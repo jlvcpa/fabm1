@@ -7,7 +7,6 @@ let currentUser = null;
 let calendarAssignments = JSON.parse(localStorage.getItem('fabm2_calendar')) || {};
 let flatTopics = []; 
 let currentCalendarYear, currentCalendarMonth;
-let hoverTimeout;
 
 // --- DOM ELEMENTS ---
 const elements = {
@@ -24,7 +23,7 @@ const elements = {
     pageTitle: () => document.getElementById('page-title'),
     sidebar: () => document.getElementById('sidebar'),
     sidebarOverlay: () => document.getElementById('sidebar-overlay'),
-    hoverMenu: () => document.getElementById('hover-menu'),
+    // hoverMenu: () => document.getElementById('hover-menu'), // No longer needed
     mobileMenuBtn: () => document.getElementById('mobile-menu-btn'),
     desktopSidebarToggle: () => document.getElementById('desktop-sidebar-toggle'),
     btnLogout: () => document.getElementById('btn-logout')
@@ -49,6 +48,9 @@ function setupEventListeners() {
     // Sidebar
     elements.desktopSidebarToggle().addEventListener('click', () => {
         elements.sidebar().classList.toggle('collapsed');
+        
+        // If collapsing, we might want to close all submenus, 
+        // but keeping them open state is usually better UX until clicked.
     });
     
     elements.mobileMenuBtn().addEventListener('click', () => {
@@ -58,10 +60,7 @@ function setupEventListeners() {
 
     elements.sidebarOverlay().addEventListener('click', closeMobileSidebar);
 
-    // Hover Menu
-    const menu = elements.hoverMenu();
-    menu.addEventListener('mouseenter', () => clearTimeout(hoverTimeout));
-    menu.addEventListener('mouseleave', hideHoverMenu);
+    // Hover Menu listeners removed as we are now using click-accordion
 }
 
 // --- AUTH LOGIC ---
@@ -168,6 +167,7 @@ function renderSidebar(role) {
             const unitPrefix = unitParts[0];
             const unitSuffix = unitParts.slice(1).join(':');
 
+            // --- UNIT BUTTON ---
             const unitBtn = document.createElement('button');
             unitBtn.className = "w-full text-left px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex justify-between items-center group whitespace-nowrap overflow-hidden";
             unitBtn.innerHTML = `
@@ -178,47 +178,107 @@ function renderSidebar(role) {
                 <i class="fas fa-chevron-down text-xs transform transition-transform duration-300 group-hover:text-blue-400"></i>
             `;
             
-            const submenu = document.createElement('div');
-            submenu.className = "submenu bg-slate-950";
+            const unitSubmenu = document.createElement('div');
+            unitSubmenu.className = "unit-submenu bg-slate-950 hidden"; // Hidden by default
             
             unitBtn.onclick = () => {
                 const icon = unitBtn.querySelector('.fa-chevron-down');
-                if (submenu.classList.contains('open')) {
-                    submenu.classList.remove('open');
-                    icon.classList.remove('rotate-180');
-                } else {
-                    document.querySelectorAll('.submenu').forEach(el => {
-                        el.classList.remove('open');
-                        el.previousElementSibling.querySelector('.fa-chevron-down')?.classList.remove('rotate-180');
-                    });
-                    submenu.classList.add('open');
+                
+                // Toggle this unit
+                if (unitSubmenu.classList.contains('hidden')) {
+                    // Open
+                    unitSubmenu.classList.remove('hidden');
                     icon.classList.add('rotate-180');
+                } else {
+                    // Close
+                    unitSubmenu.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
                 }
             };
 
+            // --- WEEK RENDERER ---
             unit.weeks.forEach(week => {
                 const weekParts = week.title.split(':');
                 const weekPrefix = weekParts[0];
                 const weekSuffix = weekParts.slice(1).join(':');
 
-                const weekLink = document.createElement('button');
-                weekLink.className = "w-full text-left pl-10 pr-6 py-2 text-sm text-slate-400 hover:text-blue-300 hover:bg-slate-900 transition-colors border-l-2 border-transparent hover:border-blue-500 relative whitespace-nowrap overflow-hidden";
-                weekLink.innerHTML = `<span>${weekPrefix}</span><span class="sidebar-text-detail">:${weekSuffix}</span>`;
+                // 1. Week Button (Parent)
+                const weekBtn = document.createElement('button');
+                // Added flex and group for chevron positioning
+                weekBtn.className = "w-full text-left pl-10 pr-6 py-2 text-sm text-slate-400 hover:text-blue-300 hover:bg-slate-900 transition-colors border-l-2 border-transparent hover:border-blue-500 relative whitespace-nowrap overflow-hidden flex justify-between items-center group";
                 
-                weekLink.onclick = () => {
-                    renderDayContent(unit, week, 0); 
-                    closeMobileSidebar();
-                    highlightActiveLink(weekLink);
-                };
+                // Added chevron icon for the week
+                weekBtn.innerHTML = `
+                    <div class="truncate">
+                        <span>${weekPrefix}</span><span class="sidebar-text-detail">:${weekSuffix}</span>
+                    </div>
+                    ${(week.days && week.days.length > 0) ? '<i class="fas fa-chevron-down text-[10px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>' : ''}
+                `;
+                
+                // 2. Day Submenu (Child Container)
+                const daySubmenu = document.createElement('div');
+                daySubmenu.className = "day-submenu hidden bg-slate-950 border-l border-slate-800 ml-10"; // Indented submenu
 
-                weekLink.addEventListener('mouseenter', (e) => showHoverMenu(e, unit, week));
-                weekLink.addEventListener('mouseleave', hideHoverMenu);
+                // 3. Populate Days
+                if (week.days && week.days.length > 0) {
+                    week.days.forEach((day, index) => {
+                        const dayBtn = document.createElement('button');
+                        dayBtn.className = "w-full text-left pl-6 pr-4 py-2 text-xs text-slate-500 hover:text-blue-400 hover:bg-slate-900 transition-colors flex items-center gap-2";
+                        dayBtn.innerHTML = `<i class="fas fa-circle text-[6px]"></i> <span>${day.day}: ${day.topic}</span>`;
+                        
+                        dayBtn.onclick = () => {
+                            renderDayContent(unit, week, index);
+                            closeMobileSidebar();
+                            highlightActiveDay(dayBtn);
+                        };
+                        daySubmenu.appendChild(dayBtn);
+                    });
 
-                submenu.appendChild(weekLink);
+                    // 4. Logic to Toggle Week and Show Days
+                    weekBtn.onclick = () => {
+                        const icon = weekBtn.querySelector('.fa-chevron-down');
+                        const isClosed = daySubmenu.classList.contains('hidden');
+
+                        // A. Close ALL other open Day Submenus in the entire sidebar
+                        document.querySelectorAll('.day-submenu').forEach(el => el.classList.add('hidden'));
+                        document.querySelectorAll('.day-submenu').forEach(el => {
+                            // Reset chevrons of other weeks
+                            const prevBtn = el.previousElementSibling; 
+                            if(prevBtn) {
+                                const prevIcon = prevBtn.querySelector('.fa-chevron-down');
+                                if(prevIcon) {
+                                    prevIcon.classList.remove('rotate-180', 'opacity-100', 'text-blue-400');
+                                    prevIcon.classList.add('opacity-0');
+                                }
+                            }
+                        });
+
+                        // B. If it was closed, open THIS one
+                        if (isClosed) {
+                            daySubmenu.classList.remove('hidden');
+                            if(icon) {
+                                icon.classList.add('rotate-180', 'opacity-100', 'text-blue-400');
+                                icon.classList.remove('opacity-0');
+                            }
+                            
+                            // *** IMPORTANT: FORCE SIDEBAR EXPANSION ***
+                            // If sidebar is collapsed (icons only), we must expand it so the user can see the "Day 1" text
+                            if (elements.sidebar().classList.contains('collapsed')) {
+                                elements.sidebar().classList.remove('collapsed');
+                            }
+                        }
+                    };
+                } else {
+                    // If no days, just do nothing or show toast
+                    weekBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                unitSubmenu.appendChild(weekBtn);
+                unitSubmenu.appendChild(daySubmenu);
             });
 
             container.appendChild(unitBtn);
-            container.appendChild(submenu);
+            container.appendChild(unitSubmenu);
         });
     });
 }
@@ -274,8 +334,6 @@ function renderLandingPage() {
 }
 
 // --- DAY RENDERER (The Core Content Logic) ---
-
-// --- DAY RENDERER REVISION ---
 
 function renderDayContent(unit, week, dayIndex) {
     // Update document title for browser history/tab
@@ -363,7 +421,12 @@ function renderDayContent(unit, week, dayIndex) {
         // Reduced height by ~20% (py-1.5 vs py-2), text-xs
         prevBtn.className = "px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 hover:text-blue-600 transition-colors flex items-center";
         prevBtn.innerHTML = `<i class="fas fa-chevron-left mr-1"></i> Prev`;
-        prevBtn.onclick = () => renderDayContent(unit, week, dayIndex - 1);
+        prevBtn.onclick = () => {
+            renderDayContent(unit, week, dayIndex - 1);
+            // Auto open the submenu if needed (UX enhancement)
+            const activeWeekBtn = document.querySelector('.day-submenu:not(.hidden)')?.previousElementSibling;
+            if (activeWeekBtn) activeWeekBtn.click();
+        };
         navButtonsGroup.appendChild(prevBtn);
     }
 
@@ -551,46 +614,20 @@ function closeMobileSidebar() {
     elements.sidebarOverlay().classList.add('hidden');
 }
 
-function highlightActiveLink(activeLink) {
-    document.querySelectorAll('.submenu button').forEach(b => b.classList.remove('text-blue-300', 'bg-slate-900', 'border-blue-500'));
-    activeLink.classList.add('text-blue-300', 'bg-slate-900', 'border-blue-500');
-}
-
-function showHoverMenu(e, unit, week) {
-    clearTimeout(hoverTimeout);
-    const menu = elements.hoverMenu();
-    if(!week.days || week.days.length === 0) {
-        menu.classList.add('hidden');
-        return;
-    }
-    menu.innerHTML = '';
-    const header = document.createElement('div');
-    header.className = "px-4 py-2 bg-gray-50 border-b text-xs font-bold text-gray-500 uppercase";
-    header.innerText = "Jump to Day";
-    menu.appendChild(header);
-
-    week.days.forEach((day, index) => {
-        const dayBtn = document.createElement('button');
-        dayBtn.className = "w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors";
-        dayBtn.innerHTML = `<span class="font-bold text-xs mr-1">${day.day}:</span> ${day.topic}`;
-        dayBtn.onclick = () => {
-            renderDayContent(unit, week, index);
-            menu.classList.add('hidden');
-            closeMobileSidebar();
-        };
-        menu.appendChild(dayBtn);
+function highlightActiveDay(activeLink) {
+    // Clear all highlights
+    document.querySelectorAll('.day-submenu button').forEach(b => {
+        b.classList.remove('text-blue-300', 'font-bold');
+        b.querySelector('.fa-circle').classList.remove('text-blue-500');
+        b.querySelector('.fa-circle').classList.add('text-[6px]'); // Reset size
     });
-
-    const rect = e.target.getBoundingClientRect();
-    menu.style.top = `${rect.top}px`;
-    menu.style.left = `${rect.right}px`;
-    menu.classList.remove('hidden');
-}
-
-function hideHoverMenu() {
-    hoverTimeout = setTimeout(() => {
-        elements.hoverMenu().classList.add('hidden');
-    }, 200);
+    
+    // Add highlight
+    activeLink.classList.add('text-blue-300', 'font-bold');
+    const dot = activeLink.querySelector('.fa-circle');
+    dot.classList.add('text-blue-500');
+    dot.classList.remove('text-[6px]');
+    dot.classList.add('text-[8px]');
 }
 
 // --- CALENDAR LOGIC (Full Implementation) ---
