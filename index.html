@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FABM 2 - Interactive Courseware</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-gray-50 text-slate-800 h-screen overflow-hidden font-sans">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md mx-4 fade-in">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+                    <i class="fas fa-book-reader text-blue-600 text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800">FABM 2 Courseware</h1>
+                <p class="text-slate-500 text-sm mt-1">Please sign in to continue</p>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">ID Number</label>
+                    <div class="relative">
+                        <i class="fas fa-id-card absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="login-id" class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow" placeholder="Enter your ID Number">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-3 text-slate-400"></i>
+                        <input type="password" id="login-pass" class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div id="login-error" class="hidden p-3 bg-red-50 text-red-600 text-xs rounded-md border border-red-100 flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2"></i> <span>Invalid credentials</span>
+                </div>
+
+                <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 flex justify-center items-center">
+                    <span>Sign In</span>
+                    <i id="login-spinner" class="fas fa-circle-notch fa-spin ml-2 hidden"></i>
+                </button>
+            </div>
+            
+            <div class="mt-6 text-center text-xs text-slate-400">
+                &copy; 2025 FABM Department<br>
+                <span class="text-[10px] opacity-70 mt-1 block">[Version 2.0.1 Modular - Fix]</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- APP CONTENT (Hidden initially) -->
+    <div id="app-content" class="hidden flex h-full">
+        <!-- Mobile Menu Button -->
+        <button id="mobile-menu-btn" class="fixed top-4 left-4 z-50 md:hidden bg-blue-900 text-white p-2 rounded shadow-lg">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-72 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col h-full transform -translate-x-full md:translate-x-0 transition-all duration-300 fixed md:relative z-40">
+            <!-- Header -->
+            <div class="p-6 bg-slate-950 border-b border-slate-800 flex items-center justify-center md:justify-start">
+                <i class="fas fa-book-open text-blue-400 sidebar-header-icon mr-2"></i>
+                <div class="overflow-hidden">
+                    <h1 class="text-xl font-bold text-white tracking-wide sidebar-header-text">FABM 2</h1>
+                    <p id="user-display-name" class="text-xs text-slate-500 mt-1 uppercase tracking-wider font-semibold truncate">Guest</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto py-4" id="nav-container">
+                <!-- Dynamic Nav Items will be injected here -->
+            </nav>
+
+            <!-- Footer -->
+            <div class="p-4 bg-slate-950 border-t border-slate-800 text-xs text-center text-slate-600">
+                <button id="btn-logout" class="w-full py-2 flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-slate-900 rounded transition-colors" title="Logout">
+                    <i class="fas fa-sign-out-alt mr-0 md:mr-2"></i> <span class="sidebar-text-detail">Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full relative w-full bg-gray-50">
+            <!-- Top Bar -->
+            <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center justify-between px-8">
+                <div class="flex items-center">
+                    <!-- Desktop Sidebar Toggle Button -->
+                    <button id="desktop-sidebar-toggle" class="hidden md:block mr-4 text-slate-600 hover:text-blue-600 transition-colors focus:outline-none" title="Toggle Sidebar">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                    <h2 id="page-title" class="text-lg font-semibold text-slate-800">Course Outline</h2>
+                </div>
+                <div class="text-sm text-slate-500">
+                    Grade 12 <span class="mx-2">|</span> ABM Strand
+                </div>
+            </header>
+
+            <!-- Content Scroll Area -->
+            <div id="content-area" class="flex-1 overflow-y-auto p-2 md:p-6 lg:p-8 scroll-smooth">
+                <!-- Dynamic Content Injected Here -->
+            </div>
+        </main>
+
+        <!-- Sidebar Overlay for mobile -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+
+        <!-- HOVER MENU CONTAINER (Fixed Position) -->
+        <div id="hover-menu" class="fixed hidden bg-white rounded-lg shadow-xl border border-gray-200 z-50 w-64 overflow-hidden py-1"></div>
+    </div>
+
+    <!-- MAIN APP MODULE -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
