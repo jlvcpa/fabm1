@@ -264,79 +264,437 @@ export const unit2Week2Data = {
             explanation: "Purchasing on account creates a liability, which is recorded by crediting Accounts Payable."
         },
 
-        // --- 5 PROBLEM SOLVING QUESTIONS (Journal Entries with Trade Discounts) ---
+        // --- 5 JOURNALIZING (Journal Entries with Trade Discounts) ---
         {
-            type: "problem",
-            question: "<strong>Journalizing (Perpetual - Purchase):</strong> <br>Purchased goods with a List Price of ₱50,000 less a 20% trade discount. The purchase was made on credit.",
-            answer: `Calculation:
-List Price:    50,000
-Less 20%:     (10,000)
-Invoice Price: 40,000
-
-Journal Entry:
-Dr. Merchandise Inventory   40,000
-    Cr. Accounts Payable       40,000`,
-            explanation: "We only record the Invoice Price of ₱40,000. The ₱10,000 discount is ignored in the journal."
-        },
-        {
-            type: "problem",
-            question: "<strong>Journalizing (Periodic - Purchase):</strong> <br>Purchased goods with a List Price of ₱20,000 less a 10% trade discount. The terms were COD (Cash on Delivery).",
-            answer: `Calculation:
-List Price:    20,000
-Less 10%:      (2,000)
-Invoice Price: 18,000
-
-Journal Entry:
-Dr. Purchases               18,000
-    Cr. Cash                   18,000`,
-            explanation: "Under Periodic, we debit 'Purchases'. Since it's COD, we credit Cash. We use the net amount of ₱18,000."
-        },
-        {
-            type: "problem",
-            question: "<strong>Journalizing (Perpetual - Sale):</strong> <br>Sold inventory with a List Price of ₱100,000 less a 25% trade discount on account. The cost of the goods sold was ₱40,000.",
-            answer: `Calculation:
-List Price:    100,000
-Less 25%:      (25,000)
-Invoice Price:  75,000
-
-Entry 1 (Revenue):
-Dr. Accounts Receivable     75,000
-    Cr. Sales                  75,000
-
-Entry 2 (Cost):
-Dr. Cost of Goods Sold      40,000
-    Cr. Mdse. Inventory        40,000`,
-            explanation: "Revenue is recorded at the Invoice Price (₱75k). The Cost entry uses the cost given (₱40k)."
-        },
-        {
-            type: "problem",
-            question: "<strong>Journalizing (Periodic - Sale):</strong> <br>Sold inventory with a List Price of ₱30,000 less a 5% trade discount for Cash. The cost of the goods sold was ₱15,000.",
-            answer: `Calculation:
-List Price:    30,000
-Less 5%:       (1,500)
-Invoice Price: 28,500
-
-Journal Entry:
-Dr. Cash                    28,500
-    Cr. Sales                  28,500
-
-(No entry for COGS in Periodic)`,
-            explanation: "In Periodic, we only record the Sales Revenue at the Invoice Price. The cost is ignored until the end-of-period count."
-        },
-        {
-            type: "problem",
-            question: "<strong>Journalizing (Chain Discount):</strong> <br>Purchased inventory (Periodic System) with a List Price of ₱10,000. The supplier offered trade discounts of 20% and 10%. Determine the Invoice Price and the Journal Entry (Credit).",
-            answer: `Step 1: 10,000 - 20% = 8,000
-Step 2:  8,000 - 10% = 7,200
-Invoice Price: ₱7,200
-
-Journal Entry:
-Dr. Purchases               7,200
-    Cr. Accounts Payable       7,200`,
-            explanation: "Apply the discounts sequentially (Chain Discount). 10k minus 2k is 8k. Then 8k minus 800 is 7,200."
-        }
-    ]
-},
+        type: "journalizing",
+        id: "prob1",
+        title: "PROBLEM 1: JANUARY TRANSACTIONS",
+        instructions: "Journalize the transactions for 'Alpha Trading'. Use the following accounts: Cash, Accounts Receivable, Accounts Payable, Sales, Purchases, Merchandise Inventory, Cost of Goods Sold. \n\nIMPORTANT: Use the Periodic System for transactions 1, 3, and 5. Use the Perpetual System for transactions 2, 4, and 6.",
+        transactions: [
+            {
+                date: "Jan 2",
+                description: "1. (Periodic) Purchased goods from Supplier A on account for $5,000.",
+                rows: 3,
+                solution: [
+                    { date: "Jan 2", account: "Purchases", debit: 5000, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 5000 },
+                    { date: "", account: "Purchased goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jan 4",
+                description: "2. (Perpetual) Sold merchandise on account to Customer X for $8,000. The cost of goods sold was $4,500.",
+                rows: 5,
+                solution: [
+                    { date: "4", account: "Accounts Receivable", debit: 8000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 8000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 4500, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 4500 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jan 7",
+                description: "3. (Periodic) Sold goods for cash, $3,000.",
+                rows: 3,
+                solution: [
+                    { date: "7", account: "Cash", debit: 3000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 3000 },
+                    { date: "", account: "Cash sales", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jan 10",
+                description: "4. (Perpetual) Purchased inventory on account from Supplier B, list price $10,000, trade discount 10%.",
+                rows: 3,
+                solution: [
+                    { date: "10", account: "Merchandise Inventory", debit: 9000, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 9000 },
+                    { date: "", account: "Purchased inventory (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jan 15",
+                description: "5. (Periodic) Purchased goods for cash, list price $4,000, trade discount 20%.",
+                rows: 3,
+                solution: [
+                    { date: "15", account: "Purchases", debit: 3200, credit: "" },
+                    { date: "", account: "Cash", debit: "", credit: 3200 },
+                    { date: "", account: "Cash purchase (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jan 20",
+                description: "6. (Perpetual) Sold merchandise to Customer Y on account for $12,000. Cost of goods sold was $7,000.",
+                rows: 5,
+                solution: [
+                    { date: "20", account: "Accounts Receivable", debit: 12000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 12000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 7000, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 7000 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            }
+        ]
+    },
+    {
+        type: "journalizing",
+        id: "prob2",
+        title: "PROBLEM 2: FEBRUARY TRANSACTIONS",
+        instructions: "Journalize the transactions for 'Beta Mart'. Use the following accounts: Cash, Accounts Receivable, Accounts Payable, Sales, Purchases, Merchandise Inventory, Cost of Goods Sold. \n\nIMPORTANT: Use the Periodic System for transactions 1, 3, and 5. Use the Perpetual System for transactions 2, 4, and 6.",
+        transactions: [
+            {
+                date: "Feb 1",
+                description: "1. (Periodic) Sold goods on account to Client A, $6,500.",
+                rows: 3,
+                solution: [
+                    { date: "Feb 1", account: "Accounts Receivable", debit: 6500, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 6500 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Feb 5",
+                description: "2. (Perpetual) Purchased merchandise for cash, $2,500.",
+                rows: 3,
+                solution: [
+                    { date: "5", account: "Merchandise Inventory", debit: 2500, credit: "" },
+                    { date: "", account: "Cash", debit: "", credit: 2500 },
+                    { date: "", account: "Purchased inventory for cash", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Feb 10",
+                description: "3. (Periodic) Purchased goods on account from Vendor Z, $8,000.",
+                rows: 3,
+                solution: [
+                    { date: "10", account: "Purchases", debit: 8000, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 8000 },
+                    { date: "", account: "Purchased goods on credit", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Feb 14",
+                description: "4. (Perpetual) Sold merchandise for cash, list price $5,000, trade discount 5%. Cost of goods sold was $3,000.",
+                rows: 5,
+                solution: [
+                    { date: "14", account: "Cash", debit: 4750, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 4750 },
+                    { date: "", account: "Cost of Goods Sold", debit: 3000, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 3000 },
+                    { date: "", account: "Cash sale (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Feb 20",
+                description: "5. (Periodic) Purchased goods on account, list price $15,000, trade discount 20%.",
+                rows: 3,
+                solution: [
+                    { date: "20", account: "Purchases", debit: 12000, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 12000 },
+                    { date: "", account: "Purchased goods (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Feb 25",
+                description: "6. (Perpetual) Sold merchandise on account to Client B, $9,000. Cost of goods sold was $5,500.",
+                rows: 5,
+                solution: [
+                    { date: "25", account: "Accounts Receivable", debit: 9000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 9000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 5500, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 5500 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            }
+        ]
+    },
+    {
+        type: "journalizing",
+        id: "prob3",
+        title: "PROBLEM 3: MARCH TRANSACTIONS",
+        instructions: "Journalize the transactions for 'Gamma Gear'. Use the following accounts: Cash, Accounts Receivable, Accounts Payable, Sales, Purchases, Merchandise Inventory, Cost of Goods Sold. \n\nIMPORTANT: Use the Periodic System for transactions 1, 3, and 5. Use the Perpetual System for transactions 2, 4, and 6.",
+        transactions: [
+            {
+                date: "Mar 3",
+                description: "1. (Periodic) Purchased inventory on credit, $11,000.",
+                rows: 3,
+                solution: [
+                    { date: "Mar 3", account: "Purchases", debit: 11000, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 11000 },
+                    { date: "", account: "Purchased inventory", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Mar 8",
+                description: "2. (Perpetual) Sold goods on credit, list price $20,000, trade discount 10%. Cost of goods sold was $10,000.",
+                rows: 5,
+                solution: [
+                    { date: "8", account: "Accounts Receivable", debit: 18000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 18000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 10000, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 10000 },
+                    { date: "", account: "Sold goods (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Mar 12",
+                description: "3. (Periodic) Sold goods for cash, $4,200.",
+                rows: 3,
+                solution: [
+                    { date: "12", account: "Cash", debit: 4200, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 4200 },
+                    { date: "", account: "Cash sales", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Mar 18",
+                description: "4. (Perpetual) Purchased merchandise on account, list price $8,000, trade discount 15%.",
+                rows: 3,
+                solution: [
+                    { date: "18", account: "Merchandise Inventory", debit: 6800, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 6800 },
+                    { date: "", account: "Purchased inventory (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Mar 22",
+                description: "5. (Periodic) Purchased goods for cash, $2,000.",
+                rows: 3,
+                solution: [
+                    { date: "22", account: "Purchases", debit: 2000, credit: "" },
+                    { date: "", account: "Cash", debit: "", credit: 2000 },
+                    { date: "", account: "Purchased goods for cash", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Mar 30",
+                description: "6. (Perpetual) Sold goods on credit, $14,000. Cost of goods sold was $8,200.",
+                rows: 5,
+                solution: [
+                    { date: "30", account: "Accounts Receivable", debit: 14000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 14000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 8200, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 8200 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            }
+        ]
+    },
+    {
+        type: "journalizing",
+        id: "prob4",
+        title: "PROBLEM 4: APRIL TRANSACTIONS",
+        instructions: "Journalize the transactions for 'Delta Depot'. Use the following accounts: Cash, Accounts Receivable, Accounts Payable, Sales, Purchases, Merchandise Inventory, Cost of Goods Sold. \n\nIMPORTANT: Use the Periodic System for transactions 1, 3, and 5. Use the Perpetual System for transactions 2, 4, and 6.",
+        transactions: [
+            {
+                date: "Apr 2",
+                description: "1. (Periodic) Sold merchandise on account, list price $10,000, trade discount 5%.",
+                rows: 3,
+                solution: [
+                    { date: "Apr 2", account: "Accounts Receivable", debit: 9500, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 9500 },
+                    { date: "", account: "Sold merchandise (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Apr 6",
+                description: "2. (Perpetual) Purchased inventory for cash, $6,000.",
+                rows: 3,
+                solution: [
+                    { date: "6", account: "Merchandise Inventory", debit: 6000, credit: "" },
+                    { date: "", account: "Cash", debit: "", credit: 6000 },
+                    { date: "", account: "Purchased inventory", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Apr 11",
+                description: "3. (Periodic) Purchased goods on credit from Supplier M, $7,500.",
+                rows: 3,
+                solution: [
+                    { date: "11", account: "Purchases", debit: 7500, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 7500 },
+                    { date: "", account: "Purchased goods on credit", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Apr 16",
+                description: "4. (Perpetual) Sold goods for cash, $3,500. Cost of goods sold was $1,900.",
+                rows: 5,
+                solution: [
+                    { date: "16", account: "Cash", debit: 3500, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 3500 },
+                    { date: "", account: "Cost of Goods Sold", debit: 1900, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 1900 },
+                    { date: "", account: "Cash sale", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Apr 22",
+                description: "5. (Periodic) Sold goods on credit, $11,500.",
+                rows: 3,
+                solution: [
+                    { date: "22", account: "Accounts Receivable", debit: 11500, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 11500 },
+                    { date: "", account: "Sold goods on credit", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Apr 28",
+                description: "6. (Perpetual) Purchased merchandise on account, list price $5,000, trade discount 25%.",
+                rows: 3,
+                solution: [
+                    { date: "28", account: "Merchandise Inventory", debit: 3750, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 3750 },
+                    { date: "", account: "Purchased inventory (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            }
+        ]
+    },
+    {
+        type: "journalizing",
+        id: "prob5",
+        title: "PROBLEM 5: MAY TRANSACTIONS",
+        instructions: "Journalize the transactions for 'Echo Supplies'. Use the following accounts: Cash, Accounts Receivable, Accounts Payable, Sales, Purchases, Merchandise Inventory, Cost of Goods Sold. \n\nIMPORTANT: Use the Periodic System for transactions 1, 3, and 5. Use the Perpetual System for transactions 2, 4, and 6.",
+        transactions: [
+            {
+                date: "May 1",
+                description: "1. (Periodic) Purchased goods on account, list price $12,000, trade discount 10%.",
+                rows: 3,
+                solution: [
+                    { date: "May 1", account: "Purchases", debit: 10800, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 10800 },
+                    { date: "", account: "Purchased goods (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "May 5",
+                description: "2. (Perpetual) Sold merchandise on account, $15,000. Cost of goods sold was $9,000.",
+                rows: 5,
+                solution: [
+                    { date: "5", account: "Accounts Receivable", debit: 15000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 15000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 9000, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 9000 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "May 12",
+                description: "3. (Periodic) Purchased goods for cash, $4,400.",
+                rows: 3,
+                solution: [
+                    { date: "12", account: "Purchases", debit: 4400, credit: "" },
+                    { date: "", account: "Cash", debit: "", credit: 4400 },
+                    { date: "", account: "Purchased goods", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "May 18",
+                description: "4. (Perpetual) Sold goods on credit, list price $8,000, trade discount 5%. Cost of goods sold was $4,000.",
+                rows: 5,
+                solution: [
+                    { date: "18", account: "Accounts Receivable", debit: 7600, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 7600 },
+                    { date: "", account: "Cost of Goods Sold", debit: 4000, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 4000 },
+                    { date: "", account: "Sold goods (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "May 25",
+                description: "5. (Periodic) Sold goods for cash, list price $3,000, trade discount 10%.",
+                rows: 3,
+                solution: [
+                    { date: "25", account: "Cash", debit: 2700, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 2700 },
+                    { date: "", account: "Cash sale (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "May 30",
+                description: "6. (Perpetual) Purchased inventory on account, $13,500.",
+                rows: 3,
+                solution: [
+                    { date: "30", account: "Merchandise Inventory", debit: 13500, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 13500 },
+                    { date: "", account: "Purchased inventory", debit: "", credit: "", isExplanation: true }
+                ]
+            }
+        ]
+    },
+    {
+        type: "journalizing",
+        id: "prob6",
+        title: "PROBLEM 6: JUNE TRANSACTIONS",
+        instructions: "Journalize the transactions for 'Foxtrot Traders'. Use the following accounts: Cash, Accounts Receivable, Accounts Payable, Sales, Purchases, Merchandise Inventory, Cost of Goods Sold. \n\nIMPORTANT: Use the Periodic System for transactions 1, 3, and 5. Use the Perpetual System for transactions 2, 4, and 6.",
+        transactions: [
+            {
+                date: "Jun 2",
+                description: "1. (Periodic) Purchased goods on account from Supplier K, $9,200.",
+                rows: 3,
+                solution: [
+                    { date: "Jun 2", account: "Purchases", debit: 9200, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 9200 },
+                    { date: "", account: "Purchased goods on credit", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jun 6",
+                description: "2. (Perpetual) Purchased merchandise for cash, list price $5,000, trade discount 20%.",
+                rows: 3,
+                solution: [
+                    { date: "6", account: "Merchandise Inventory", debit: 4000, credit: "" },
+                    { date: "", account: "Cash", debit: "", credit: 4000 },
+                    { date: "", account: "Purchased inventory (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jun 11",
+                description: "3. (Periodic) Sold goods on account, list price $7,000, trade discount 10%.",
+                rows: 3,
+                solution: [
+                    { date: "11", account: "Accounts Receivable", debit: 6300, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 6300 },
+                    { date: "", account: "Sold goods (net of discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jun 17",
+                description: "4. (Perpetual) Sold goods for cash, $2,800. Cost of goods sold was $1,500.",
+                rows: 5,
+                solution: [
+                    { date: "17", account: "Cash", debit: 2800, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 2800 },
+                    { date: "", account: "Cost of Goods Sold", debit: 1500, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 1500 },
+                    { date: "", account: "Cash sale", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jun 23",
+                description: "5. (Periodic) Purchased goods on credit, list price $10,000, trade discounts 20% and 10% (Chain Discount).",
+                rows: 3,
+                solution: [
+                    { date: "23", account: "Purchases", debit: 7200, credit: "" },
+                    { date: "", account: "Accounts Payable", debit: "", credit: 7200 },
+                    { date: "", account: "Purchased goods (chain discount)", debit: "", credit: "", isExplanation: true }
+                ]
+            },
+            {
+                date: "Jun 29",
+                description: "6. (Perpetual) Sold merchandise on account, $16,000. Cost of goods sold was $9,500.",
+                rows: 5,
+                solution: [
+                    { date: "29", account: "Accounts Receivable", debit: 16000, credit: "" },
+                    { date: "", account: "Sales", debit: "", credit: 16000 },
+                    { date: "", account: "Cost of Goods Sold", debit: 9500, credit: "" },
+                    { date: "", account: "Merchandise Inventory", debit: "", credit: 9500 },
+                    { date: "", account: "Sold goods on account", debit: "", credit: "", isExplanation: true }
+                ]
+            }
+        ]
+    },
         {
   day: "Day 2",
   topic: "Discounts, Returns, and Net Calculations (Periodic vs. Perpetual)",
