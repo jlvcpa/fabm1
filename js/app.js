@@ -511,8 +511,9 @@ function renderExercises(exercises, dayIndex) {
 
         const exId = `ex-${dayIndex}-${i}`;
         
+        // --- MCQ HANDLER ---
         if (ex.type === 'mcq') {
-            const optionsHtml = ex.options.map((opt, optIndex) => `
+             const optionsHtml = ex.options.map((opt, optIndex) => `
                 <label class="flex items-start p-3 rounded border border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors bg-white">
                     <input type="radio" name="${exId}" value="${optIndex}" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500" data-qid="${exId}">
                     <span class="text-sm text-gray-700">${opt}</span>
@@ -520,7 +521,7 @@ function renderExercises(exercises, dayIndex) {
             `).join('');
 
             return `
-                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100">
+                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8">
                     <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Question ${i+1}</span>${ex.question}</p>
                     <div class="space-y-3 mb-4">${optionsHtml}</div>
                     
@@ -534,17 +535,16 @@ function renderExercises(exercises, dayIndex) {
                     </div>
                 </div>
             `;
-        } else if (ex.type === 'problem') {
-            return `
-                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100">
+        } 
+        // --- EXISTING PROBLEM HANDLER ---
+        else if (ex.type === 'problem') {
+             return `
+                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8">
                     <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Problem ${i+1}</span>${ex.question}</p>
-                    
                     <textarea id="input-${exId}" class="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white" rows="4" placeholder="Type your solution here..." data-qid="${exId}"></textarea>
-                    
                     <div class="mt-4">
                         <button id="btn-${exId}" class="hidden px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-all shadow-sm" data-qid="${exId}">Show Answer Key</button>
                     </div>
-
                     <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800 font-mono whitespace-pre-wrap">
 <strong><i class="fas fa-key mr-1"></i> Answer Key:</strong>
 ${ex.answer}
@@ -555,9 +555,172 @@ ${ex.explanation}
                 </div>
             `;
         }
+        // --- NEW JOURNALIZING HANDLER ---
+        else if (ex.type === 'journalizing') {
+            
+            // Helper to generate rows for specific transaction
+            // isReadOnly = true generates the Answer Key view
+            const generateRows = (txId, rowCount, isReadOnly = false, solutionData = []) => {
+                let rowsHtml = '';
+                for (let r = 0; r < rowCount; r++) {
+                    // If read-only, pull data from solutionData, else empty
+                    const rowData = isReadOnly && solutionData[r] ? solutionData[r] : { date: '', account: '', debit: '', credit: '' };
+                    
+                    // Indentation logic for Read-Only mode
+                    let indentStyle = "padding-left: 0.5rem;"; 
+                    let acctClass = "";
+                    if (isReadOnly) {
+                        if (rowData.isExplanation) {
+                            indentStyle = "padding-left: 2rem;"; // 8 spaces approx
+                            acctClass = "italic text-gray-500";
+                        } else if (rowData.credit) {
+                            indentStyle = "padding-left: 1.25rem;"; // 5 spaces approx
+                        }
+                    }
+
+                    rowsHtml += `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 bg-white">
+                        <td class="border-r border-gray-300 p-0 w-16 align-top">
+                            <input type="text" 
+                                class="w-full h-full p-2 bg-transparent outline-none text-xs text-center font-mono text-gray-600" 
+                                value="${rowData.date || ''}" 
+                                ${isReadOnly ? 'readonly disabled' : ''}
+                                placeholder="Date">
+                        </td>
+                        <td class="border-r border-gray-300 p-0 relative align-top">
+                            <input type="text" 
+                                id="acct-${txId}-${r}"
+                                class="w-full h-full p-2 bg-transparent outline-none text-sm font-mono transition-all duration-200 ${acctClass}"
+                                style="${indentStyle}"
+                                value="${rowData.account || ''}"
+                                ${isReadOnly ? 'readonly disabled' : ''}
+                                placeholder="Account Titles and Explanation">
+                        </td>
+                        <td class="border-r border-gray-300 p-0 w-28 align-top">
+                            <input type="number" 
+                                id="dr-${txId}-${r}"
+                                class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono"
+                                step="0.01"
+                                placeholder=""
+                                value="${rowData.debit !== '' && rowData.debit !== undefined ? Number(rowData.debit).toFixed(2) : ''}"
+                                ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
+                        </td>
+                        <td class="p-0 w-28 align-top">
+                            <input type="number" 
+                                id="cr-${txId}-${r}"
+                                class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono"
+                                step="0.01"
+                                placeholder=""
+                                value="${rowData.credit !== '' && rowData.credit !== undefined ? Number(rowData.credit).toFixed(2) : ''}"
+                                ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
+                        </td>
+                    </tr>`;
+                }
+                return rowsHtml;
+            };
+
+            const transactionsHtml = ex.transactions.map((tx, txIndex) => {
+                const txId = `${exId}-tx-${txIndex}`;
+                
+                // 1. The Student Input Table
+                const inputTable = `
+                    <div class="mb-6 border border-gray-300 shadow-sm rounded-lg overflow-hidden">
+                        <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex justify-between items-center">
+                            <span class="font-bold text-gray-700 text-sm">Transaction: ${tx.date}</span>
+                        </div>
+                        <div class="p-3 bg-blue-50 text-sm text-gray-800 border-b border-gray-300 italic">
+                            ${tx.description}
+                        </div>
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-200 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
+                                    <th class="py-2 border-r border-gray-300">Date</th>
+                                    <th class="py-2 border-r border-gray-300 text-left pl-2">Account Titles and Explanation</th>
+                                    <th class="py-2 border-r border-gray-300">Debit</th>
+                                    <th class="py-2">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generateRows(txId, tx.rows)}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                // 2. The Hidden Answer Key Table
+                const answerTable = `
+                    <div id="ans-table-${txId}" class="hidden mb-8 border-2 border-green-400 shadow-md rounded-lg overflow-hidden ring-4 ring-green-50">
+                        <div class="bg-green-100 px-4 py-2 border-b border-green-300 text-green-800 font-bold text-sm flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i> Correct Entry: ${tx.date}
+                        </div>
+                        <table class="w-full border-collapse bg-green-50">
+                             <thead>
+                                <tr class="bg-green-200 text-xs text-green-800 font-bold uppercase border-b border-green-300">
+                                    <th class="py-2 border-r border-green-300 w-16">Date</th>
+                                    <th class="py-2 border-r border-green-300 text-left pl-2">Account Titles and Explanation</th>
+                                    <th class="py-2 border-r border-green-300 w-28">Debit</th>
+                                    <th class="py-2 w-28">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generateRows(txId, tx.rows, true, tx.solution)}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                return inputTable + answerTable;
+            }).join('');
+
+            return `
+                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-10">
+                    <h3 class="font-bold text-xl text-gray-900 mb-2 border-b pb-2">${ex.title}</h3>
+                    <p class="text-gray-600 mb-6 text-sm">${ex.instructions}</p>
+                    
+                    ${transactionsHtml}
+
+                    <div class="mt-6">
+                         <button onclick="document.querySelectorAll('[id^=ans-table-${exId}]').forEach(el => el.classList.remove('hidden')); this.classList.add('hidden');" 
+                            class="px-6 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700 shadow-md transition-colors w-full sm:w-auto">
+                            <i class="fas fa-eye mr-2"></i> Reveal Solution
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         return '';
     }).join('');
 }
+
+// --- REQUIRED HELPER FUNCTION ---
+// Add this to your script, outside the renderExercises function so it is globally accessible.
+window.handleJournalIndent = function(txId, row) {
+    const acctInput = document.getElementById(`acct-${txId}-${row}`);
+    const drInput = document.getElementById(`dr-${txId}-${row}`);
+    const crInput = document.getElementById(`cr-${txId}-${row}`);
+
+    if (!acctInput) return;
+
+    const drVal = drInput ? drInput.value.trim() : '';
+    const crVal = crInput ? crInput.value.trim() : '';
+
+    // Logic:
+    // 1. If Credit has value -> Indent 5 spaces (~1.25rem)
+    // 2. If Both Empty -> Assume Explanation -> Indent 8 spaces (~2rem)
+    // 3. Else (Debit has value or typing) -> No Indent (0.5rem default padding)
+
+    if (crVal !== '') {
+        acctInput.style.paddingLeft = '1.25rem'; // ~5 spaces
+        acctInput.classList.remove('italic', 'text-gray-500');
+    } else if (drVal === '' && crVal === '') {
+        acctInput.style.paddingLeft = '2rem'; // ~8 spaces
+        acctInput.classList.add('italic', 'text-gray-500'); // Optional: make explanation italic
+    } else {
+        acctInput.style.paddingLeft = '0.5rem'; // Default
+        acctInput.classList.remove('italic', 'text-gray-500');
+    }
+};
 
 function attachExerciseListeners() {
     // Listen for radio changes
