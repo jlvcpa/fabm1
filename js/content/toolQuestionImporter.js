@@ -39,8 +39,8 @@ const samples = {
         // Formatted to match the screenshot exactly
         code: `{
   "qbMultipleChoice": {
-    "FABM1-History-001": {
-      "subject": "FABM 1",
+    "[subject]-[topic]-[count]": {
+      "subject": "FABM1",
       "type": "Multiple Choice",
       "topic": "History of Accounting",
       "competency": "Remember",
@@ -58,8 +58,8 @@ const samples = {
         desc: "Requires 'solution' field for the numerical answer.",
         code: `{
   "qbProblemSolving": {
-    "FABM1-COGS-002": {
-      "subject": "FABM 1",
+    "[subject]-[topic]-[count]": {
+      "subject": "FABM1",
       "type": "Problem Solving",
       "topic": "Cost of Goods Sold",
       "competency": "Apply",
@@ -76,8 +76,8 @@ const samples = {
         desc: "Complex structure with nested 'transactions' array.",
         code: `{
   "qbJournalizing": {
-    "FABM1-Journal-Set1": {
-      "subject": "FABM 1",
+    "[subject]-[topic]-[count]": {
+      "subject": "FABM1",
       "type": "journalizing",
       "topic": "Periodic System",
       "id": "set1_periodic",
