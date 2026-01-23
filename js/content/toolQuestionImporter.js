@@ -27,15 +27,17 @@ const db = getFirestore(app);
 
 // SVG Icons for visuals
 const svgs = {
-    json: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M10 13a3.5 3.5 0 0 0 4 0"></path></svg>`,
-    upload: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
+    upload: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+    // Icons for sample panel header
+    list: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`,
+    calc: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>`,
+    pen: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>`
 };
 
 const samples = {
     multiple: {
         title: "Multiple Choice",
-        collection: "qbMultipleChoice",
-        desc: "Structure: Collection -> Doc ID -> Question Data",
+        icon: svgs.list,
         code: `{
   "qbMultipleChoice": {
     "FABM1-History-001": {
@@ -45,7 +47,7 @@ const samples = {
       "competency": "Remember",
       "question": "When was the ASC established?",
       "options": ["1973", "1981", "1995", "2001"],
-      "answer": 1, 
+      "answer": 1,
       "explanation": "Established in 1981."
     }
   }
@@ -53,8 +55,7 @@ const samples = {
     },
     problem: {
         title: "Problem Solving",
-        collection: "qbProblemSolving",
-        desc: "Requires 'solution' field for the numerical answer.",
+        icon: svgs.calc,
         code: `{
   "qbProblemSolving": {
     "FABM1-COGS-002": {
@@ -71,8 +72,7 @@ const samples = {
     },
     journal: {
         title: "Journalizing",
-        collection: "qbJournalizing",
-        desc: "Complex structure with nested 'transactions' array.",
+        icon: svgs.pen,
         code: `{
   "qbJournalizing": {
     "FABM1-Journal-Set1": {
@@ -111,22 +111,26 @@ export function renderQuestionImporter(targetElementId) {
     style.innerHTML = `
         .qi-container { display: flex; gap: 20px; font-family: 'Segoe UI', sans-serif; height: 85vh; }
         .qi-left { flex: 6; display: flex; flex-direction: column; }
-        .qi-right { flex: 4; background: #1e1e1e; border-radius: 8px; color: #d4d4d4; display: flex; flex-direction: column; overflow: hidden; }
-        .qi-header { text-align: center; color: #007acc; margin-bottom: 10px; }
+        .qi-right { flex: 4; background: #1e1e1e; border-radius: 8px; color: #d4d4d4; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .qi-header { text-align: center; color: #007acc; margin-bottom: 10px; font-size: 1.5rem; font-weight: 600; }
         .qi-controls { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .qi-textarea { flex-grow: 1; width: 100%; padding: 15px; font-family: monospace; font-size: 14px; border: 1px solid #ccc; border-radius: 5px; resize: none; margin-bottom: 10px; }
+        .qi-textarea { flex-grow: 1; width: 100%; padding: 15px; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; border: 1px solid #ccc; border-radius: 5px; resize: none; margin-bottom: 10px; background-color: #f8fafc; color: #334155; }
+        .qi-textarea:focus { outline: 2px solid #007acc; border-color: transparent; }
         .qi-btn { background-color: #007acc; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; transition: background 0.2s; }
         .qi-btn:hover { background-color: #005fa3; }
         .qi-log { height: 150px; background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
         
         /* Sample Panel Styles */
-        .sample-header { background: #252526; padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
-        .sample-title { font-weight: bold; color: #fff; }
-        .sample-meta { font-size: 12px; color: #9cdcfe; margin-top: 4px; }
-        .sample-body { padding: 20px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.5; color: #ce9178; }
-        .key { color: #9cdcfe; } /* JSON Keys */
-        .string { color: #ce9178; } /* JSON Strings */
-        .number { color: #b5cea8; } /* JSON Numbers */
+        .sample-header { background: #252526; padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; }
+        .sample-title { font-weight: bold; color: #fff; font-size: 14px; }
+        .sample-body { padding: 20px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.5; color: #d4d4d4; }
+        
+        /* Syntax Highlighting Colors */
+        .key { color: #9cdcfe; }      /* Light Blue for Keys */
+        .string { color: #ce9178; }   /* Orange/Red for Strings */
+        .number { color: #b5cea8; }   /* Light Green for Numbers */
+        .boolean { color: #569cd6; }  /* Blue for Booleans */
+        .null { color: #569cd6; }     /* Blue for Null */
     `;
     document.head.appendChild(style);
 
@@ -137,7 +141,7 @@ export function renderQuestionImporter(targetElementId) {
             <div class="qi-left">
                 <div class="qi-controls">
                     <label for="qiTypeSelector"><strong>Target Collection:</strong></label>
-                    <select id="qiTypeSelector" style="padding: 5px; font-size: 14px; border-radius: 4px; flex-grow: 1;">
+                    <select id="qiTypeSelector" style="padding: 6px; font-size: 14px; border-radius: 4px; flex-grow: 1; border: 1px solid #ccc;">
                         <option value="multiple">Multiple Choice (qbMultipleChoice)</option>
                         <option value="problem">Problem Solving (qbProblemSolving)</option>
                         <option value="journal">Journalizing (qbJournalizing)</option>
@@ -179,10 +183,9 @@ function updateSampleView() {
 
     panel.innerHTML = `
         <div class="sample-header">
-            ${svgs.json}
+            ${data.icon}
             <div>
-                <div class="sample-title">${data.title} Format</div>
-                <div class="sample-meta">${data.desc}</div>
+                <div class="sample-title">${data.title}</div>
             </div>
         </div>
         <div class="sample-body">
@@ -192,7 +195,7 @@ function updateSampleView() {
 }
 
 function syntaxHighlight(json) {
-    // Basic regex based highlighter for visual purposes
+    // Basic regex based highlighter for visual purposes matching the screenshot colors
     json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
         let cls = 'number';
@@ -203,7 +206,7 @@ function syntaxHighlight(json) {
                 cls = 'string';
             }
         } else if (/true|false/.test(match)) {
-            cls = 'boolean'; // using number color for simplicity or add class
+            cls = 'boolean';
         } else if (/null/.test(match)) {
             cls = 'null';
         }
@@ -266,9 +269,6 @@ async function handleUpload() {
     for (const docId of docIds) {
         const docData = documents[docId];
         
-        // Ensure the ID in the data matches the key (optional, but good practice)
-        // docData.id = docId; 
-
         try {
             const docRef = doc(collection(db, collectionName), docId);
             await setDoc(docRef, docData, { merge: true }); // Merge to update if exists
