@@ -1,8 +1,8 @@
 import { loginUser } from './auth.js';
 import { courseData } from './content/syllabus.js';
 import { formatRanges } from './utils.js';
-// import { renderQuizActivityCreator } from './quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-// import { renderQuizzesAndActivities } from './quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 
 // --- STATE MANAGEMENT ---
 let currentUser = null; 
