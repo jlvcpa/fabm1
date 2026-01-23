@@ -27,17 +27,16 @@ const db = getFirestore(app);
 
 // SVG Icons for visuals
 const svgs = {
-    upload: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
-    // Icons for sample panel header
-    list: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`,
-    calc: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></svg>`,
-    pen: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>`
+    json: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M10 13a3.5 3.5 0 0 0 4 0"></path></svg>`,
+    upload: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
 };
 
 const samples = {
     multiple: {
         title: "Multiple Choice",
-        icon: svgs.list,
+        collection: "qbMultipleChoice",
+        desc: "Structure: Collection -> Doc ID -> Question Data",
+        // Formatted to match the screenshot exactly
         code: `{
   "qbMultipleChoice": {
     "FABM1-History-001": {
@@ -55,7 +54,8 @@ const samples = {
     },
     problem: {
         title: "Problem Solving",
-        icon: svgs.calc,
+        collection: "qbProblemSolving",
+        desc: "Requires 'solution' field for the numerical answer.",
         code: `{
   "qbProblemSolving": {
     "FABM1-COGS-002": {
@@ -72,7 +72,8 @@ const samples = {
     },
     journal: {
         title: "Journalizing",
-        icon: svgs.pen,
+        collection: "qbJournalizing",
+        desc: "Complex structure with nested 'transactions' array.",
         code: `{
   "qbJournalizing": {
     "FABM1-Journal-Set1": {
@@ -111,7 +112,7 @@ export function renderQuestionImporter(targetElementId) {
     style.innerHTML = `
         .qi-container { display: flex; gap: 20px; font-family: 'Segoe UI', sans-serif; height: 85vh; }
         .qi-left { flex: 6; display: flex; flex-direction: column; }
-        .qi-right { flex: 4; background: #1e1e1e; border-radius: 8px; color: #d4d4d4; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .qi-right { flex: 4; background: #1e1e1e; border-radius: 8px; color: #d4d4d4; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .qi-header { text-align: center; color: #007acc; margin-bottom: 10px; font-size: 1.5rem; font-weight: 600; }
         .qi-controls { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .qi-textarea { flex-grow: 1; width: 100%; padding: 15px; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; border: 1px solid #ccc; border-radius: 5px; resize: none; margin-bottom: 10px; background-color: #f8fafc; color: #334155; }
@@ -120,10 +121,11 @@ export function renderQuestionImporter(targetElementId) {
         .qi-btn:hover { background-color: #005fa3; }
         .qi-log { height: 150px; background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 10px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
         
-        /* Sample Panel Styles */
-        .sample-header { background: #252526; padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; }
+        /* Sample Panel Styles matching VS Code Dark Theme */
+        .sample-header { background: #252526; padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 10px; }
         .sample-title { font-weight: bold; color: #fff; font-size: 14px; }
-        .sample-body { padding: 20px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.5; color: #d4d4d4; }
+        .sample-meta { font-size: 12px; color: #9cdcfe; margin-top: 4px; display: none; } /* Hidden to match pure image look */
+        .sample-body { padding: 20px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 13px; line-height: 1.5; color: #d4d4d4; white-space: pre; }
         
         /* Syntax Highlighting Colors */
         .key { color: #9cdcfe; }      /* Light Blue for Keys */
@@ -131,6 +133,7 @@ export function renderQuestionImporter(targetElementId) {
         .number { color: #b5cea8; }   /* Light Green for Numbers */
         .boolean { color: #569cd6; }  /* Blue for Booleans */
         .null { color: #569cd6; }     /* Blue for Null */
+        .punctuation { color: #ffd700; } /* Yellow for braces (optional, kept default white/grey usually) */
     `;
     document.head.appendChild(style);
 
@@ -183,27 +186,27 @@ function updateSampleView() {
 
     panel.innerHTML = `
         <div class="sample-header">
-            ${data.icon}
+            ${svgs.json}
             <div>
-                <div class="sample-title">${data.title}</div>
+                <div class="sample-title">${data.title} Format</div>
             </div>
         </div>
-        <div class="sample-body">
-            ${highlightedCode}
-        </div>
+        <div class="sample-body">${highlightedCode}</div>
     `;
 }
 
 function syntaxHighlight(json) {
-    // Basic regex based highlighter for visual purposes matching the screenshot colors
+    // Escape HTML first
     json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    
+    // Regex to match JSON components
     return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
         let cls = 'number';
         if (/^"/.test(match)) {
             if (/:$/.test(match)) {
-                cls = 'key';
+                cls = 'key'; // Keys end with a colon
             } else {
-                cls = 'string';
+                cls = 'string'; // Strings do not
             }
         } else if (/true|false/.test(match)) {
             cls = 'boolean';
