@@ -87,7 +87,7 @@ const samples = {
         {
           "date": "Jan 2",
           "description": "Purchased goods...",
-          "rows": 3,
+          "rows": 3, // Number of input rows to give the student (Dr + Cr + Explanation)
           "solution": [
              { "date": "Jan 2", "account": "Purchases", "debit": 1000, "credit": "" },
              { "date": "", "account": "Cash", "debit": "", "credit": 1000 },
