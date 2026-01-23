@@ -1,4 +1,4 @@
-import { getFirestore, collection, getDocs, doc, setDoc, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc, query, limit, where } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
 
 const firebaseConfig = {
@@ -257,13 +257,14 @@ async function loadSections() {
     }
 }
 
-// Updated Logic: Fetch from 'students' collection where Section matches
+// FIX: Removed orderBy from query to fix "Requires Index" error. Sorting logic moved to JS.
 async function loadStudents(sectionName) {
     const listDiv = document.getElementById('qc-student-list');
     listDiv.innerHTML = '<p class="text-xs text-gray-500 text-center mt-4">Loading students...</p>';
     
     try {
-        const q = query(collection(db, "students"), where("Section", "==", sectionName), orderBy("LastName"));
+        // Only querying by Section. Sorting will be done in memory.
+        const q = query(collection(db, "students"), where("Section", "==", sectionName));
         const querySnapshot = await getDocs(q);
         
         listDiv.innerHTML = '';
@@ -273,10 +274,18 @@ async function loadStudents(sectionName) {
             return;
         }
 
+        // Convert to array and sort manually
+        const students = [];
         querySnapshot.forEach((doc) => {
-            const data = doc.data();
+            students.push(doc.data());
+        });
+
+        // Sort by LastName
+        students.sort((a, b) => a.LastName.localeCompare(b.LastName));
+
+        students.forEach((data) => {
             const fullName = `${data.LastName}, ${data.FirstName}`;
-            const id = data.Idnumber; // Using Idnumber as key
+            const id = data.Idnumber; 
 
             const div = document.createElement('div');
             div.className = "flex items-start gap-2 mb-2 p-1 hover:bg-blue-50 rounded transition";
@@ -301,7 +310,6 @@ async function loadSavedQuizzes(section) {
     container.innerHTML = '<p class="text-xs text-gray-500 text-center mt-4">Loading activities...</p>';
     
     try {
-        // Query quiz_list where attendanceRecord (now used as Section) matches
         const q = query(collection(db, "quiz_list"), where("attendanceRecord", "==", section));
         const snapshot = await getDocs(q);
         
@@ -346,7 +354,7 @@ function populateCreatorForm(data) {
         data.testQuestions.forEach(section => addTestSectionUI(section));
     }
 
-    // Students (Checkboxes) - comparing by ID now
+    // Students (Checkboxes)
     if(data.students && Array.isArray(data.students)) {
         document.querySelectorAll('.student-checkbox').forEach(cb => {
             cb.checked = data.students.includes(cb.value);
@@ -357,7 +365,7 @@ function populateCreatorForm(data) {
 async function saveActivityToFirebase() {
     const schoolYear = document.getElementById('qc-school-year').value;
     const activityName = document.getElementById('qc-activity-name').value;
-    const section = document.getElementById('qc-section').value; // Using this as attendanceRecord/Section
+    const section = document.getElementById('qc-section').value; 
     const topics = document.getElementById('qc-topics-area').value;
     const start = document.getElementById('qc-start-time').value;
     const limit = document.getElementById('qc-time-limit').value;
@@ -370,7 +378,7 @@ async function saveActivityToFirebase() {
 
     const selectedStudents = [];
     document.querySelectorAll('.student-checkbox:checked').forEach(cb => {
-        selectedStudents.push(cb.value); // Saving Student IDs
+        selectedStudents.push(cb.value);
     });
 
     const testQuestions = [];
@@ -399,7 +407,7 @@ async function saveActivityToFirebase() {
         timeLimit: limit,
         dateTimeExpire: expire,
         students: selectedStudents,
-        attendanceRecord: section, // Saving Section Name
+        attendanceRecord: section, 
         dateTimeCreated: new Date().toISOString()
     };
 
