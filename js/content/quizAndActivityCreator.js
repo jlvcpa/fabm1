@@ -20,7 +20,7 @@ let currentAttendanceId = null;
 let selectedStudents = [];
 let testSections = [];
 
-export async function renderCreatorPage(container) {
+export async function renderQuizActivityCreator(container) {
     container.innerHTML = `
         <div class="flex flex-col lg:flex-row gap-6 h-full p-4 overflow-hidden">
             <div class="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
