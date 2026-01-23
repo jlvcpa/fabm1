@@ -300,15 +300,15 @@ function renderQuizzesActivitiesPage() {
     content.innerHTML = '';
 
     // UNCOMMENT AND USE THIS BLOCK WHEN quizzesAndActivities.js IS READY
-    /*
+    
     if (typeof renderQuizzesAndActivities === 'function') {
         renderQuizzesAndActivities(content, currentUser);
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
-    */
-
+   
     // Placeholder content until file is linked
+    /*
     content.innerHTML = `
         <div class="w-full max-w-4xl mx-auto p-8">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
@@ -321,6 +321,7 @@ function renderQuizzesActivitiesPage() {
             </div>
         </div>
     `;
+     */
 }
 
 // --- CREATOR PAGE RENDERER ---
