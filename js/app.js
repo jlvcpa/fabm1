@@ -333,18 +333,18 @@ function renderCreatorPage() {
     renderQuizActivityCreator(content);
     
     // Placeholder content until file is linked
-    content.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-green-500">
-                    <i class="fas fa-magic text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
+    //content.innerHTML = `
+    //    <div class="w-full max-w-4xl mx-auto p-8">
+    //        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+    //            <div class="mb-4 text-green-500">
+     //               <i class="fas fa-magic text-5xl"></i>
+    //            </div>
+    //            <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
+    //            <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
+    //            <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
+    //        </div>
+    //    </div>
+    //`;
 }
 
 function renderLandingPage() {
