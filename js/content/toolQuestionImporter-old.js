@@ -1,4 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+// Change import to include getApps and getApp to check for existing instances
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
 // --- CONFIGURATION ---
@@ -11,7 +12,15 @@ const firebaseConfig = {
     appId: "1:629158256557:web:b3d1a424b32e28cd578b24"
 };
 
-const app = initializeApp(firebaseConfig);
+// --- SAFE INITIALIZATION ---
+// Check if an app is already initialized to prevent the duplicate-app error
+let app;
+if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp(); // Use the existing app instance
+}
+
 const db = getFirestore(app);
 
 // --- TEMPLATES & SAMPLES ---
