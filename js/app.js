@@ -1,6 +1,8 @@
 import { loginUser } from './auth.js';
 import { courseData } from './content/syllabus.js';
 import { formatRanges } from './utils.js';
+// import { renderQuizActivityCreator } from './quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+// import { renderQuizzesAndActivities } from './quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 
 // --- STATE MANAGEMENT ---
 let currentUser = null; 
@@ -23,7 +25,6 @@ const elements = {
     pageTitle: () => document.getElementById('page-title'),
     sidebar: () => document.getElementById('sidebar'),
     sidebarOverlay: () => document.getElementById('sidebar-overlay'),
-    // hoverMenu: () => document.getElementById('hover-menu'), // No longer needed
     mobileMenuBtn: () => document.getElementById('mobile-menu-btn'),
     desktopSidebarToggle: () => document.getElementById('desktop-sidebar-toggle'),
     btnLogout: () => document.getElementById('btn-logout')
@@ -48,9 +49,6 @@ function setupEventListeners() {
     // Sidebar
     elements.desktopSidebarToggle().addEventListener('click', () => {
         elements.sidebar().classList.toggle('collapsed');
-        
-        // If collapsing, we might want to close all submenus, 
-        // but keeping them open state is usually better UX until clicked.
     });
     
     elements.mobileMenuBtn().addEventListener('click', () => {
@@ -59,8 +57,6 @@ function setupEventListeners() {
     });
 
     elements.sidebarOverlay().addEventListener('click', closeMobileSidebar);
-
-    // Hover Menu listeners removed as we are now using click-accordion
 }
 
 // --- AUTH LOGIC ---
@@ -133,27 +129,15 @@ function renderSidebar(role) {
     const container = elements.navContainer();
     container.innerHTML = ''; 
 
-    // Course Outline Button
+    // Course Outline Button (Reduced padding to py-2)
     const outlineBtn = document.createElement('button');
-    outlineBtn.className = "w-full text-left px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-blue-500 focus:outline-none whitespace-nowrap overflow-hidden";
+    outlineBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-blue-500 focus:outline-none whitespace-nowrap overflow-hidden";
     outlineBtn.innerHTML = '<i class="fas fa-home w-6"></i> <span class="sidebar-text-detail">Course Outline</span>';
     outlineBtn.onclick = () => {
         renderLandingPage();
         closeMobileSidebar();
     };
     container.appendChild(outlineBtn);
-
-    // Calendar Button (Teachers Only)
-    if (role === 'teacher') {
-        const calendarBtn = document.createElement('button');
-        calendarBtn.className = "w-full text-left px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-purple-500 focus:outline-none whitespace-nowrap overflow-hidden";
-        calendarBtn.innerHTML = '<i class="fas fa-calendar-alt w-6"></i> <span class="sidebar-text-detail">Course Schedule</span>';
-        calendarBtn.onclick = () => {
-            renderCalendarPage();
-            closeMobileSidebar();
-        };
-        container.appendChild(calendarBtn);
-    }
 
     // Dynamic Terms/Units
     courseData.terms.forEach(term => {
@@ -167,9 +151,9 @@ function renderSidebar(role) {
             const unitPrefix = unitParts[0];
             const unitSuffix = unitParts.slice(1).join(':');
 
-            // --- UNIT BUTTON ---
+            // --- UNIT BUTTON (Reduced padding to py-2) ---
             const unitBtn = document.createElement('button');
-            unitBtn.className = "w-full text-left px-6 py-3 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex justify-between items-center group whitespace-nowrap overflow-hidden";
+            unitBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex justify-between items-center group whitespace-nowrap overflow-hidden";
             unitBtn.innerHTML = `
                 <div class="truncate pr-2">
                     <span class="font-bold text-sm">${unitPrefix}</span>
@@ -183,14 +167,10 @@ function renderSidebar(role) {
             
             unitBtn.onclick = () => {
                 const icon = unitBtn.querySelector('.fa-chevron-down');
-                
-                // Toggle this unit
                 if (unitSubmenu.classList.contains('hidden')) {
-                    // Open
                     unitSubmenu.classList.remove('hidden');
                     icon.classList.add('rotate-180');
                 } else {
-                    // Close
                     unitSubmenu.classList.add('hidden');
                     icon.classList.remove('rotate-180');
                 }
@@ -202,12 +182,9 @@ function renderSidebar(role) {
                 const weekPrefix = weekParts[0];
                 const weekSuffix = weekParts.slice(1).join(':');
 
-                // 1. Week Button (Parent)
                 const weekBtn = document.createElement('button');
-                // Added flex and group for chevron positioning
                 weekBtn.className = "w-full text-left pl-10 pr-6 py-2 text-sm text-slate-400 hover:text-blue-300 hover:bg-slate-900 transition-colors border-l-2 border-transparent hover:border-blue-500 relative whitespace-nowrap overflow-hidden flex justify-between items-center group";
                 
-                // Added chevron icon for the week
                 weekBtn.innerHTML = `
                     <div class="truncate">
                         <span>${weekPrefix}</span><span class="sidebar-text-detail">:${weekSuffix}</span>
@@ -215,11 +192,9 @@ function renderSidebar(role) {
                     ${(week.days && week.days.length > 0) ? '<i class="fas fa-chevron-down text-[10px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>' : ''}
                 `;
                 
-                // 2. Day Submenu (Child Container)
                 const daySubmenu = document.createElement('div');
-                daySubmenu.className = "day-submenu hidden bg-slate-950 border-l border-slate-800 ml-10"; // Indented submenu
+                daySubmenu.className = "day-submenu hidden bg-slate-950 border-l border-slate-800 ml-10"; 
 
-                // 3. Populate Days
                 if (week.days && week.days.length > 0) {
                     week.days.forEach((day, index) => {
                         const dayBtn = document.createElement('button');
@@ -234,15 +209,12 @@ function renderSidebar(role) {
                         daySubmenu.appendChild(dayBtn);
                     });
 
-                    // 4. Logic to Toggle Week and Show Days
                     weekBtn.onclick = () => {
                         const icon = weekBtn.querySelector('.fa-chevron-down');
                         const isClosed = daySubmenu.classList.contains('hidden');
 
-                        // A. Close ALL other open Day Submenus in the entire sidebar
                         document.querySelectorAll('.day-submenu').forEach(el => el.classList.add('hidden'));
                         document.querySelectorAll('.day-submenu').forEach(el => {
-                            // Reset chevrons of other weeks
                             const prevBtn = el.previousElementSibling; 
                             if(prevBtn) {
                                 const prevIcon = prevBtn.querySelector('.fa-chevron-down');
@@ -253,23 +225,18 @@ function renderSidebar(role) {
                             }
                         });
 
-                        // B. If it was closed, open THIS one
                         if (isClosed) {
                             daySubmenu.classList.remove('hidden');
                             if(icon) {
                                 icon.classList.add('rotate-180', 'opacity-100', 'text-blue-400');
                                 icon.classList.remove('opacity-0');
                             }
-                            
-                            // *** IMPORTANT: FORCE SIDEBAR EXPANSION ***
-                            // If sidebar is collapsed (icons only), we must expand it so the user can see the "Day 1" text
                             if (elements.sidebar().classList.contains('collapsed')) {
                                 elements.sidebar().classList.remove('collapsed');
                             }
                         }
                     };
                 } else {
-                    // If no days, just do nothing or show toast
                     weekBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 }
 
@@ -281,6 +248,103 @@ function renderSidebar(role) {
             container.appendChild(unitSubmenu);
         });
     });
+
+    // --- QUIZZES AND ACTIVITIES (Visible to All) (Reduced padding to py-2) ---
+    const qaHeader = document.createElement('div');
+    qaHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
+    qaHeader.textContent = "Assessments";
+    container.appendChild(qaHeader);
+
+    const qaBtn = document.createElement('button');
+    qaBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-yellow-500 focus:outline-none whitespace-nowrap overflow-hidden";
+    qaBtn.innerHTML = '<i class="fas fa-clipboard-list w-6"></i> <span class="sidebar-text-detail">Quizzes & Activities</span>';
+    qaBtn.onclick = () => {
+        renderQuizzesActivitiesPage(); 
+        closeMobileSidebar();
+    };
+    container.appendChild(qaBtn);
+
+    // --- TEACHER TOOLS (Teachers Only) ---
+    if (role === 'teacher') {
+        const creatorHeader = document.createElement('div');
+        creatorHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
+        creatorHeader.textContent = "Teacher Tools";
+        container.appendChild(creatorHeader);
+
+        // 1. Quiz & Activity Creator (Reduced padding to py-2)
+        const creatorBtn = document.createElement('button');
+        creatorBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-green-500 focus:outline-none whitespace-nowrap overflow-hidden";
+        creatorBtn.innerHTML = '<i class="fas fa-magic w-6"></i> <span class="sidebar-text-detail">Quiz & Activity Creator</span>';
+        creatorBtn.onclick = () => {
+            renderCreatorPage(); 
+            closeMobileSidebar();
+        };
+        container.appendChild(creatorBtn);
+
+        // 2. Course Schedule (Moved here, Reduced padding to py-2)
+        const calendarBtn = document.createElement('button');
+        calendarBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-purple-500 focus:outline-none whitespace-nowrap overflow-hidden";
+        calendarBtn.innerHTML = '<i class="fas fa-calendar-alt w-6"></i> <span class="sidebar-text-detail">Course Schedule</span>';
+        calendarBtn.onclick = () => {
+            renderCalendarPage();
+            closeMobileSidebar();
+        };
+        container.appendChild(calendarBtn);
+    }
+}
+
+// --- QUIZZES & ACTIVITIES PAGE RENDERER ---
+function renderQuizzesActivitiesPage() {
+    elements.pageTitle().innerText = "Quizzes & Activities";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    // UNCOMMENT AND USE THIS BLOCK WHEN quizzesAndActivities.js IS READY
+    /*
+    if (typeof renderQuizzesAndActivities === 'function') {
+        renderQuizzesAndActivities(content, currentUser);
+    } else {
+        content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
+    }
+    */
+
+    // Placeholder content until file is linked
+    content.innerHTML = `
+        <div class="w-full max-w-4xl mx-auto p-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                <div class="mb-4 text-yellow-500">
+                    <i class="fas fa-clipboard-list text-5xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quizzes & Activities</h2>
+                <p class="text-gray-600">The content for this module is being imported from <code>quizzesAndActivities.js</code>.</p>
+                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
+            </div>
+        </div>
+    `;
+}
+
+// --- CREATOR PAGE RENDERER ---
+function renderCreatorPage() {
+    elements.pageTitle().innerText = "Quiz & Activity Creator";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    // If you have imported renderQuizActivityCreator, call it here:
+    // renderQuizActivityCreator(content);
+    
+    // Placeholder content until file is linked
+    content.innerHTML = `
+        <div class="w-full max-w-4xl mx-auto p-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                <div class="mb-4 text-green-500">
+                    <i class="fas fa-magic text-5xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
+                <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
+                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
+            </div>
+        </div>
+    `;
 }
 
 function renderLandingPage() {
@@ -316,7 +380,6 @@ function renderLandingPage() {
 
     content.appendChild(container);
 
-    // Landing Page Event Listeners
     container.querySelector('#tab-landing-summary').onclick = () => {
         summaryDiv.classList.remove('hidden', 'fade-in');
         summaryDiv.classList.add('fade-in');
@@ -336,17 +399,14 @@ function renderLandingPage() {
 // --- DAY RENDERER (The Core Content Logic) ---
 
 function renderDayContent(unit, week, dayIndex) {
-    // Update document title for browser history/tab
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
     const content = elements.contentArea();
     content.innerHTML = ''; 
 
-    // Main Container: W-full to maximize width, flex-col to manage height
     const container = document.createElement('div');
     container.className = "w-full max-w-[1600px] mx-auto h-full flex flex-col";
 
-    // 1. Prepare Date Badge Logic
     const scheduledDateStr = getDateForTopic(unit.id, week.id, dayIndex);
     const dateBadgeHtml = scheduledDateStr 
         ? `<div class="shrink-0 bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded border border-purple-200 shadow-sm whitespace-nowrap">
@@ -363,14 +423,16 @@ function renderDayContent(unit, week, dayIndex) {
     }
 
     const day = week.days[dayIndex];
+    const exercises = day.exercises || [];
 
-    // 2. Main Card Container
+    // Analyze Exercise Types to determine tabs
+    const hasMcq = exercises.some(e => e.type === 'mcq');
+    const hasProb = exercises.some(e => e.type === 'problem');
+    const hasJourn = exercises.some(e => e.type === 'journalizing');
+
     const card = document.createElement('div');
-    // Added flex-1 to make card fill all available vertical space
     card.className = "bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden fade-in";
 
-    // 3. Compact Header (Day + Topic Left | Date Right)
-    // Reduced vertical padding (py-3) to half height. Flex-wrap allows text to wrap if needed.
     const headerDiv = document.createElement('div');
     headerDiv.className = "bg-gray-50 px-6 py-3 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4";
     headerDiv.innerHTML = `
@@ -382,20 +444,18 @@ function renderDayContent(unit, week, dayIndex) {
     `;
     card.appendChild(headerDiv);
 
-    // 4. Combined Tabs & Navigation Bar
+    // --- NAVIGATION TABS ---
     const navBar = document.createElement('div');
-    navBar.className = "flex flex-wrap items-center justify-between border-b border-gray-200 bg-white pl-0 pr-4 min-h-[50px]";
+    navBar.className = "flex flex-wrap items-center justify-between border-b border-gray-200 bg-white min-h-[50px]";
 
-    // Left Side: Tabs (Left Aligned, Fixed Width/Padding instead of flex-1)
     const tabsContainer = document.createElement('div');
-    tabsContainer.className = "flex";
+    // Added overflow-x-auto and whitespace-nowrap for horizontal scrolling on mobile
+    tabsContainer.className = "flex overflow-x-auto whitespace-nowrap no-scrollbar";
     
-    // Tab Button Helper
     const createTabBtn = (id, icon, label, isActive) => {
         const btn = document.createElement('button');
         btn.id = id;
-        // px-6 for width, py-3 for comfortable touch target but compact
-        btn.className = `px-6 py-3 text-sm font-semibold transition-colors border-b-2 flex items-center whitespace-nowrap ${
+        btn.className = `flex-shrink-0 px-6 py-3 text-sm font-semibold transition-colors border-b-2 flex items-center ${
             isActive 
             ? 'border-blue-600 text-blue-900 bg-blue-50' 
             : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -404,33 +464,44 @@ function renderDayContent(unit, week, dayIndex) {
         return btn;
     };
 
+    // Always create Concepts Tab
     const tabConcepts = createTabBtn('tab-btn-concepts', 'fa-book-reader', 'Topic & Concepts', true);
-    const tabPractice = createTabBtn('tab-btn-practice', 'fa-pencil-alt', 'Practice Questions', false);
-
     tabsContainer.appendChild(tabConcepts);
-    tabsContainer.appendChild(tabPractice);
+
+    // Conditional Tabs
+    let tabMcq, tabProb, tabJourn;
+
+    if (hasMcq) {
+        tabMcq = createTabBtn('tab-btn-mcq', 'fa-list-ul', 'Practice - Multiple Choice', false);
+        tabsContainer.appendChild(tabMcq);
+    }
+    if (hasProb) {
+        tabProb = createTabBtn('tab-btn-prob', 'fa-calculator', 'Practice - Problem Solving', false);
+        tabsContainer.appendChild(tabProb);
+    }
+    if (hasJourn) {
+        tabJourn = createTabBtn('tab-btn-journ', 'fa-pen-fancy', 'Practice - Journalizing', false);
+        tabsContainer.appendChild(tabJourn);
+    }
+
     navBar.appendChild(tabsContainer);
 
-    // Right Side: Navigation Buttons (Injected here instead of bottom footer)
+    // Prev/Next Buttons (Hidden on small screens since we have swipe/scroll)
     const navButtonsGroup = document.createElement('div');
-    navButtonsGroup.className = "flex items-center gap-2 py-2 ml-auto"; // ml-auto pushes to right
+    navButtonsGroup.className = "hidden md:flex items-center gap-2 py-2 px-4 ml-auto"; 
 
-    // Previous Button
     if (dayIndex > 0) {
         const prevBtn = document.createElement('button');
-        // Reduced height by ~20% (py-1.5 vs py-2), text-xs
         prevBtn.className = "px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 hover:text-blue-600 transition-colors flex items-center";
         prevBtn.innerHTML = `<i class="fas fa-chevron-left mr-1"></i> Prev`;
         prevBtn.onclick = () => {
             renderDayContent(unit, week, dayIndex - 1);
-            // Auto open the submenu if needed (UX enhancement)
             const activeWeekBtn = document.querySelector('.day-submenu:not(.hidden)')?.previousElementSibling;
             if (activeWeekBtn) activeWeekBtn.click();
         };
         navButtonsGroup.appendChild(prevBtn);
     }
 
-    // Next Button
     if (dayIndex < week.days.length - 1) {
         const nextBtn = document.createElement('button');
         nextBtn.className = "px-3 py-1.5 text-xs font-medium text-white bg-blue-600 border border-transparent rounded shadow-sm hover:bg-blue-700 transition-colors flex items-center";
@@ -442,53 +513,93 @@ function renderDayContent(unit, week, dayIndex) {
     navBar.appendChild(navButtonsGroup);
     card.appendChild(navBar);
 
-    // 5. Content Area (Fills remaining height)
+    // --- CONTENT AREA ---
+    // Modified to be a flex container to hold the split panes (content + right sidebar)
     const tabContentWrapper = document.createElement('div');
-    tabContentWrapper.className = "p-8 flex-1 overflow-y-auto bg-white"; // Added bg-white explicitly
+    tabContentWrapper.className = "flex-1 relative overflow-hidden bg-white flex flex-col";
 
+    // 1. Concepts Content (Standard View)
     const conceptsDiv = document.createElement('div');
     conceptsDiv.id = "tab-content-concepts";
-    conceptsDiv.className = "prose prose-blue max-w-none text-gray-600";
+    conceptsDiv.className = "p-8 overflow-y-auto h-full prose prose-blue max-w-none text-gray-600";
     conceptsDiv.innerHTML = day.content;
     tabContentWrapper.appendChild(conceptsDiv);
 
-    const practiceDiv = document.createElement('div');
-    practiceDiv.id = "tab-content-practice";
-    practiceDiv.className = "hidden space-y-6";
-    
-    if (day.exercises && day.exercises.length > 0) {
-        practiceDiv.innerHTML = renderExercises(day.exercises, dayIndex);
-    } else {
-        practiceDiv.innerHTML = `<div class="text-center py-12"><p class="text-gray-500">No practice questions available for this day.</p></div>`;
+    // 2. MCQ Content
+    let mcqDiv;
+    if (hasMcq) {
+        mcqDiv = document.createElement('div');
+        mcqDiv.id = "tab-content-mcq";
+        mcqDiv.className = "hidden h-full"; // Full height for internal scrolling
+        mcqDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'mcq');
+        tabContentWrapper.appendChild(mcqDiv);
     }
-    tabContentWrapper.appendChild(practiceDiv);
+
+    // 3. Problem Content
+    let probDiv;
+    if (hasProb) {
+        probDiv = document.createElement('div');
+        probDiv.id = "tab-content-prob";
+        probDiv.className = "hidden h-full";
+        probDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'problem');
+        tabContentWrapper.appendChild(probDiv);
+    }
+
+    // 4. Journal Content
+    let journDiv;
+    if (hasJourn) {
+        journDiv = document.createElement('div');
+        journDiv.id = "tab-content-journ";
+        journDiv.className = "hidden h-full";
+        journDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'journalizing');
+        tabContentWrapper.appendChild(journDiv);
+    }
+
     card.appendChild(tabContentWrapper);
-    
     container.appendChild(card);
     content.appendChild(container);
 
-    // 6. Tab Switching Logic
-    const switchTab = (tab) => {
-        if(tab === 'concepts') {
+    // --- TAB SWITCHING LOGIC ---
+    const switchTab = (targetType) => {
+        // Hide all
+        conceptsDiv.classList.add('hidden');
+        if (mcqDiv) mcqDiv.classList.add('hidden');
+        if (probDiv) probDiv.classList.add('hidden');
+        if (journDiv) journDiv.classList.add('hidden');
+
+        // Deactivate all buttons
+        [tabConcepts, tabMcq, tabProb, tabJourn].forEach(btn => {
+            if (btn) btn.className = btn.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
+        });
+
+        // Show Target
+        let activeBtn;
+        if (targetType === 'concepts') {
             conceptsDiv.classList.remove('hidden');
-            practiceDiv.classList.add('hidden');
-            
-            // Update styles manually since we aren't using the old HTML string method
-            tabConcepts.className = tabConcepts.className.replace('border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'border-blue-600 text-blue-900 bg-blue-50');
-            tabPractice.className = tabPractice.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
-        } else {
-            practiceDiv.classList.remove('hidden');
-            conceptsDiv.classList.add('hidden');
-
-            tabPractice.className = tabPractice.className.replace('border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'border-blue-600 text-blue-900 bg-blue-50');
-            tabConcepts.className = tabConcepts.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
+            activeBtn = tabConcepts;
+        } else if (targetType === 'mcq' && mcqDiv) {
+            mcqDiv.classList.remove('hidden');
+            activeBtn = tabMcq;
+        } else if (targetType === 'problem' && probDiv) {
+            probDiv.classList.remove('hidden');
+            activeBtn = tabProb;
+        } else if (targetType === 'journal' && journDiv) {
+            journDiv.classList.remove('hidden');
+            activeBtn = tabJourn;
         }
-    }
-    
-    tabConcepts.onclick = () => switchTab('concepts');
-    tabPractice.onclick = () => switchTab('practice');
 
-    // Attach Logic AFTER rendering
+        // Activate Button
+        if (activeBtn) {
+            activeBtn.className = activeBtn.className.replace('border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'border-blue-600 text-blue-900 bg-blue-50');
+        }
+    };
+
+    tabConcepts.onclick = () => switchTab('concepts');
+    if (tabMcq) tabMcq.onclick = () => switchTab('mcq');
+    if (tabProb) tabProb.onclick = () => switchTab('problem');
+    if (tabJourn) tabJourn.onclick = () => switchTab('journal');
+
+    // Attach Listeners
     attachExerciseListeners();
     executeExerciseMounts(day.exercises);
 }
@@ -497,7 +608,6 @@ function executeExerciseMounts(exercises) {
     if (!exercises) return;
     exercises.forEach(ex => {
         if (ex.type === 'custom-mount' && typeof ex.mountLogic === 'function') {
-            // Execute the mount logic which typically imports and runs a module
             setTimeout(() => {
                 ex.mountLogic();
             }, 0);
@@ -505,114 +615,142 @@ function executeExerciseMounts(exercises) {
     });
 }
 
-function renderExercises(exercises, dayIndex) {
-    return exercises.map((ex, i) => {
-        if (ex.type === 'custom-mount') return ''; // Don't render as a question
+// --- NEW CATEGORY CONTENT RENDERER ---
+function renderCategoryContent(exercises, dayIndex, type) {
+    const filtered = exercises.filter(ex => ex.type === type);
+    if (filtered.length === 0) return '';
 
-        const exId = `ex-${dayIndex}-${i}`;
-        
-        // --- MCQ HANDLER ---
-        if (ex.type === 'mcq') {
-             const optionsHtml = ex.options.map((opt, optIndex) => `
-                <label class="flex items-start p-3 rounded border border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors bg-white">
-                    <input type="radio" name="${exId}" value="${optIndex}" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500" data-qid="${exId}">
-                    <span class="text-sm text-gray-700">${opt}</span>
-                </label>
-            `).join('');
+    let contentHtml = '';
+    let navLinksHtml = '';
 
-            return `
-                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8">
-                    <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Question ${i+1}</span>${ex.question}</p>
-                    <div class="space-y-3 mb-4">${optionsHtml}</div>
-                    
-                    <div class="flex items-center gap-3">
-                        <button id="btn-${exId}" class="hidden px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-all shadow-sm" data-qid="${exId}">Check Answer</button>
-                    </div>
+    // Helper to chunk array
+    const chunkArray = (arr, size) => {
+        const chunks = [];
+        for (let i = 0; i < arr.length; i += size) {
+            chunks.push(arr.slice(i, i + size));
+        }
+        return chunks;
+    };
 
-                    <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800">
-                        <p class="font-bold mb-1"><i class="fas fa-check-circle mr-1"></i> Correct Answer: ${ex.options[ex.correctIndex]}</p>
-                        <p>${ex.explanation}</p>
-                    </div>
-                </div>
+    // --- Build Navigation Links ---
+    const buildNav = (sets, isJournal = false) => {
+        let html = '';
+        sets.forEach((item, index) => {
+            const label = isJournal ? `Journal #${index + 1}` : `${type === 'mcq' ? 'MCQ' : 'Problem'} Set ${index + 1}`;
+            const targetId = isJournal ? `journ-set-${dayIndex}-${index}` : `${type === 'mcq' ? 'mcq' : 'prob'}-set-${dayIndex}-${index}`;
+            // Added scroll to internal container logic
+            html += `
+                <button onclick="document.getElementById('${targetId}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
+                class="w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-100 flex items-center group">
+                    <i class="fas fa-chevron-right text-xs text-gray-400 mr-2 group-hover:text-blue-500"></i>
+                    ${label}
+                </button>
             `;
-        } 
-        // --- EXISTING PROBLEM HANDLER ---
-        else if (ex.type === 'problem') {
-             return `
-                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8">
-                    <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Problem ${i+1}</span>${ex.question}</p>
-                    <textarea id="input-${exId}" class="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white" rows="4" placeholder="Type your solution here..." data-qid="${exId}"></textarea>
-                    <div class="mt-4">
-                        <button id="btn-${exId}" class="hidden px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-all shadow-sm" data-qid="${exId}">Show Answer Key</button>
-                    </div>
-                    <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800 font-mono whitespace-pre-wrap">
+        });
+        return html;
+    };
+
+    // --- Build Content & Nav Logic ---
+    if (type === 'mcq' || type === 'problem') {
+        const sets = chunkArray(filtered, 20);
+        navLinksHtml = buildNav(sets);
+
+        sets.forEach((set, setIndex) => {
+            const setId = `${type === 'mcq' ? 'mcq' : 'prob'}-set-${dayIndex}-${setIndex}`;
+            
+            let questionsHtml = set.map((ex, i) => {
+                const exId = `ex-${type === 'mcq' ? 'mcq' : 'prob'}-${dayIndex}-${setIndex}-${i}`;
+                const globalIndex = (setIndex * 20) + i + 1;
+
+                if (type === 'mcq') {
+                    const optionsHtml = ex.options.map((opt, optIndex) => `
+                        <label class="flex items-start p-3 rounded border border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors bg-white">
+                            <input type="radio" name="${exId}" value="${optIndex}" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500" data-qid="${exId}">
+                            <span class="text-sm text-gray-700">${opt}</span>
+                        </label>
+                    `).join('');
+
+                    return `
+                        <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8 exercise-item" data-id="${exId}">
+                            <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Question ${globalIndex}</span>${ex.question}</p>
+                            <div class="space-y-3 mb-4">${optionsHtml}</div>
+                            <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                                <p class="font-bold mb-1"><i class="fas fa-check-circle mr-1"></i> Correct Answer: ${ex.options[ex.correctIndex]}</p>
+                                <p>${ex.explanation}</p>
+                            </div>
+                            <div id="msg-${exId}" class="hidden mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 italic">
+                                 <i class="fas fa-exclamation-circle mr-1"></i> Please answer this question to see the answer key.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8 exercise-item" data-id="${exId}">
+                            <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Problem ${globalIndex}</span>${ex.question}</p>
+                            <textarea id="input-${exId}" class="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white" rows="4" placeholder="Type your solution here..." data-qid="${exId}"></textarea>
+                            <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800 font-mono whitespace-pre-wrap">
 <strong><i class="fas fa-key mr-1"></i> Answer Key:</strong>
 ${ex.answer}
 
 <strong><i class="fas fa-info-circle mr-1"></i> Explanation:</strong>
 ${ex.explanation}
+                            </div>
+                            <div id="msg-${exId}" class="hidden mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 italic">
+                                 <i class="fas fa-exclamation-circle mr-1"></i> Please answer this question to see the answer key.
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            contentHtml += `
+                <div id="${setId}" class="mb-12 border-t-4 border-blue-500 pt-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">${type === 'mcq' ? 'MC Questions' : 'Problem Questions'} Set ${setIndex + 1}</h3>
+                    ${questionsHtml}
+                    <div class="mt-6 flex justify-start">
+                        <button class="btn-reveal-set px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 shadow-md transition-colors"
+                            data-set-id="${setId}" data-type="${type}">
+                            <i class="fas fa-eye mr-2"></i> ${type === 'mcq' ? 'Reveal Answer Key' : 'Reveal Solution'}
+                        </button>
                     </div>
                 </div>
             `;
-        }
-        // --- NEW JOURNALIZING HANDLER ---
-        else if (ex.type === 'journalizing') {
+        });
+    } 
+    else if (type === 'journalizing') {
+        navLinksHtml = buildNav(filtered, true);
+
+        filtered.forEach((ex, jIndex) => {
+            const setId = `journ-set-${dayIndex}-${jIndex}`;
             
-            // Helper to generate rows for specific transaction
-            // isReadOnly = true generates the Answer Key view
             const generateRows = (txId, rowCount, isReadOnly = false, solutionData = []) => {
                 let rowsHtml = '';
                 for (let r = 0; r < rowCount; r++) {
-                    // If read-only, pull data from solutionData, else empty
                     const rowData = isReadOnly && solutionData[r] ? solutionData[r] : { date: '', account: '', debit: '', credit: '' };
-                    
-                    // Indentation logic for Read-Only mode
                     let indentStyle = "padding-left: 0.5rem;"; 
                     let acctClass = "";
                     if (isReadOnly) {
                         if (rowData.isExplanation) {
-                            indentStyle = "padding-left: 2rem;"; // 8 spaces approx
+                            indentStyle = "padding-left: 2rem;"; 
                             acctClass = "italic text-gray-500";
                         } else if (rowData.credit) {
-                            indentStyle = "padding-left: 1.25rem;"; // 5 spaces approx
+                            indentStyle = "padding-left: 1.25rem;";
                         }
                     }
 
                     rowsHtml += `
                     <tr class="border-b border-gray-200 hover:bg-gray-50 bg-white">
                         <td class="border-r border-gray-300 p-0 w-16 align-top">
-                            <input type="text" 
-                                class="w-full h-full p-2 bg-transparent outline-none text-xs text-center font-mono text-gray-600" 
-                                value="${rowData.date || ''}" 
-                                ${isReadOnly ? 'readonly disabled' : ''}
-                                placeholder="Date">
+                            <input type="text" class="w-full h-full p-2 bg-transparent outline-none text-xs text-right font-mono text-gray-600" value="${rowData.date || ''}" ${isReadOnly ? 'readonly disabled' : ''}>
                         </td>
                         <td class="border-r border-gray-300 p-0 relative align-top">
-                            <input type="text" 
-                                id="acct-${txId}-${r}"
-                                class="w-full h-full p-2 bg-transparent outline-none text-sm font-mono transition-all duration-200 ${acctClass}"
-                                style="${indentStyle}"
-                                value="${rowData.account || ''}"
-                                ${isReadOnly ? 'readonly disabled' : ''}
-                                placeholder="Account Titles and Explanation">
+                            <input type="text" id="acct-${txId}-${r}" class="w-full h-full p-2 bg-transparent outline-none text-sm font-mono transition-all duration-200 ${acctClass}" style="${indentStyle}" value="${rowData.account || ''}" ${isReadOnly ? 'readonly disabled' : ''}>
                         </td>
                         <td class="border-r border-gray-300 p-0 w-28 align-top">
-                            <input type="number" 
-                                id="dr-${txId}-${r}"
-                                class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono"
-                                step="0.01"
-                                placeholder=""
-                                value="${rowData.debit !== '' && rowData.debit !== undefined ? Number(rowData.debit).toFixed(2) : ''}"
-                                ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
+                            <input type="number" id="dr-${txId}-${r}" class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono" step="0.01" value="${rowData.debit !== '' && rowData.debit !== undefined ? Number(rowData.debit).toFixed(2) : ''}" ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
                         </td>
                         <td class="p-0 w-28 align-top">
-                            <input type="number" 
-                                id="cr-${txId}-${r}"
-                                class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono"
-                                step="0.01"
-                                placeholder=""
-                                value="${rowData.credit !== '' && rowData.credit !== undefined ? Number(rowData.credit).toFixed(2) : ''}"
-                                ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
+                            <input type="number" id="cr-${txId}-${r}" class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono" step="0.01" value="${rowData.credit !== '' && rowData.credit !== undefined ? Number(rowData.credit).toFixed(2) : ''}" ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
                         </td>
                     </tr>`;
                 }
@@ -620,81 +758,96 @@ ${ex.explanation}
             };
 
             const transactionsHtml = ex.transactions.map((tx, txIndex) => {
-                const txId = `${exId}-tx-${txIndex}`;
-                
-                // 1. The Student Input Table
-                const inputTable = `
-                    <div class="mb-6 border border-gray-300 shadow-sm rounded-lg overflow-hidden">
+                const txId = `ex-journ-${dayIndex}-${jIndex}-tx-${txIndex}`;
+                return `
+                    <div class="mb-6 border border-gray-300 shadow-sm rounded-lg overflow-hidden exercise-item" data-id="${txId}">
                         <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex justify-between items-center">
-                            <span class="font-bold text-gray-700 text-sm">Transaction: ${tx.date}</span>
+                            <span class="font-bold text-gray-700 text-sm">${tx.date} - ${tx.description}</span>
                         </div>
-                        <div class="p-3 bg-blue-50 text-sm text-gray-800 border-b border-gray-300 italic">
-                            ${tx.description}
-                        </div>
-                        <table class="w-full border-collapse">
+                        <table class="w-full border-collapse" id="table-${txId}">
                             <thead>
                                 <tr class="bg-gray-200 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
                                     <th class="py-2 border-r border-gray-300">Date</th>
-                                    <th class="py-2 border-r border-gray-300 text-left pl-2">Account Titles and Explanation</th>
+                                    <th class="py-2 border-r border-gray-300 text-left pl-2">Account Titles</th>
                                     <th class="py-2 border-r border-gray-300">Debit</th>
                                     <th class="py-2">Credit</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                ${generateRows(txId, tx.rows)}
-                            </tbody>
+                            <tbody>${generateRows(txId, tx.rows)}</tbody>
                         </table>
-                    </div>
-                `;
-
-                // 2. The Hidden Answer Key Table
-                const answerTable = `
-                    <div id="ans-table-${txId}" class="hidden mb-8 border-2 border-green-400 shadow-md rounded-lg overflow-hidden ring-4 ring-green-50">
-                        <div class="bg-green-100 px-4 py-2 border-b border-green-300 text-green-800 font-bold text-sm flex items-center">
-                            <i class="fas fa-check-circle mr-2"></i> Correct Entry: ${tx.date}
+                        <div id="ans-${txId}" class="hidden mt-0 border-t-2 border-green-400">
+                             <div class="bg-green-100 px-4 py-2 border-b border-green-300 text-green-800 font-bold text-sm flex items-center"><i class="fas fa-check-circle mr-2"></i> Correct Entry</div>
+                            <table class="w-full border-collapse bg-green-50"><tbody>${generateRows(txId, tx.rows, true, tx.solution)}</tbody></table>
                         </div>
-                        <table class="w-full border-collapse bg-green-50">
-                             <thead>
-                                <tr class="bg-green-200 text-xs text-green-800 font-bold uppercase border-b border-green-300">
-                                    <th class="py-2 border-r border-green-300 w-16">Date</th>
-                                    <th class="py-2 border-r border-green-300 text-left pl-2">Account Titles and Explanation</th>
-                                    <th class="py-2 border-r border-green-300 w-28">Debit</th>
-                                    <th class="py-2 w-28">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${generateRows(txId, tx.rows, true, tx.solution)}
-                            </tbody>
-                        </table>
+                        <div id="msg-${txId}" class="hidden p-3 bg-yellow-50 border-t border-yellow-200 text-sm text-yellow-800 italic"><i class="fas fa-exclamation-circle mr-1"></i> Please answer this question to see the answer key.</div>
                     </div>
                 `;
-
-                return inputTable + answerTable;
             }).join('');
 
-            return `
-                <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-10">
+            contentHtml += `
+                <div id="${setId}" class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-10">
                     <h3 class="font-bold text-xl text-gray-900 mb-2 border-b pb-2">${ex.title}</h3>
                     <p class="text-gray-600 mb-6 text-sm">${ex.instructions}</p>
-                    
                     ${transactionsHtml}
-
-                    <div class="mt-6">
-                         <button onclick="document.querySelectorAll('[id^=ans-table-${exId}]').forEach(el => el.classList.remove('hidden')); this.classList.add('hidden');" 
-                            class="px-6 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700 shadow-md transition-colors w-full sm:w-auto">
-                            <i class="fas fa-eye mr-2"></i> Reveal Solution
+                    <div class="mt-6 flex justify-start">
+                        <button class="btn-reveal-set px-6 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700 shadow-md transition-colors"
+                            data-set-id="${setId}" data-type="journal">
+                            <i class="fas fa-eye mr-2"></i> Reveal Journal Entries
                         </button>
                     </div>
                 </div>
             `;
-        }
+        });
+    }
 
-        return '';
-    }).join('');
+    // --- Construct Layout with Collapsible Sidebar ---
+    const sidebarId = `sidebar-${type}`;
+    const contentId = `content-${type}`;
+
+    return `
+    <div class="flex h-full relative">
+        <div id="${contentId}" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth h-full">
+            ${contentHtml}
+        </div>
+
+        <div id="${sidebarId}" class="w-0 md:w-64 transition-all duration-300 border-l border-gray-200 bg-gray-50 flex flex-col h-full absolute md:relative right-0 z-20 shadow-xl md:shadow-none overflow-hidden group">
+            
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-white min-w-[250px]">
+                <span class="font-bold text-gray-700 text-sm"><i class="fas fa-location-arrow mr-2"></i> Quick Nav</span>
+                <button onclick="toggleRightSidebar('${sidebarId}')" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto min-w-[250px] p-2">
+                ${navLinksHtml}
+            </div>
+        </div>
+
+        <button onclick="toggleRightSidebar('${sidebarId}')" class="md:hidden absolute top-4 right-4 z-30 bg-white text-blue-600 p-2 rounded-full shadow-lg border border-gray-200 hover:bg-gray-50">
+            <i class="fas fa-list-ul"></i>
+        </button>
+    </div>
+    `;
 }
 
+// --- GLOBAL TOGGLE HELPER ---
+window.toggleRightSidebar = function(sidebarId) {
+    const sidebar = document.getElementById(sidebarId);
+    if (!sidebar) return;
+    
+    if (sidebar.classList.contains('w-0')) {
+        // Expand
+        sidebar.classList.remove('w-0');
+        sidebar.classList.add('w-64');
+    } else {
+        // Collapse
+        sidebar.classList.remove('w-64');
+        sidebar.classList.add('w-0');
+    }
+};
+
 // --- REQUIRED HELPER FUNCTION ---
-// Add this to your script, outside the renderExercises function so it is globally accessible.
 window.handleJournalIndent = function(txId, row) {
     const acctInput = document.getElementById(`acct-${txId}-${row}`);
     const drInput = document.getElementById(`dr-${txId}-${row}`);
@@ -705,67 +858,96 @@ window.handleJournalIndent = function(txId, row) {
     const drVal = drInput ? drInput.value.trim() : '';
     const crVal = crInput ? crInput.value.trim() : '';
 
-    // Logic:
-    // 1. If Credit has value -> Indent 5 spaces (~1.25rem)
-    // 2. If Both Empty -> Assume Explanation -> Indent 8 spaces (~2rem)
-    // 3. Else (Debit has value or typing) -> No Indent (0.5rem default padding)
-
     if (crVal !== '') {
-        acctInput.style.paddingLeft = '1.25rem'; // ~5 spaces
+        acctInput.style.paddingLeft = '1.25rem'; 
         acctInput.classList.remove('italic', 'text-gray-500');
     } else if (drVal === '' && crVal === '') {
-        acctInput.style.paddingLeft = '2rem'; // ~8 spaces
-        acctInput.classList.add('italic', 'text-gray-500'); // Optional: make explanation italic
+        acctInput.style.paddingLeft = '2rem'; 
+        acctInput.classList.add('italic', 'text-gray-500'); 
     } else {
-        acctInput.style.paddingLeft = '0.5rem'; // Default
+        acctInput.style.paddingLeft = '0.5rem'; 
         acctInput.classList.remove('italic', 'text-gray-500');
     }
 };
 
 function attachExerciseListeners() {
-    // Listen for radio changes
-    document.querySelectorAll('input[type="radio"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            const qid = e.target.getAttribute('data-qid');
-            const btn = document.getElementById(`btn-${qid}`);
-            if(btn) {
-                btn.classList.remove('hidden');
-                btn.classList.add('fade-in');
-            }
-        });
-    });
-
-    // Listen for text input changes (for problems)
-    document.querySelectorAll('textarea[id^="input-"]').forEach(area => {
-        area.addEventListener('input', (e) => {
-            const qid = e.target.getAttribute('data-qid');
-            const btn = document.getElementById(`btn-${qid}`);
-            if(e.target.value.trim().length > 0) {
-                btn.classList.remove('hidden');
-                btn.classList.add('fade-in');
-            } else {
-                btn.classList.add('hidden');
-            }
-        });
-    });
-
-    // Listen for check answer clicks
-    document.querySelectorAll('button[id^="btn-ex-"]').forEach(btn => {
+    document.querySelectorAll('.btn-reveal-set').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const qid = e.target.getAttribute('data-qid');
-            const ansDiv = document.getElementById(`ans-${qid}`);
-            if(ansDiv.classList.contains('hidden')) {
-                ansDiv.classList.remove('hidden');
-                ansDiv.classList.add('fade-in');
-                e.target.textContent = "Hide Answer";
-                e.target.classList.replace('bg-blue-600', 'bg-gray-500');
-                e.target.classList.replace('hover:bg-blue-700', 'hover:bg-gray-600');
+            const setId = e.target.getAttribute('data-set-id');
+            const type = e.target.getAttribute('data-type');
+            const container = document.getElementById(setId);
+            
+            const isRevealing = !e.target.classList.contains('revealed');
+            
+            if (isRevealing) {
+                e.target.classList.add('revealed');
+                e.target.innerHTML = `<i class="fas fa-eye-slash mr-2"></i> Hide Answer Key`;
+                e.target.classList.replace('bg-blue-600', 'bg-slate-600');
+                e.target.classList.replace('hover:bg-blue-700', 'hover:bg-slate-700');
+                if(type === 'journal') {
+                    e.target.classList.replace('bg-green-600', 'bg-slate-600');
+                    e.target.classList.replace('hover:bg-green-700', 'hover:bg-slate-700');
+                }
             } else {
-                ansDiv.classList.add('hidden');
-                e.target.textContent = "Show Answer";
-                e.target.classList.replace('bg-gray-500', 'bg-blue-600');
-                e.target.classList.replace('hover:bg-gray-600', 'hover:bg-blue-700');
+                e.target.classList.remove('revealed');
+                const label = type === 'journal' ? 'Reveal Journal Entries' : (type === 'problem' ? 'Reveal Solution' : 'Reveal Answer Key');
+                e.target.innerHTML = `<i class="fas fa-eye mr-2"></i> ${label}`;
+                e.target.classList.replace('bg-slate-600', 'bg-blue-600');
+                e.target.classList.replace('hover:bg-slate-700', 'hover:bg-blue-700');
+                if(type === 'journal') {
+                    e.target.classList.replace('bg-slate-600', 'bg-green-600');
+                    e.target.classList.replace('hover:bg-slate-700', 'hover:bg-green-700');
+                }
             }
+
+            const items = container.querySelectorAll('.exercise-item');
+            items.forEach(item => {
+                const exId = item.getAttribute('data-id');
+                const ansDiv = document.getElementById(`ans-${exId}`);
+                const msgDiv = document.getElementById(`msg-${exId}`);
+                const inputs = item.querySelectorAll('input, textarea');
+                
+                let isAnswered = false;
+
+                if (type === 'mcq') {
+                    const checked = item.querySelector(`input[name="${exId}"]:checked`);
+                    isAnswered = !!checked;
+                } else if (type === 'problem') {
+                    const val = document.getElementById(`input-${exId}`).value.trim();
+                    isAnswered = val.length > 0;
+                } else if (type === 'journal') {
+                    const tableInputs = document.getElementById(`table-${exId}`).querySelectorAll('input');
+                    for (let input of tableInputs) {
+                        if (input.value.trim() !== '') {
+                            isAnswered = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isRevealing) {
+                    inputs.forEach(inp => {
+                        inp.disabled = true;
+                        inp.classList.add('bg-gray-50');
+                    });
+                    if (isAnswered) {
+                        ansDiv.classList.remove('hidden');
+                        ansDiv.classList.add('fade-in');
+                        msgDiv.classList.add('hidden');
+                    } else {
+                        msgDiv.classList.remove('hidden');
+                        msgDiv.classList.add('fade-in');
+                        ansDiv.classList.add('hidden');
+                    }
+                } else {
+                    inputs.forEach(inp => {
+                        inp.disabled = false;
+                        inp.classList.remove('bg-gray-50');
+                    });
+                    ansDiv.classList.add('hidden');
+                    msgDiv.classList.add('hidden');
+                }
+            });
         });
     });
 }
@@ -778,14 +960,12 @@ function closeMobileSidebar() {
 }
 
 function highlightActiveDay(activeLink) {
-    // Clear all highlights
     document.querySelectorAll('.day-submenu button').forEach(b => {
         b.classList.remove('text-blue-300', 'font-bold');
         b.querySelector('.fa-circle').classList.remove('text-blue-500');
-        b.querySelector('.fa-circle').classList.add('text-[6px]'); // Reset size
+        b.querySelector('.fa-circle').classList.add('text-[6px]'); 
     });
     
-    // Add highlight
     activeLink.classList.add('text-blue-300', 'font-bold');
     const dot = activeLink.querySelector('.fa-circle');
     dot.classList.add('text-blue-500');
@@ -824,20 +1004,13 @@ function generateFlatTopics() {
 function getDateForTopic(unitId, weekId, dayIndex) {
     const topicKey = `${unitId}|${weekId}|${dayIndex}`;
     const dates = [];
-    
-    // Find all matching dates
     for (const [date, assignedTopic] of Object.entries(calendarAssignments)) {
         if (assignedTopic === topicKey) {
             dates.push(date);
         }
     }
-
     if (dates.length === 0) return null;
-
-    // Sort dates
     dates.sort();
-
-    // Format into ranges using updated Util
     return formatRanges(dates);
 }
 
@@ -901,7 +1074,6 @@ function renderCalendarPage() {
 
     const calendarContainer = document.createElement('div');
     
-    // Event Listeners for controls
     yearSelect.onchange = (e) => {
         currentCalendarYear = parseInt(e.target.value);
         renderMonthView(calendarContainer);
@@ -920,12 +1092,11 @@ function renderCalendarPage() {
 
     content.appendChild(container);
     
-    // Auto-scroll to today if present in current view
     setTimeout(() => {
         const todayRow = document.getElementById('today-row');
         if (todayRow) {
             todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            todayRow.classList.add('bg-purple-100'); // Highlight effect
+            todayRow.classList.add('bg-purple-100'); 
             setTimeout(() => todayRow.classList.remove('bg-purple-100'), 2000);
         }
     }, 100);
@@ -945,7 +1116,6 @@ function renderMonthView(container) {
 
     const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
     
-    // Get today's info for highlighting
     const now = new Date();
     const todayStr = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
     const todayDay = todayStr.getDate();
@@ -965,13 +1135,11 @@ function renderMonthView(container) {
             const isWeekend = dayName === 'Sat' || dayName === 'Sun';
             const currentAssignment = calendarAssignments[dateStr] || "";
 
-            // Check if it's today
             const isToday = (d === todayDay && currentCalendarMonth === todayMonth && currentCalendarYear === todayYear);
 
             const row = document.createElement('div');
             if (isToday) row.id = "today-row";
             
-            // Style adjustments for Today
             const rowClass = `flex items-center border-b border-gray-100 last:border-0 p-3 hover:bg-gray-50 transition-colors duration-500 ${isWeekend ? 'bg-gray-50' : ''} ${isToday ? 'border-l-4 border-l-purple-500' : ''}`;
             row.className = rowClass;
             
