@@ -42,7 +42,13 @@ export async function renderQuizActivityCreator(container) {
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Activity Name</label>
-                            <input type="text" id="qc-activity-name" class="w-full p-2 border rounded" placeholder="e.g., Q1 Summative Test">
+                            <select id="qc-activity-name" class="w-full p-2 border rounded" placeholder="e.g., Q1 Summative Test">
+                                <option value="">-- Select Activity --</option>
+                                <option value="S1T2 Summative Test 01">S1T2 Summative Test 01</option>
+                                <option value="S1T2 Performance Task 01">S1T2 Performance Task 01</option>
+                                <option value="S1T2 Performance Task 02">S1T2 Performance Task 02</option>
+		                        <option value="S2T1 Summative Test 01">S2T1 Summative Test 01</option>
+                            </select>
                         </div>
                     </div>
 
