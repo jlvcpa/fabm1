@@ -18,7 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export async function renderQuizzesActivitiesPage() {
+export async function renderQuizzesAndActivities() {
     const contentArea = document.getElementById('content-area');
     
     // Layout: Collapsible Sidebar (Left) + Main Content (Right)
