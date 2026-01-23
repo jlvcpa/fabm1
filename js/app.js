@@ -330,7 +330,7 @@ function renderCreatorPage() {
     content.innerHTML = '';
 
     // If you have imported renderQuizActivityCreator, call it here:
-    // renderQuizActivityCreator(content);
+    renderQuizActivityCreator(content);
     
     // Placeholder content until file is linked
     content.innerHTML = `
