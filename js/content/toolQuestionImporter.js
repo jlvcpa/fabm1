@@ -81,7 +81,7 @@ const samples = {
       "type": "journalizing",
       "topic": "Periodic System",
       "id": "set1_periodic",
-      "title": "Set 1: Periodic System",
+      "title": Journalizing - "Periodic Inventory System",
       "instructions": "Journalize the following...",
       "transactions": [
         {
