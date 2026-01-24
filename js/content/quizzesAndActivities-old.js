@@ -1,10 +1,5 @@
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-
-// Placeholder imports (commented out until created)
-// import { getRandomMCQ } from './multipleChoiceQ.js';
-// import { getRandomProblem } from './problemSolvingQ.js';
-// import { getRandomJournal } from './journalizingQ.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
@@ -18,7 +13,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export async function renderQuizzesAndActivities() {
+export async function renderQuizzesAndActivities(containerElement, user) {
     const contentArea = document.getElementById('content-area');
     
     // Layout: Collapsible Sidebar (Left) + Main Content (Right)
@@ -64,7 +59,6 @@ async function loadStudentActivities() {
     
     try {
         // Query quizzes. logic: fetch all, or filter by student ID if stored in 'students' array
-        // Ideally: where('students', 'array-contains', currentUser.name/id)
         const q = query(collection(db, "quiz_list"), orderBy("dateTimeCreated", "desc"));
         const snapshot = await getDocs(q);
 
@@ -125,15 +119,15 @@ async function loadStudentActivities() {
 
 // --- QUIZ RUNNER LOGIC ---
 
-function renderQuizRunner(data) {
+async function renderQuizRunner(data) {
     const container = document.getElementById('qa-runner-container');
+    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
-    // 1. Generate Questions based on topics and types
-    // Since imported files don't exist, we use a helper to mock data
-    const generatedContent = generateQuizContent(data);
+    // 1. Generate Questions based on topics and types from Firebase Collections
+    const generatedContent = await generateQuizContent(data);
 
     container.innerHTML = `
-        <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+        <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
             <div class="bg-blue-800 text-white p-6">
                 <h1 class="text-2xl font-bold mb-2">${data.activityname}</h1>
                 <div class="flex flex-wrap gap-4 text-sm opacity-90">
@@ -157,17 +151,19 @@ function renderQuizRunner(data) {
     document.getElementById('btn-submit-quiz').addEventListener('click', () => submitQuiz(data, generatedContent.data));
 }
 
-// --- MOCK CONTENT GENERATOR ---
-// This replaces the logic of importing from multipleChoiceQ.js etc for now.
-function generateQuizContent(data) {
+// --- CONTENT GENERATOR ---
+async function generateQuizContent(activityData) {
     let html = '';
-    let questionData = []; // To store answer keys and details for submission logic
+    let questionData = []; // Store question details for answer checking later
 
-    if (!data.testQuestions || !Array.isArray(data.testQuestions)) {
+    if (!activityData.testQuestions || !Array.isArray(activityData.testQuestions)) {
         return { html: '<p>No test sections defined.</p>', data: [] };
     }
 
-    data.testQuestions.forEach((section, index) => {
+    // Split activity topics string into array for querying
+    const activityTopics = activityData.topics ? activityData.topics.split(',').map(t => t.trim()) : [];
+
+    for (const [index, section] of activityData.testQuestions.entries()) {
         html += `
             <div class="test-section">
                 <h3 class="text-xl font-bold text-gray-800 mb-2 border-b pb-2">Test ${index + 1}: ${section.type}</h3>
@@ -177,97 +173,142 @@ function generateQuizContent(data) {
         `;
 
         const count = parseInt(section.noOfQuestions) || 5;
+        let questions = [];
 
-        // --- RENDER LOGIC PER TYPE ---
-        for (let i = 1; i <= count; i++) {
+        // --- FETCH QUESTIONS FROM FIREBASE ---
+        // Strategy: Fetch all matching subject/topic questions then randomize in memory.
+        // Firestore doesn't support random selection natively efficiently for small sets.
+        // Note: 'subject' is hardcoded to FABM1 based on your prompt, but could be dynamic.
+        
+        let collectionName = '';
+        if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
+        else if (section.type === "Problem Solving") collectionName = 'qbProblemSolving';
+        else if (section.type === "Journalizing") collectionName = 'qbJournalizing';
+
+        if (collectionName) {
+            try {
+                // Fetch candidate questions matching topic
+                const qRef = collection(db, collectionName);
+                // Simple query: Get questions where 'topic' is one of the activity topics
+                // Firestore 'in' query supports up to 10 values
+                const qQuery = query(qRef, where("subject", "==", "FABM 1"), where("topic", "in", activityTopics.slice(0, 10))); 
+                const qSnap = await getDocs(qQuery);
+                
+                let candidates = [];
+                qSnap.forEach(doc => {
+                    candidates.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Randomize and slice
+                candidates.sort(() => 0.5 - Math.random());
+                questions = candidates.slice(0, count);
+
+            } catch (error) {
+                console.error(`Error fetching ${section.type} questions:`, error);
+                html += `<p class="text-red-500">Error loading questions for this section.</p>`;
+            }
+        }
+
+        // --- RENDER QUESTIONS ---
+        questions.forEach((q, i) => {
             const qId = `s${index}_q${i}`;
-            
-            if (section.type === "Multiple Choice") {
-                // Mock Random MCQ
-                const mockQ = {
-                    id: qId,
-                    type: 'mcq',
-                    question: `This is a sample generated Multiple Choice Question #${i} about ${data.topics.split(',')[0] || 'Accounting'}.`,
-                    options: ['Debit Cash', 'Credit Sales', 'Debit Expenses', 'Credit Equity'],
-                    correct: 0
-                };
-                questionData.push(mockQ);
+            // Store for submission mapping
+            questionData.push({ 
+                uiId: qId, 
+                dbId: q.id, 
+                type: section.type,
+                // Store answer/solution for quick client-side grading or reference if needed later
+                // In a highly secure app, you might valid on server, but for this:
+                correctAnswer: q.answer || q.solution 
+            });
 
-                const opts = mockQ.options.map((opt, idx) => `
-                    <label class="flex items-center p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                        <input type="radio" name="${qId}" value="${idx}" class="mr-3 text-blue-600">
-                        <span class="text-sm">${opt}</span>
+            if (section.type === "Multiple Choice") {
+                const opts = q.options.map((opt, idx) => `
+                    <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-2">
+                        <input type="radio" name="${qId}" value="${idx}" class="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300">
+                        <span class="text-sm text-gray-700 font-medium">${opt}</span>
                     </label>
                 `).join('');
 
                 html += `
-                    <div class="mb-6 p-4 bg-gray-50 rounded border border-gray-100">
-                        <p class="font-bold text-gray-700 mb-3">${i}. ${mockQ.question}</p>
-                        <div class="space-y-2">${opts}</div>
+                    <div class="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="font-bold text-gray-800 mb-4 text-lg"><span class="text-blue-600 mr-2">${i+1}.</span>${q.question}</p>
+                        <div class="flex flex-col">${opts}</div>
                     </div>
                 `;
 
             } else if (section.type === "Problem Solving") {
-                // Mock Problem
-                const mockQ = {
-                    id: qId,
-                    type: 'problem',
-                    question: `Calculate the Cost of Goods Sold given the following data... (Sample Problem #${i})`
-                };
-                questionData.push(mockQ);
-
                 html += `
-                    <div class="mb-6 p-4 bg-gray-50 rounded border border-gray-100">
-                        <p class="font-bold text-gray-700 mb-3">${i}. ${mockQ.question}</p>
-                        <textarea name="${qId}" class="w-full p-3 border rounded h-32 focus:ring-2 focus:ring-blue-500" placeholder="Type your solution here..."></textarea>
+                    <div class="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="font-bold text-gray-800 mb-4 text-lg"><span class="text-blue-600 mr-2">${i+1}.</span>${q.question}</p>
+                        <textarea name="${qId}" class="w-full p-4 border border-gray-300 rounded-lg h-32 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow" placeholder="Type your final answer and solution here..."></textarea>
                     </div>
                 `;
 
             } else if (section.type === "Journalizing") {
-                // Mock Journal
-                const mockQ = {
-                    id: qId,
-                    type: 'journal',
-                    question: `Journalize the transaction for Jan ${i}: Purchased inventory on account.`
-                };
-                questionData.push(mockQ);
+                // Determine Transaction Rows
+                let transactionHtml = '';
+                
+                if(q.transactions && Array.isArray(q.transactions)) {
+                   q.transactions.forEach((trans, tIdx) => {
+                       const tId = `${qId}_t${tIdx}`;
+                       const rowCount = trans.rows || 2; // Default to 2 if missing
+                       let rows = '';
+
+                       for(let r=0; r < rowCount; r++) {
+                           // Date Formatting Logic: First row gets Month/Day, others get Day only
+                           // This is visual placeholder logic, input allows editing
+                           
+                           rows += `
+                           <tr class="border-b border-gray-200 bg-white">
+                               <td class="p-0 border-r border-gray-300">
+                                   <input type="text" name="${tId}_r${r}_date" class="w-full h-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="Date">
+                               </td>
+                               <td class="p-0 border-r border-gray-300">
+                                   <input type="text" name="${tId}_r${r}_acct" class="w-full h-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder="Account Title / Explanation">
+                               </td>
+                               <td class="p-0 border-r border-gray-300 w-32">
+                                   <input type="number" name="${tId}_r${r}_dr" class="w-full h-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00" step="0.01">
+                               </td>
+                               <td class="p-0 w-32">
+                                   <input type="number" name="${tId}_r${r}_cr" class="w-full h-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00" step="0.01">
+                               </td>
+                           </tr>
+                           `;
+                       }
+
+                       transactionHtml += `
+                           <div class="mb-4 border border-gray-300 rounded-lg overflow-hidden">
+                               <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex justify-between items-center text-sm font-semibold text-gray-700">
+                                   <span>${trans.date} - ${trans.description}</span>
+                               </div>
+                               <table class="w-full border-collapse">
+                                   <thead>
+                                       <tr class="bg-gray-200 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
+                                            <th class="py-2 border-r border-gray-300 w-24">Date</th>
+                                            <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles & Explanation</th>
+                                            <th class="py-2 border-r border-gray-300 w-32 text-right pr-2">Debit</th>
+                                            <th class="py-2 w-32 text-right pr-2">Credit</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody>${rows}</tbody>
+                               </table>
+                           </div>
+                       `;
+                   });
+                }
 
                 html += `
-                    <div class="mb-6 p-4 bg-gray-50 rounded border border-gray-100">
-                        <p class="font-bold text-gray-700 mb-3">${i}. ${mockQ.question}</p>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm border bg-white">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="border p-2 w-24">Date</th>
-                                        <th class="border p-2">Account Titles</th>
-                                        <th class="border p-2 w-24">Debit</th>
-                                        <th class="border p-2 w-24">Credit</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="border p-0"><input type="text" class="w-full h-full p-2 outline-none"></td>
-                                        <td class="border p-0"><input type="text" class="w-full h-full p-2 outline-none"></td>
-                                        <td class="border p-0"><input type="number" class="w-full h-full p-2 outline-none"></td>
-                                        <td class="border p-0"><input type="number" class="w-full h-full p-2 outline-none"></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="border p-0"><input type="text" class="w-full h-full p-2 outline-none"></td>
-                                        <td class="border p-0"><input type="text" class="w-full h-full p-2 outline-none pl-8" placeholder="    (Indent)"></td>
-                                        <td class="border p-0"><input type="number" class="w-full h-full p-2 outline-none"></td>
-                                        <td class="border p-0"><input type="number" class="w-full h-full p-2 outline-none"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="mb-8 p-6 bg-gray-50 rounded-xl border border-gray-200 shadow-sm">
+                        <p class="font-bold text-gray-800 mb-4 text-lg"><span class="text-blue-600 mr-2">${i+1}.</span>${q.title || 'Journalize the transactions'}</p>
+                        ${transactionHtml}
                     </div>
                 `;
             }
-        }
-        
+        });
+
         html += `</div>`; // End Section
-    });
+    }
 
     return { html, data: questionData };
 }
@@ -280,25 +321,47 @@ async function submitQuiz(activityData, questionData) {
     const formData = new FormData(form);
     const answers = {};
     
-    // Simple extraction logic
+    // Extraction logic
     questionData.forEach(q => {
-        if(q.type === 'mcq') {
-            answers[q.id] = formData.get(q.id);
-        } else if (q.type === 'problem') {
-            answers[q.id] = formData.get(q.id);
-        }
-        // Journalizing extraction would require specific ID targeting on inputs, simplified here
-        else if (q.type === 'journal') {
-            answers[q.id] = "Journal Entry Data Submitted"; 
+        if(q.type === 'Multiple Choice') { // Matching firebase type string 'Multiple Choice'
+            answers[q.uiId] = formData.get(q.uiId);
+        } else if (q.type === 'Problem Solving') {
+            answers[q.uiId] = formData.get(q.uiId);
+        } else if (q.type === 'Journalizing') {
+            // Journalizing extraction: We need to iterate over known structure
+            // Re-finding DOM elements to scrape the table inputs
+            // Logic: Iterate inputs starting with q.uiId
+            const journalEntry = [];
+            // We assume max 10 transactions and 5 rows per trans as a safe loop limit or use DOM query
+            // Better: Select inputs by name prefix
+            const inputs = document.querySelectorAll(`input[name^="${q.uiId}"]`);
+            
+            // Organize flat inputs into structure
+            // Name format: s0_q1_t0_r0_date
+            let currentRow = {};
+            inputs.forEach(input => {
+                 const name = input.name;
+                 const parts = name.split('_'); // [s0, q1, t0, r0, field]
+                 const tIdx = parts[2];
+                 const rIdx = parts[3];
+                 const field = parts[4];
+                 const key = `${tIdx}_${rIdx}`;
+
+                 if(!currentRow[key]) currentRow[key] = {};
+                 currentRow[key][field] = input.value;
+            });
+            answers[q.uiId] = currentRow;
         }
     });
 
     const submissionPayload = {
         activityId: activityData.id,
-        studentName: "Current Student", // Replace with currentUser.name if available
+        activityName: activityData.activityname,
+        studentName: "Current Student", // Replace with user.LastName + ", " + user.FirstName
         timestamp: new Date().toISOString(),
         answers: answers,
-        activitySnapshot: activityData // Saving context
+        // Optional: Save snapshot of questions to know what they answered if Qs are random
+        // questionSnapshot: questionData 
     };
 
     try {
@@ -306,9 +369,10 @@ async function submitQuiz(activityData, questionData) {
         alert("Submission Successful! Your answers have been recorded.");
         document.getElementById('qa-runner-container').innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-green-600">
-                <i class="fas fa-check-circle text-5xl mb-4"></i>
-                <h2 class="text-2xl font-bold">Submitted Successfully</h2>
-                <p class="text-gray-500 mt-2">You may select another activity from the menu.</p>
+                <i class="fas fa-check-circle text-6xl mb-6"></i>
+                <h2 class="text-3xl font-bold">Submitted Successfully</h2>
+                <p class="text-gray-500 mt-2 text-lg">Your response has been saved.</p>
+                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-8 text-blue-600 hover:underline">Select another activity</button>
             </div>
         `;
     } catch (e) {
