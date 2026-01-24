@@ -354,7 +354,7 @@ async function loadSavedQuizzes(section) {
     container.innerHTML = '<p class="text-xs text-gray-500 text-center mt-4">Loading activities...</p>';
     
     try {
-        const q = query(collection(db, "quiz_list"), where("attendanceRecord", "==", section));
+        const q = query(collection(db, "quiz_list"), where("section", "==", section));
         const snapshot = await getDocs(q);
         
         container.innerHTML = '';
@@ -389,8 +389,6 @@ function populateCreatorForm(data) {
     document.getElementById('qc-start-time').value = data.dateTimeStart;
     document.getElementById('qc-time-limit').value = data.timeLimit;
     document.getElementById('qc-expire-time').value = data.dateTimeExpire;
-    
-    // Topics removed from main form, so we don't populate global topics area anymore
     
     const sectionContainer = document.getElementById('qc-test-sections');
     sectionContainer.innerHTML = '';
@@ -456,7 +454,7 @@ async function saveActivityToFirebase() {
         timeLimit: limit,
         dateTimeExpire: expire,
         students: selectedStudents,
-        attendanceRecord: section,
+        section: section,
         dateTimeCreated: new Date().toISOString()
     };
 
