@@ -130,10 +130,12 @@ async function renderQuizRunner(data) {
         <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
             <div class="bg-blue-800 text-white p-6">
                 <h1 class="text-2xl font-bold mb-2">${data.activityname}</h1>
+                /*
                 <div class="flex flex-wrap gap-4 text-sm opacity-90">
                     <span><i class="far fa-clock mr-1"></i> ${data.timeLimit} Minutes</span>
                     <span><i class="fas fa-list mr-1"></i> ${data.topics}</span>
                 </div>
+                */
             </div>
             
             <form id="quiz-form" class="p-6 space-y-8">
