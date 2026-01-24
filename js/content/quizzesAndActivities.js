@@ -13,14 +13,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// State Management for the Runner
-let quizState = {
-    currentSectionIndex: 0,
-    currentSlideIndex: 0, // Index within the section
-    sections: [], // { name, type, slides: [ { id, trackerLabel, isAnswered } ] }
-    timerInterval: null,
-    answers: {} // Track answered status
-};
+// Global timer interval variable to clear it when navigating away
+let quizTimerInterval = null;
 
 export async function renderQuizzesAndActivities(containerElement, user) {
     const contentArea = document.getElementById('content-area');
@@ -42,7 +36,7 @@ export async function renderQuizzesAndActivities(containerElement, user) {
                 <i class="fas fa-bars"></i>
             </button>
 
-            <div id="qa-runner-container" class="flex-1 overflow-y-auto relative flex flex-col">
+            <div id="qa-runner-container" class="flex-1 overflow-y-auto relative bg-gray-100">
                 <div class="h-full flex flex-col items-center justify-center text-gray-400 p-4 md:p-8">
                     <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
                     <p>Select an activity from the list to begin.</p>
@@ -80,6 +74,9 @@ async function loadStudentActivities() {
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
+            // Store ID in data object for easier access
+            data.id = docSnap.id; 
+            
             const start = new Date(data.dateTimeStart);
             const expire = new Date(data.dateTimeExpire);
             const isExpired = now > expire;
@@ -110,7 +107,9 @@ async function loadStudentActivities() {
                 } else if (isFuture) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
                 } else {
+                    if(quizTimerInterval) clearInterval(quizTimerInterval); // Clear any existing timer
                     renderQuizRunner(data);
+                    // Close mobile sidebar if open
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
             };
@@ -130,277 +129,83 @@ async function renderQuizRunner(data) {
     const container = document.getElementById('qa-runner-container');
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
-    // Generate Content & Metadata
-    const content = await generateQuizContent(data);
-    quizState.sections = content.sections;
-    quizState.currentSectionIndex = 0;
-    quizState.currentSlideIndex = 0;
+    // 1. Generate Questions based on topics and types
+    const generatedContent = await generateQuizContent(data);
 
-    // Start Timer
-    if(quizState.timerInterval) clearInterval(quizState.timerInterval);
-    const expireTime = new Date(data.dateTimeExpire).getTime();
-
-    // Render Basic Layout
+    // Header with Timer Layout
     container.innerHTML = `
         <div class="flex flex-col h-full bg-gray-100">
-            <div class="bg-blue-900 text-white p-3 flex justify-between items-center shadow-md z-20">
-                <h1 class="text-lg md:text-xl font-bold truncate mr-4">${data.activityname}</h1>
-                <div class="flex items-center bg-blue-800 px-3 py-1 rounded border border-blue-700">
-                    <i class="far fa-clock mr-2 text-yellow-400"></i>
-                    <span id="quiz-timer" class="font-mono font-bold text-lg">00:00:00</span>
-                </div>
+            <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-20">
+                 <h1 class="text-xl md:text-2xl font-bold truncate pl-2">${data.activityname}</h1>
+                 <div class="flex items-center space-x-2 bg-blue-900 px-3 py-1 rounded border border-blue-700">
+                    <i class="fas fa-stopwatch text-yellow-400"></i>
+                    <span id="quiz-timer" class="font-mono text-lg font-bold">--:--:--</span>
+                 </div>
             </div>
-
-            <div class="bg-white border-b border-gray-200 px-2 md:px-4 flex justify-between items-center shadow-sm h-12">
-                <div id="quiz-tabs" class="flex space-x-1 overflow-x-auto h-full items-end no-scrollbar">
-                    </div>
-                <div class="pl-2">
-                    <button id="btn-submit-quiz" disabled class="bg-gray-400 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition opacity-50 cursor-not-allowed">
-                        Submit
-                    </button>
-                </div>
-            </div>
-
-            <div class="flex-1 flex overflow-hidden relative">
-                <form id="quiz-form" class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 relative">
-                    ${content.html}
-                </form>
-
-                <div class="w-16 md:w-64 bg-white border-l border-gray-200 flex flex-col shadow-lg z-10 transition-all duration-300" id="right-sidebar">
-                     <div class="p-2 md:p-4 border-b border-gray-100 bg-gray-50 flex flex-col gap-2">
-                        <div class="flex gap-2">
-                            <button id="btn-prev" class="flex-1 bg-white border border-gray-300 text-gray-700 py-2 rounded hover:bg-blue-50 transition shadow-sm">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <button id="btn-next" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition shadow-sm">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                     </div>
-
-                     <div class="flex-1 overflow-y-auto p-2">
-                         <div id="quiz-tracker" class="grid grid-cols-1 gap-2">
-                             </div>
-                     </div>
-                     
-                     <button id="toggle-tracker" class="md:hidden w-full py-2 bg-gray-100 text-gray-500 text-xs border-t">
-                        <i class="fas fa-expand"></i> Details
-                     </button>
-                </div>
-            </div>
+            
+            <form id="quiz-form" class="flex-1 flex flex-col overflow-hidden">
+                ${generatedContent.html}
+            </form>
         </div>
     `;
 
-    // Initialize UI
-    updateTimer(expireTime);
-    quizState.timerInterval = setInterval(() => updateTimer(expireTime), 1000);
-    
-    renderTabs();
-    showSection(0);
-    
-    // Event Listeners
-    document.getElementById('btn-prev').addEventListener('click', () => navigate(-1));
-    document.getElementById('btn-next').addEventListener('click', () => navigate(1));
-    document.getElementById('btn-submit-quiz').addEventListener('click', () => submitQuiz(data, content.data));
-    
-    // Mobile toggle logic
-    const rightSidebar = document.getElementById('right-sidebar');
-    document.getElementById('toggle-tracker').addEventListener('click', () => {
-        rightSidebar.classList.toggle('w-16');
-        rightSidebar.classList.toggle('w-64');
-        rightSidebar.classList.toggle('absolute');
-        rightSidebar.classList.toggle('right-0');
-        rightSidebar.classList.toggle('h-full');
-    });
-
-    // Input Change Listener for "Answered" state
-    document.getElementById('quiz-form').addEventListener('input', (e) => {
-        // Find closest slide ID
-        const slide = e.target.closest('.quiz-slide');
-        if(slide) {
-            const slideId = slide.id;
-            const currentSec = quizState.sections[quizState.currentSectionIndex];
-            const slideObj = currentSec.slides.find(s => s.id === slideId);
-            
-            if(slideObj && !slideObj.isAnswered) {
-                // Check if value actually exists
-                if(e.target.value.trim() !== '') {
-                    slideObj.isAnswered = true;
-                    updateTrackerUI();
-                    checkSubmitEligibility();
-                }
-            }
-        }
-    });
-}
-
-// --- UI HELPERS ---
-
-function updateTimer(expireTime) {
-    const now = new Date().getTime();
-    const distance = expireTime - now;
-    const timerEl = document.getElementById('quiz-timer');
-    
-    if(!timerEl) return;
-
-    if (distance < 0) {
-        clearInterval(quizState.timerInterval);
-        timerEl.innerHTML = "EXPIRED";
-        timerEl.classList.add('text-red-500');
-        document.getElementById('quiz-form').classList.add('opacity-50', 'pointer-events-none');
-        return;
-    }
-
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-    timerEl.innerHTML = 
-        (hours < 10 ? "0" + hours : hours) + ":" + 
-        (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-        (seconds < 10 ? "0" + seconds : seconds);
-}
-
-function renderTabs() {
-    const tabContainer = document.getElementById('quiz-tabs');
-    tabContainer.innerHTML = '';
-    
-    quizState.sections.forEach((sec, idx) => {
-        const btn = document.createElement('button');
-        btn.className = `px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${idx === quizState.currentSectionIndex ? 'border-blue-800 text-blue-900 bg-blue-50' : 'border-transparent text-gray-500 hover:text-blue-600'}`;
-        btn.innerText = `Test ${idx + 1}`;
-        btn.onclick = () => showSection(idx);
-        tabContainer.appendChild(btn);
-    });
-}
-
-function showSection(index) {
-    quizState.currentSectionIndex = index;
-    quizState.currentSlideIndex = 0; // Reset to first question of section
-    renderTabs();
-    
-    // Hide all slides
-    document.querySelectorAll('.quiz-slide').forEach(el => el.classList.add('hidden'));
-    
-    // Update Tracker UI for this section
-    updateTrackerUI();
-    
-    // Show first slide
-    updateSlideView();
-}
-
-function updateTrackerUI() {
-    const trackerContainer = document.getElementById('quiz-tracker');
-    const currentSec = quizState.sections[quizState.currentSectionIndex];
-    trackerContainer.innerHTML = '';
-
-    // Determine layout: Grid for items, List for journal transactions
-    const isList = currentSec.type === 'Journalizing';
-    trackerContainer.className = isList ? 'flex flex-col gap-1' : 'grid grid-cols-1 md:grid-cols-3 gap-2';
-
-    currentSec.slides.forEach((slide, idx) => {
-        const btn = document.createElement('button');
-        const isActive = idx === quizState.currentSlideIndex;
-        const isAnswered = slide.isAnswered;
-        
-        let baseClass = "text-xs p-2 rounded border transition text-left truncate";
-        let colorClass = isAnswered ? "bg-green-100 border-green-300 text-green-800" : "bg-gray-50 border-gray-200 text-gray-500";
-        if(isActive) colorClass = "bg-blue-600 border-blue-600 text-white ring-2 ring-blue-200";
-        
-        btn.className = `${baseClass} ${colorClass}`;
-        
-        if(isList) {
-             // Journal List View
-             btn.innerHTML = `<i class="fas ${isAnswered ? 'fa-check-circle' : 'fa-circle'} mr-2 text-[10px]"></i>${slide.trackerLabel}`;
-        } else {
-             // Calendar Grid View (Just numbers usually)
-             btn.className += " text-center";
-             btn.innerHTML = slide.trackerLabel;
-        }
-
-        btn.onclick = () => {
-            quizState.currentSlideIndex = idx;
-            updateSlideView();
-        };
-        trackerContainer.appendChild(btn);
-    });
-}
-
-function updateSlideView() {
-    const currentSec = quizState.sections[quizState.currentSectionIndex];
-    const slideId = currentSec.slides[quizState.currentSlideIndex].id;
-    
-    // Hide all slides again to be safe
-    document.querySelectorAll('.quiz-slide').forEach(el => el.classList.add('hidden'));
-    
-    // Show specific slide
-    const slideEl = document.getElementById(slideId);
-    if(slideEl) slideEl.classList.remove('hidden');
-
-    // Update Tracker Highlight
-    updateTrackerUI();
-    
-    // Update Buttons
-    const prevBtn = document.getElementById('btn-prev');
-    const nextBtn = document.getElementById('btn-next');
-    
-    prevBtn.disabled = quizState.currentSlideIndex === 0;
-    prevBtn.classList.toggle('opacity-50', prevBtn.disabled);
-    
-    const isLast = quizState.currentSlideIndex === currentSec.slides.length - 1;
-    // We allow next to loop or stop? Usually stop at end of section
-    nextBtn.disabled = isLast;
-    nextBtn.classList.toggle('opacity-50', nextBtn.disabled);
-}
-
-function navigate(direction) {
-    const currentSec = quizState.sections[quizState.currentSectionIndex];
-    const newIndex = quizState.currentSlideIndex + direction;
-    
-    if(newIndex >= 0 && newIndex < currentSec.slides.length) {
-        quizState.currentSlideIndex = newIndex;
-        updateSlideView();
-    }
-}
-
-function checkSubmitEligibility() {
-    const btn = document.getElementById('btn-submit-quiz');
-    // Check if ALL slides in ALL sections are answered
-    const allAnswered = quizState.sections.every(sec => sec.slides.every(s => s.isAnswered));
-    
-    if(allAnswered) {
-        btn.disabled = false;
-        btn.classList.remove('bg-gray-400', 'opacity-50', 'cursor-not-allowed');
-        btn.classList.add('bg-green-600', 'hover:bg-green-700');
-    }
+    // 2. Initialize Logic (Timer, Tabs, Pagination, Validation)
+    initializeQuizManager(data, generatedContent.data);
 }
 
 // --- CONTENT GENERATOR ---
 async function generateQuizContent(activityData) {
-    let fullHtml = '';
-    let questionData = []; // DB mapping
-    let sectionsMetadata = []; // UI mapping
+    let tabsHtml = '';
+    let sectionsHtml = '';
+    let questionData = []; 
 
     if (!activityData.testQuestions || !Array.isArray(activityData.testQuestions)) {
-        return { html: '<p>No test sections defined.</p>', data: [], sections: [] };
+        return { html: '<div class="p-8 text-center text-gray-500">No test sections defined.</div>', data: [] };
     }
+
+    // --- Generate Tabs Header ---
+    tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0 h-14">`;
+    
+    activityData.testQuestions.forEach((section, index) => {
+        const isActive = index === 0 ? 'border-blue-800 text-blue-800 bg-blue-50' : 'border-transparent text-gray-600 hover:text-blue-600';
+        tabsHtml += `
+            <button type="button" class="tab-btn px-4 py-2 mr-2 font-semibold text-sm border-b-2 transition-colors focus:outline-none ${isActive}" data-target="test-section-${index}">
+                Test ${index + 1}
+            </button>
+        `;
+    });
+
+    // Add Submit Button to the right end of Tabs
+    tabsHtml += `
+        <div class="ml-auto pl-4">
+            <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-6 py-2 rounded shadow transition">
+                Submit Activity
+            </button>
+        </div>
+    </div>`;
+
+    // --- Generate Sections ---
+    sectionsHtml = `<div class="flex-1 relative overflow-hidden">`; // Container for all sections
 
     for (const [index, section] of activityData.testQuestions.entries()) {
         const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
-        let sectionSlides = [];
+        const isHidden = index === 0 ? '' : 'hidden'; // Only show first section initially
 
-        // Determine Collection
+        // Section Wrapper
+        sectionsHtml += `<div id="test-section-${index}" class="test-section-panel absolute inset-0 flex flex-col md:flex-row ${isHidden}" data-section-type="${section.type}">`;
+
+        // Fetch Questions Logic
+        let questions = [];
         let collectionName = '';
         if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
         else if (section.type === "Problem Solving") collectionName = 'qbProblemSolving';
         else if (section.type === "Journalizing") collectionName = 'qbJournalizing';
 
-        let questions = [];
+        const count = parseInt(section.noOfQuestions) || 5;
 
         if (collectionName && sectionTopics.length > 0) {
             try {
                 const qRef = collection(db, collectionName);
-                // Important: Ensure "subject" matches your DB ("FABM1" vs "FABM 1")
                 const qQuery = query(
                     qRef, 
                     where("subject", "==", "FABM1"), 
@@ -408,137 +213,385 @@ async function generateQuizContent(activityData) {
                 );
                 const qSnap = await getDocs(qQuery);
                 let candidates = [];
-                qSnap.forEach(doc => { candidates.push({ id: doc.id, ...doc.data() }); });
+                qSnap.forEach(doc => candidates.push({ id: doc.id, ...doc.data() }));
                 candidates.sort(() => 0.5 - Math.random());
-                const count = parseInt(section.noOfQuestions) || 5;
                 questions = candidates.slice(0, count);
             } catch (error) {
-                console.error(error);
+                console.error(`Error fetching questions:`, error);
             }
         }
 
-        // --- RENDER QUESTIONS ---
-        questions.forEach((q, qIdx) => {
-            const qUiId = `s${index}_q${qIdx}`;
-            
-            // Shared Header for all slides of this question
-            const headerHtml = `
-                 <div class="mb-4">
-                    <h3 class="text-lg font-bold text-gray-800 mb-1">Test ${index+1}: Question ${qIdx+1}</h3>
-                    <div class="text-sm text-gray-500 mb-2 italic">${section.instructions}</div>
-                    <div class="p-4 bg-white rounded border border-gray-200 shadow-sm text-gray-800 font-medium">
-                        ${q.question}
-                    </div>
-                 </div>
-            `;
+        // --- Render Content Area (Left/Top) & Tracker Area (Right/Bottom) ---
+        
+        // 1. Questions Container
+        let questionsHtml = '';
+        let trackerHtml = '';
 
-            // Data storage for submit
+        questions.forEach((q, qIdx) => {
+            const uiId = `s${index}_q${qIdx}`;
+            
+            // Store Metadata
             questionData.push({ 
-                uiId: qUiId, 
+                uiId: uiId, 
                 dbId: q.id, 
-                type: section.type, 
+                type: section.type,
                 correctAnswer: q.answer || q.solution 
             });
 
-            // --- MULTIPLE CHOICE & PROBLEM SOLVING (1 Slide per Question) ---
-            if (section.type === "Multiple Choice") {
-                 const opts = q.options ? q.options.map((opt, idx) => `
-                    <label class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-2 shadow-sm">
-                        <input type="radio" name="${qUiId}" value="${idx}" class="mr-3 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300">
-                        <span class="text-sm text-gray-700 font-medium">${opt}</span>
-                    </label>
-                `).join('') : '';
+            // --- Multiple Choice & Problem Solving Logic ---
+            if (section.type !== "Journalizing") {
+                const hiddenClass = qIdx === 0 ? '' : 'hidden';
+                
+                // Tracker Button
+                trackerHtml += `
+                    <button type="button" class="tracker-btn w-10 h-10 m-1 rounded border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
+                        ${qIdx + 1}
+                    </button>
+                `;
 
-                const slideId = `slide_${qUiId}`;
-                fullHtml += `
-                    <div id="${slideId}" class="quiz-slide hidden flex flex-col h-full">
-                        ${headerHtml}
-                        <div class="flex flex-col">${opts}</div>
+                // Question Content
+                let innerContent = '';
+                if (section.type === "Multiple Choice") {
+                    const opts = q.options ? q.options.map((opt, optIdx) => `
+                        <label class="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-3 shadow-sm">
+                            <input type="radio" name="${uiId}" value="${optIdx}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <span class="text-sm md:text-base text-gray-700">${opt}</span>
+                        </label>
+                    `).join('') : '';
+                    
+                    innerContent = `<div class="flex flex-col">${opts}</div>`;
+                } else {
+                    innerContent = `
+                        <textarea name="${uiId}" class="input-checker w-full p-4 border border-gray-300 rounded-lg h-64 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-none" placeholder="Type your answer here..."></textarea>
+                    `;
+                }
+
+                questionsHtml += `
+                    <div id="${uiId}" class="question-block h-full flex flex-col p-4 md:p-8 overflow-y-auto ${hiddenClass}">
+                        <div class="mb-4">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
+                            <p class="text-lg md:text-xl font-bold text-gray-800 mt-1 leading-relaxed">${q.question}</p>
+                        </div>
+                        ${innerContent}
                     </div>
                 `;
-                sectionSlides.push({ id: slideId, trackerLabel: `${qIdx+1}`, isAnswered: false });
-
-            } else if (section.type === "Problem Solving") {
-                const slideId = `slide_${qUiId}`;
-                fullHtml += `
-                    <div id="${slideId}" class="quiz-slide hidden flex flex-col h-full">
-                        ${headerHtml}
-                        <textarea name="${qUiId}" class="w-full p-4 border border-gray-300 rounded-lg flex-1 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-none shadow-inner" placeholder="Type your solution here..."></textarea>
-                    </div>
-                `;
-                sectionSlides.push({ id: slideId, trackerLabel: `${qIdx+1}`, isAnswered: false });
-
             } 
-            // --- JOURNALIZING (Multiple Slides per Question: 1 per Transaction) ---
-            else if (section.type === "Journalizing") {
-                if(q.transactions && Array.isArray(q.transactions)) {
-                    q.transactions.forEach((trans, tIdx) => {
-                        const tId = `${qUiId}_t${tIdx}`;
-                        const slideId = `slide_${tId}`;
-                        
-                        // Transaction Header
-                        const transHeader = `
-                            <div class="bg-blue-50 px-4 py-3 border-l-4 border-blue-500 mb-4 rounded-r shadow-sm">
-                                <span class="block text-xs font-bold text-blue-500 uppercase">Transaction</span>
-                                <span class="font-bold text-gray-800">${trans.date}</span> - ${trans.description}
+            
+            // --- Journalizing Logic (Nested Tracker) ---
+            else {
+                // For Journalizing, the "Question" is the header, but functionality is per-transaction.
+                // We will render ALL questions, but within them, the transactions are navigated.
+                // Note: If multiple Journalizing questions exist, we need outer logic. 
+                // Assuming "One Journalizing Question set" per test usually, but loop handles multiple.
+                
+                const transactions = q.transactions || [];
+                
+                // Wrap the whole journalizing question setup
+                const jHiddenClass = qIdx === 0 ? '' : 'hidden'; // If multiple journal problems, nav between them? 
+                // Let's simplify: If section is Journalizing, usually 1 big problem. If multiple, we treat them as questions.
+                
+                // Tracker for Transactions
+                let transTrackerList = '';
+                let transContent = '';
+
+                transactions.forEach((trans, tIdx) => {
+                    const transUiId = `${uiId}_t${tIdx}`;
+                    const tHidden = tIdx === 0 ? '' : 'hidden';
+                    const tActive = tIdx === 0 ? 'bg-blue-100 border-l-4 border-blue-600 text-blue-800' : 'bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+
+                    // 1. Transaction Tracker Item
+                    transTrackerList += `
+                        <button type="button" class="trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none ${tActive}" data-target-trans="${transUiId}">
+                            <div class="font-bold">${trans.date}</div>
+                            <div class="truncate opacity-80">${trans.description}</div>
+                        </button>
+                    `;
+
+                    // 2. Transaction Content (Input Table)
+                    const rowCount = trans.rows || 2;
+                    let rows = '';
+                    for(let r=0; r < rowCount; r++) {
+                        rows += `
+                        <tr class="border-b border-gray-200 bg-white">
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full h-full p-2 text-center outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="Date"></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full h-full p-2 text-left outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="Account Title"></td>
+                            <td class="p-0 border-r border-gray-300 w-24 md:w-32"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full h-full p-2 text-right outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="0.00"></td>
+                            <td class="p-0 w-24 md:w-32"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full h-full p-2 text-right outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="0.00"></td>
+                        </tr>`;
+                    }
+
+                    transContent += `
+                        <div id="${transUiId}" class="journal-trans-block h-full flex flex-col ${tHidden}">
+                            <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
+                                <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
+                                <p class="text-lg font-bold text-gray-800 mt-1">${trans.description}</p>
+                                <p class="text-sm text-gray-600 mt-1">Date: ${trans.date}</p>
                             </div>
-                        `;
 
-                        // Input Rows
-                        let rows = '';
-                        const rowCount = trans.rows || 2;
-                        for(let r=0; r < rowCount; r++) {
-                            rows += `
-                               <tr class="border-b border-gray-200 bg-white">
-                                   <td class="p-1 border-r border-gray-300"><input type="text" name="${tId}_r${r}_date" class="w-full p-2 text-right outline-none bg-transparent font-mono text-xs" placeholder="Date"></td>
-                                   <td class="p-1 border-r border-gray-300"><input type="text" name="${tId}_r${r}_acct" class="w-full p-2 text-left outline-none bg-transparent font-mono text-xs" placeholder="Account Title"></td>
-                                   <td class="p-1 border-r border-gray-300 w-24"><input type="number" name="${tId}_r${r}_dr" class="w-full p-2 text-right outline-none bg-transparent font-mono text-xs" placeholder="0.00"></td>
-                                   <td class="p-1 w-24"><input type="number" name="${tId}_r${r}_cr" class="w-full p-2 text-right outline-none bg-transparent font-mono text-xs" placeholder="0.00"></td>
-                               </tr>`;
-                        }
-
-                        const tableHtml = `
-                            <div class="border border-gray-300 rounded-lg overflow-hidden shadow-sm">
-                                <table class="w-full border-collapse">
-                                    <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
-                                         <th class="py-2 border-r border-gray-300 w-20">Date</th>
-                                         <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles</th>
-                                         <th class="py-2 border-r border-gray-300 w-24 text-right pr-2">Debit</th>
-                                         <th class="py-2 w-24 text-right pr-2">Credit</th>
+                            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow-sm bg-gray-50">
+                                <table class="w-full border-collapse min-w-[500px]">
+                                    <thead><tr class="bg-gray-200 text-xs text-gray-600 font-bold uppercase border-b border-gray-300 sticky top-0">
+                                        <th class="py-2 border-r border-gray-300 w-24">Date</th>
+                                        <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles</th>
+                                        <th class="py-2 border-r border-gray-300 w-24 md:w-32 text-right pr-2">Debit</th>
+                                        <th class="py-2 w-24 md:w-32 text-right pr-2">Credit</th>
                                     </tr></thead>
                                     <tbody>${rows}</tbody>
                                 </table>
                             </div>
-                        `;
+                        </div>
+                    `;
+                });
 
-                        fullHtml += `
-                            <div id="${slideId}" class="quiz-slide hidden flex flex-col h-full">
-                                ${headerHtml}
-                                ${transHeader}
-                                ${tableHtml}
-                            </div>
-                        `;
-                        
-                        // Tracker Label: "Jan 1 - Invest..."
-                        const shortDesc = trans.description.length > 15 ? trans.description.substring(0,15)+"..." : trans.description;
-                        sectionSlides.push({ id: slideId, trackerLabel: `${trans.date} - ${shortDesc}`, isAnswered: false });
-                    });
-                }
+                // Wrap entire journal question
+                questionsHtml += `
+                    <div id="${uiId}" class="question-block h-full w-full ${jHiddenClass}" data-is-journal="true">
+                        <div class="flex h-full flex-col md:flex-row">
+                             <div class="flex-1 p-4 md:p-6 h-full overflow-hidden flex flex-col">
+                                 <h3 class="font-bold text-gray-800 mb-2 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
+                                 <div class="flex-1 relative">
+                                    ${transContent}
+                                 </div>
+                             </div>
+                             
+                             <div class="w-full md:w-72 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col h-64 md:h-full">
+                                <div class="p-3 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                    Transactions List
+                                </div>
+                                <div class="flex-1 overflow-y-auto">
+                                    ${transTrackerList}
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                `;
             }
         });
 
-        sectionsMetadata.push({
-            name: `Test ${index+1}`,
-            type: section.type,
-            slides: sectionSlides
-        });
+        // Assemble Layout for this Section
+        if (section.type !== "Journalizing") {
+            sectionsHtml += `
+                <div class="flex-1 relative bg-white overflow-hidden flex flex-col">
+                    <div class="flex-1 relative overflow-hidden">
+                        ${questionsHtml}
+                    </div>
+                    <div class="p-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50">
+                        <button type="button" class="nav-prev-btn px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100 text-gray-700">Previous</button>
+                        <button type="button" class="nav-next-btn px-4 py-2 bg-blue-800 text-white rounded text-sm font-medium hover:bg-blue-900 shadow">Next</button>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-72 bg-gray-100 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col h-auto md:h-full">
+                    <div class="p-3 bg-gray-200 font-bold text-xs text-gray-600 uppercase tracking-wider">
+                        Question Tracker
+                    </div>
+                    <div class="p-3 flex-1 overflow-y-auto flex content-start flex-wrap">
+                        ${trackerHtml}
+                    </div>
+                </div>
+            `;
+        } else {
+            // Journalizing already has internal tracker structure built in 'questionsHtml' loop
+            // But we need the prev/next for switching between multiple Journal problems if they exist
+             sectionsHtml += `
+                <div class="flex-1 relative bg-white overflow-hidden flex flex-col">
+                    <div class="flex-1 relative overflow-hidden">
+                        ${questionsHtml}
+                    </div>
+                    ${ questions.length > 1 ? `
+                    <div class="p-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50">
+                        <button type="button" class="nav-prev-btn px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100">Previous Problem</button>
+                        <button type="button" class="nav-next-btn px-4 py-2 bg-blue-800 text-white rounded text-sm font-medium hover:bg-blue-900 shadow">Next Problem</button>
+                    </div>` : ''}
+                </div>
+             `;
+        }
+
+        sectionsHtml += `</div>`; // End Section Wrapper
     }
 
-    return { html: fullHtml, data: questionData, sections: sectionsMetadata };
+    sectionsHtml += `</div>`; // End All Sections Container
+
+    return { html: tabsHtml + sectionsHtml, data: questionData };
+}
+
+// --- QUIZ MANAGER (INTERACTIVITY) ---
+
+function initializeQuizManager(activityData, questionData) {
+    const expireTime = new Date(activityData.dateTimeExpire).getTime();
+    const timerDisplay = document.getElementById('quiz-timer');
+    const submitBtn = document.getElementById('btn-submit-quiz');
+    const form = document.getElementById('quiz-form');
+
+    // 1. Timer Logic
+    function updateTimer() {
+        const now = new Date().getTime();
+        const dist = expireTime - now;
+
+        if (dist < 0) {
+            clearInterval(quizTimerInterval);
+            timerDisplay.innerHTML = "EXPIRED";
+            timerDisplay.parentElement.classList.add('bg-red-600');
+            alert("Time is up! Submitting answers now.");
+            submitQuiz(activityData, questionData); // Auto submit
+            return;
+        }
+
+        const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((dist % (1000 * 60)) / 1000);
+
+        timerDisplay.innerHTML = `${h > 0 ? h + ':' : ''}${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+    updateTimer(); // Initial call
+    quizTimerInterval = setInterval(updateTimer, 1000);
+
+    // 2. Tab Switching Logic
+    const tabs = document.querySelectorAll('.tab-btn');
+    const sections = document.querySelectorAll('.test-section-panel');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // UI Toggle
+            tabs.forEach(t => {
+                t.classList.remove('border-blue-800', 'text-blue-800', 'bg-blue-50');
+                t.classList.add('border-transparent', 'text-gray-600');
+            });
+            tab.classList.remove('border-transparent', 'text-gray-600');
+            tab.classList.add('border-blue-800', 'text-blue-800', 'bg-blue-50');
+
+            // Section Visibility
+            const targetId = tab.dataset.target;
+            sections.forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(targetId).classList.remove('hidden');
+        });
+    });
+
+    // 3. Question Navigation & Tracker Logic (Scoped per section)
+    sections.forEach(section => {
+        const type = section.dataset.sectionType;
+        
+        if (type !== 'Journalizing') {
+            const questions = section.querySelectorAll('.question-block');
+            const trackers = section.querySelectorAll('.tracker-btn');
+            const prevBtn = section.querySelector('.nav-prev-btn');
+            const nextBtn = section.querySelector('.nav-next-btn');
+            
+            let currentIndex = 0;
+
+            function showQuestion(index) {
+                questions.forEach((q, i) => {
+                    if (i === index) q.classList.remove('hidden');
+                    else q.classList.add('hidden');
+                });
+                // Update tracker
+                trackers.forEach((t, i) => {
+                    if (i === index) {
+                        t.className = "tracker-btn w-10 h-10 m-1 rounded border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
+                    } else {
+                        // Check if answered (simple check)
+                        // This logic can be expanded, currently just resets styling
+                        t.className = "tracker-btn w-10 h-10 m-1 rounded border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                    }
+                });
+                currentIndex = index;
+            }
+
+            // Click Tracker
+            trackers.forEach((t, idx) => {
+                t.addEventListener('click', () => showQuestion(idx));
+            });
+
+            // Prev/Next
+            if(prevBtn) prevBtn.addEventListener('click', () => {
+                if (currentIndex > 0) showQuestion(currentIndex - 1);
+            });
+            if(nextBtn) nextBtn.addEventListener('click', () => {
+                if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
+            });
+        } 
+        
+        // --- Journalizing Navigation (Internal Transactions) ---
+        else if (type === 'Journalizing') {
+            // Handle Navigation between multiple journal problems if they exist (rare)
+            // Focus: Handle Transaction Clicking
+            const questions = section.querySelectorAll('.question-block');
+            
+            questions.forEach(qBlock => {
+                const transBtns = qBlock.querySelectorAll('.trans-tracker-btn');
+                const transBlocks = qBlock.querySelectorAll('.journal-trans-block');
+                
+                transBtns.forEach((btn, idx) => {
+                    btn.addEventListener('click', () => {
+                        // Hide all blocks
+                        transBlocks.forEach(b => b.classList.add('hidden'));
+                        // Show target
+                        const targetId = btn.dataset.targetTrans;
+                        document.getElementById(targetId).classList.remove('hidden');
+
+                        // Update Active State
+                        transBtns.forEach(b => {
+                            b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+                        });
+                        btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
+                    });
+                });
+            });
+        }
+    });
+
+    // 4. Input Validation (Unlock Submit Button)
+    // Listens to any change in the form
+    form.addEventListener('input', checkCompletion);
+    
+    function checkCompletion() {
+        let allAnswered = true;
+        
+        // Check standard inputs (Radio/Textarea)
+        // This is a simplified check. For strict "All Answered", we iterate `questionData`
+        // and check if specific fields related to them have values.
+        
+        for (const q of questionData) {
+            if (q.type === 'Multiple Choice') {
+                const checked = form.querySelector(`input[name="${q.uiId}"]:checked`);
+                if (!checked) { allAnswered = false; break; }
+            } else if (q.type === 'Problem Solving') {
+                const val = form.querySelector(`textarea[name="${q.uiId}"]`).value;
+                if (!val || val.trim() === '') { allAnswered = false; break; }
+            } else if (q.type === 'Journalizing') {
+                // Check if at least one row in every transaction has data? 
+                // Or just check that inputs exist. 
+                // Strict check: Ensure at least one debit/credit is entered per transaction.
+                // Loose check for UI enabling:
+                const inputs = form.querySelectorAll(`input[name^="${q.uiId}"]`);
+                let hasData = false;
+                inputs.forEach(i => { if(i.value) hasData = true; });
+                if(!hasData) { allAnswered = false; break; } // Very loose check
+            }
+        }
+
+        if (allAnswered) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+            submitBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
+            submitBtn.innerHTML = "Submit Activity";
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
+            submitBtn.innerHTML = "Finish All Questions";
+        }
+    }
+
+    // Submit Action
+    submitBtn.addEventListener('click', () => submitQuiz(activityData, questionData));
 }
 
 async function submitQuiz(activityData, questionData) {
     if(!confirm("Are you sure you want to submit your answers?")) return;
+    
+    // Clear Timer
+    if(quizTimerInterval) clearInterval(quizTimerInterval);
 
     // Collect Answers
     const form = document.getElementById('quiz-form');
@@ -547,17 +600,21 @@ async function submitQuiz(activityData, questionData) {
     
     // Extraction logic
     questionData.forEach(q => {
-        if(q.type === 'Multiple Choice' || q.type === 'Problem Solving') { 
+        if(q.type === 'Multiple Choice') { 
+            answers[q.uiId] = formData.get(q.uiId);
+        } else if (q.type === 'Problem Solving') {
             answers[q.uiId] = formData.get(q.uiId);
         } else if (q.type === 'Journalizing') {
             const inputs = document.querySelectorAll(`input[name^="${q.uiId}"]`);
             let currentRow = {};
             inputs.forEach(input => {
-                 const parts = input.name.split('_'); // [s0, q1, t0, r0, field]
+                 const name = input.name;
+                 const parts = name.split('_'); // [s0, q1, t0, r0, field]
                  const tIdx = parts[2];
                  const rIdx = parts[3];
                  const field = parts[4];
                  const key = `${tIdx}_${rIdx}`;
+
                  if(!currentRow[key]) currentRow[key] = {};
                  currentRow[key][field] = input.value;
             });
@@ -568,9 +625,9 @@ async function submitQuiz(activityData, questionData) {
     const submissionPayload = {
         activityId: activityData.id,
         activityName: activityData.activityname,
-        studentName: "Current Student",
+        studentName: "Current Student", // Replace with actual user object data
         timestamp: new Date().toISOString(),
-        answers: answers
+        answers: answers,
     };
 
     try {
@@ -580,11 +637,11 @@ async function submitQuiz(activityData, questionData) {
                 <i class="fas fa-check-circle text-6xl mb-6"></i>
                 <h2 class="text-3xl font-bold">Submitted Successfully</h2>
                 <p class="text-gray-500 mt-2 text-lg">Your response has been saved.</p>
-                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-8 text-blue-600 hover:underline">Select another activity</button>
+                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-8 px-6 py-3 bg-blue-600 text-white rounded shadow hover:bg-blue-700">Select another activity</button>
             </div>
         `;
     } catch (e) {
         console.error("Submission Error:", e);
-        alert("Error submitting quiz. Please check your connection and try again.");
+        alert("Error submitting quiz. Please check your connection.");
     }
 }
