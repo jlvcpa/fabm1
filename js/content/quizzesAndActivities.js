@@ -128,7 +128,7 @@ async function renderQuizRunner(data) {
 
     container.innerHTML = `
         <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
-            <div class="bg-blue-800 text-white p-6">
+            <div class="bg-blue-800 text-white p-3">
                 <h1 class="text-2xl font-bold mb-2">${data.activityname}</h1>
             </div>
             
