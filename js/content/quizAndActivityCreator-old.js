@@ -1,4 +1,4 @@
-import { getFirestore, collection, getDocs, doc, setDoc, query, limit, where } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, setDoc, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
 
 const firebaseConfig = {
@@ -67,23 +67,6 @@ export async function renderQuizActivityCreator(container) {
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Topics</label>
-                            <select id="qc-topic-select" class="w-full p-2 border rounded mb-2 bg-gray-50 text-sm">
-                                <option value="">-- Add a Topic --</option>
-                                <option value="Merchandising Operations">Merchandising Operations</option>
-                                <option value="FIFO Costing">FIFO Costing</option>
-                                <option value="Weighted Average Costing">Weighted Average Costing</option>
-                                <option value="Moving Average Costing">Moving Average Costing</option>
-                                <option value="Periodic Inventory System">Periodic Inventory System</option>
-                                <option value="Perpetual Inventory System">Perpetual Inventory System</option>
-                                <option value="Trade Discounts">Trade Discounts</option>
-                                <option value="Cash Discounts">Cash Discounts</option>
-                                <option value="Freight Cost">Freight Cost</option>
-                            </select>
-                            <textarea id="qc-topics-area" class="w-full p-2 border rounded font-mono text-sm h-20" placeholder="Selected topics..."></textarea>
-                        </div>
-
-                        <div>
                             <div class="flex justify-between items-center mb-2">
                                 <label class="block text-xs font-bold text-gray-500 uppercase">Test Sections</label>
                                 <button id="btn-add-section" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">
@@ -145,17 +128,6 @@ function attachCreatorListeners() {
         document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = true);
     });
 
-    // Topic Selection
-    document.getElementById('qc-topic-select').addEventListener('change', (e) => {
-        const val = e.target.value;
-        const area = document.getElementById('qc-topics-area');
-        if(val) {
-            const current = area.value ? area.value + ', ' : '';
-            area.value = current + val;
-            e.target.value = "";
-        }
-    });
-
     // Time Logic
     const startInput = document.getElementById('qc-start-time');
     const limitInput = document.getElementById('qc-time-limit');
@@ -181,7 +153,7 @@ function attachCreatorListeners() {
     });
 
     // Add Test Section
-    document.getElementById('btn-add-section').addEventListener('click', addTestSectionUI);
+    document.getElementById('btn-add-section').addEventListener('click', () => addTestSectionUI());
 
     // Save Button
     document.getElementById('btn-save-activity').addEventListener('click', saveActivityToFirebase);
@@ -192,7 +164,7 @@ function addTestSectionUI(existingData = null) {
     const index = container.children.length + 1;
     
     const div = document.createElement('div');
-    div.className = "bg-gray-50 p-3 rounded border border-gray-300 shadow-sm relative text-sm";
+    div.className = "bg-gray-50 p-3 rounded border border-gray-300 shadow-sm relative text-sm section-card";
     div.innerHTML = `
         <div class="absolute top-2 right-2 cursor-pointer text-red-400 hover:text-red-600" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
@@ -212,6 +184,15 @@ function addTestSectionUI(existingData = null) {
                 <input type="number" class="section-count w-full p-1 border rounded bg-white" value="5">
             </div>
         </div>
+        
+        <div class="mb-2">
+            <label class="block text-xs text-gray-500 mb-1">Topics (Filtered by Type)</label>
+            <select class="section-topic-select w-full p-1 border rounded bg-white mb-1">
+                <option value="">Loading topics...</option>
+            </select>
+            <textarea class="section-topics-area w-full p-1 border rounded bg-white h-10 text-xs" placeholder="Selected topics..."></textarea>
+        </div>
+
         <div class="mb-2">
             <label class="block text-xs text-gray-500 mb-1">Instructions</label>
             <input type="text" class="section-instructions w-full p-1 border rounded bg-white">
@@ -223,15 +204,82 @@ function addTestSectionUI(existingData = null) {
     `;
     container.appendChild(div);
 
+    const typeSelect = div.querySelector('.section-type');
+    const topicSelect = div.querySelector('.section-topic-select');
+    const topicArea = div.querySelector('.section-topics-area');
+
+    // Load initial topics for default type
+    loadTopicsForType(typeSelect.value, topicSelect);
+
+    // Event Listeners
+    typeSelect.addEventListener('change', () => {
+        loadTopicsForType(typeSelect.value, topicSelect);
+        topicArea.value = ""; // Clear selected on type change
+    });
+
+    topicSelect.addEventListener('change', (e) => {
+        if(e.target.value) {
+            const current = topicArea.value ? topicArea.value + ', ' : '';
+            topicArea.value = current + e.target.value;
+            e.target.value = ""; // Reset dropdown
+        }
+    });
+
     if(existingData) {
         div.querySelector('.section-type').value = existingData.type;
         div.querySelector('.section-count').value = existingData.noOfQuestions;
         div.querySelector('.section-instructions').value = existingData.instructions;
         div.querySelector('.section-rubrics').value = existingData.gradingRubrics;
+        div.querySelector('.section-topics-area').value = existingData.topics || "";
+        
+        // Reload topics for saved type
+        loadTopicsForType(existingData.type, topicSelect);
     }
 }
 
-// Replaced loadAttendanceRecords with loadSections to get unique sections from students collection
+// Helper to fetch topics from Firebase based on Question Type
+async function loadTopicsForType(type, selectElement) {
+    selectElement.innerHTML = '<option value="">Loading...</option>';
+    let collectionName = "";
+    
+    if (type === "Multiple Choice") collectionName = "qbMultipleChoice";
+    else if (type === "Problem Solving") collectionName = "qbProblemSolving";
+    else if (type === "Journalizing") collectionName = "qbJournalizing";
+
+    if (!collectionName) {
+        selectElement.innerHTML = '<option value="">Unknown Type</option>';
+        return;
+    }
+
+    try {
+        const q = query(collection(db, collectionName));
+        const snapshot = await getDocs(q);
+        const topics = new Set();
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // Data structure: { "subject-topic-count": { topic: "..." } } 
+            // OR flattened? Assuming standard doc data has 'topic' field inside.
+            // Based on your prompt layout: { "qbMultipleChoice": { "id": { "topic": "..." } } }
+            // Firestore collection queries return documents. 
+            // If you uploaded using the importer: doc ID is key, data is value.
+            if(data.topic) topics.add(data.topic);
+        });
+
+        selectElement.innerHTML = '<option value="">-- Add Topic --</option>';
+        Array.from(topics).sort().forEach(topic => {
+            const opt = document.createElement('option');
+            opt.value = topic;
+            opt.text = topic;
+            selectElement.appendChild(opt);
+        });
+
+    } catch (e) {
+        console.error(`Error loading topics for ${type}:`, e);
+        selectElement.innerHTML = '<option value="">Error loading</option>';
+    }
+}
+
 async function loadSections() {
     const select = document.getElementById('qc-section');
     try {
@@ -257,13 +305,11 @@ async function loadSections() {
     }
 }
 
-// FIX: Removed orderBy from query to fix "Requires Index" error. Sorting logic moved to JS.
 async function loadStudents(sectionName) {
     const listDiv = document.getElementById('qc-student-list');
     listDiv.innerHTML = '<p class="text-xs text-gray-500 text-center mt-4">Loading students...</p>';
     
     try {
-        // Only querying by Section. Sorting will be done in memory.
         const q = query(collection(db, "students"), where("Section", "==", sectionName));
         const querySnapshot = await getDocs(q);
         
@@ -274,13 +320,11 @@ async function loadStudents(sectionName) {
             return;
         }
 
-        // Convert to array and sort manually
         const students = [];
         querySnapshot.forEach((doc) => {
             students.push(doc.data());
         });
 
-        // Sort by LastName
         students.sort((a, b) => a.LastName.localeCompare(b.LastName));
 
         students.forEach((data) => {
@@ -345,16 +389,13 @@ function populateCreatorForm(data) {
     document.getElementById('qc-start-time').value = data.dateTimeStart;
     document.getElementById('qc-time-limit').value = data.timeLimit;
     document.getElementById('qc-expire-time').value = data.dateTimeExpire;
-    document.getElementById('qc-topics-area').value = data.topics;
     
-    // Test Sections
     const sectionContainer = document.getElementById('qc-test-sections');
     sectionContainer.innerHTML = '';
     if(data.testQuestions && Array.isArray(data.testQuestions)) {
         data.testQuestions.forEach(section => addTestSectionUI(section));
     }
 
-    // Students (Checkboxes)
     if(data.students && Array.isArray(data.students)) {
         document.querySelectorAll('.student-checkbox').forEach(cb => {
             cb.checked = data.students.includes(cb.value);
@@ -366,7 +407,6 @@ async function saveActivityToFirebase() {
     const schoolYear = document.getElementById('qc-school-year').value;
     const activityName = document.getElementById('qc-activity-name').value;
     const section = document.getElementById('qc-section').value; 
-    const topics = document.getElementById('qc-topics-area').value;
     const start = document.getElementById('qc-start-time').value;
     const limit = document.getElementById('qc-time-limit').value;
     const expire = document.getElementById('qc-expire-time').value;
@@ -383,16 +423,23 @@ async function saveActivityToFirebase() {
 
     const testQuestions = [];
     const sectionDivs = document.getElementById('qc-test-sections').children;
+    
+    // Collect all topics from sections for global metadata if needed
+    let allTopics = new Set();
+
     for(let div of sectionDivs) {
+        const topics = div.querySelector('.section-topics-area').value;
+        if(topics) topics.split(',').forEach(t => allTopics.add(t.trim()));
+
         testQuestions.push({
             type: div.querySelector('.section-type').value,
             noOfQuestions: div.querySelector('.section-count').value,
+            topics: topics, // Save topics per section
             instructions: div.querySelector('.section-instructions').value,
             gradingRubrics: div.querySelector('.section-rubrics').value
         });
     }
 
-    // Sanitize ID
     const cleanActName = activityName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const cleanSection = section.replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const docId = `${schoolYear}_${cleanActName}_${cleanSection}`;
@@ -401,13 +448,13 @@ async function saveActivityToFirebase() {
         id: docId,
         schoolYear,
         activityname: activityName,
-        topics,
+        topics: Array.from(allTopics).join(', '), // Aggregated topics string
         testQuestions,
         dateTimeStart: start,
         timeLimit: limit,
         dateTimeExpire: expire,
         students: selectedStudents,
-        attendanceRecord: section, 
+        attendanceRecord: section,
         dateTimeCreated: new Date().toISOString()
     };
 
