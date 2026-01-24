@@ -1,3 +1,156 @@
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
+    authDomain: "jlvcpa-quizzes.firebaseapp.com",
+    projectId: "jlvcpa-quizzes",
+    storageBucket: "jlvcpa-quizzes.appspot.com",
+    messagingSenderId: "629158256557",
+    appId: "1:629158256557:web:b3d1a424b32e28cd578b24"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+export async function renderQuizzesAndActivities(containerElement, user) {
+    const contentArea = document.getElementById('content-area');
+    
+    // Layout: Collapsible Sidebar (Left) + Main Content (Right)
+    contentArea.innerHTML = `
+        <div class="flex h-full relative overflow-hidden bg-gray-50">
+            <div id="qa-sidebar" class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 transition-transform absolute md:relative transform -translate-x-full md:translate-x-0">
+                <div class="p-4 border-b border-gray-200 bg-blue-900 text-white flex justify-between items-center">
+                    <h2 class="font-bold">Your Activities</h2>
+                    <button id="qa-close-sidebar" class="md:hidden text-white"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="qa-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <p class="text-center text-gray-400 mt-4 text-sm">Loading activities...</p>
+                </div>
+            </div>
+
+            <button id="qa-toggle-sidebar" class="md:hidden absolute top-4 left-4 z-20 bg-blue-900 text-white p-2 rounded shadow">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div id="qa-runner-container" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+                <div class="h-full flex flex-col items-center justify-center text-gray-400">
+                    <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
+                    <p>Select an activity from the list to begin.</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Mobile Sidebar Logic
+    const sidebar = document.getElementById('qa-sidebar');
+    document.getElementById('qa-toggle-sidebar').addEventListener('click', () => {
+        sidebar.classList.remove('-translate-x-full');
+    });
+    document.getElementById('qa-close-sidebar').addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+    });
+
+    await loadStudentActivities();
+}
+
+async function loadStudentActivities() {
+    const listContainer = document.getElementById('qa-list-container');
+    
+    try {
+        // Query quizzes. logic: fetch all, or filter by student ID if stored in 'students' array
+        const q = query(collection(db, "quiz_list"), orderBy("dateTimeCreated", "desc"));
+        const snapshot = await getDocs(q);
+
+        listContainer.innerHTML = '';
+        if(snapshot.empty) {
+            listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities found.</p>';
+            return;
+        }
+
+        const now = new Date();
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const start = new Date(data.dateTimeStart);
+            const expire = new Date(data.dateTimeExpire);
+            const isExpired = now > expire;
+            const isFuture = now < start;
+
+            const card = document.createElement('div');
+            card.className = `p-3 rounded border cursor-pointer hover:shadow-md transition bg-white ${isExpired ? 'border-red-200 bg-red-50 opacity-75' : 'border-blue-200'}`;
+            
+            let statusBadge = '';
+            if(isExpired) statusBadge = '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">Expired</span>';
+            else if(isFuture) statusBadge = '<span class="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded font-bold">Upcoming</span>';
+            else statusBadge = '<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded font-bold">Active</span>';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-1">
+                    <h3 class="font-bold text-gray-800 text-sm">${data.activityname}</h3>
+                    ${statusBadge}
+                </div>
+                <div class="text-xs text-gray-500">
+                    <p><i class="far fa-clock mr-1"></i> Due: ${expire.toLocaleString()}</p>
+                    <p><i class="fas fa-hourglass-half mr-1"></i> Limit: ${data.timeLimit} mins</p>
+                </div>
+            `;
+
+            card.onclick = () => {
+                if (isExpired) {
+                    alert("This activity has expired.");
+                } else if (isFuture) {
+                    alert(`This activity starts on ${start.toLocaleString()}`);
+                } else {
+                    renderQuizRunner(data);
+                    // Close mobile sidebar if open
+                    document.getElementById('qa-sidebar').classList.add('-translate-x-full');
+                }
+            };
+
+            listContainer.appendChild(card);
+        });
+
+    } catch (e) {
+        console.error("Error loading activities:", e);
+        listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
+    }
+}
+
+// --- QUIZ RUNNER LOGIC ---
+
+async function renderQuizRunner(data) {
+    const container = document.getElementById('qa-runner-container');
+    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
+    
+    // 1. Generate Questions based on topics and types from Firebase Collections
+    const generatedContent = await generateQuizContent(data);
+
+    container.innerHTML = `
+        <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
+            <div class="bg-blue-800 text-white p-6">
+                <h1 class="text-2xl font-bold mb-2">${data.activityname}</h1>
+                <div class="flex flex-wrap gap-4 text-sm opacity-90">
+                    <span><i class="far fa-clock mr-1"></i> ${data.timeLimit} Minutes</span>
+                    <span><i class="fas fa-list mr-1"></i> ${data.topics}</span>
+                </div>
+            </div>
+            
+            <form id="quiz-form" class="p-6 space-y-8">
+                ${generatedContent.html}
+                
+                <div class="pt-6 border-t border-gray-200">
+                    <button type="button" id="btn-submit-quiz" class="w-full bg-green-600 text-white font-bold py-4 rounded-lg hover:bg-green-700 shadow-md transition text-lg">
+                        Submit Activity
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.getElementById('btn-submit-quiz').addEventListener('click', () => submitQuiz(data, generatedContent.data));
+}
+
 // --- CONTENT GENERATOR ---
 async function generateQuizContent(activityData) {
     let html = '';
@@ -151,4 +304,72 @@ async function generateQuizContent(activityData) {
     }
 
     return { html, data: questionData };
+}
+
+async function submitQuiz(activityData, questionData) {
+    if(!confirm("Are you sure you want to submit your answers?")) return;
+
+    // Collect Answers
+    const form = document.getElementById('quiz-form');
+    const formData = new FormData(form);
+    const answers = {};
+    
+    // Extraction logic
+    questionData.forEach(q => {
+        if(q.type === 'Multiple Choice') { // Matching firebase type string 'Multiple Choice'
+            answers[q.uiId] = formData.get(q.uiId);
+        } else if (q.type === 'Problem Solving') {
+            answers[q.uiId] = formData.get(q.uiId);
+        } else if (q.type === 'Journalizing') {
+            // Journalizing extraction: We need to iterate over known structure
+            // Re-finding DOM elements to scrape the table inputs
+            // Logic: Iterate inputs starting with q.uiId
+            const journalEntry = [];
+            // We assume max 10 transactions and 5 rows per trans as a safe loop limit or use DOM query
+            // Better: Select inputs by name prefix
+            const inputs = document.querySelectorAll(`input[name^="${q.uiId}"]`);
+            
+            // Organize flat inputs into structure
+            // Name format: s0_q1_t0_r0_date
+            let currentRow = {};
+            inputs.forEach(input => {
+                 const name = input.name;
+                 const parts = name.split('_'); // [s0, q1, t0, r0, field]
+                 const tIdx = parts[2];
+                 const rIdx = parts[3];
+                 const field = parts[4];
+                 const key = `${tIdx}_${rIdx}`;
+
+                 if(!currentRow[key]) currentRow[key] = {};
+                 currentRow[key][field] = input.value;
+            });
+            answers[q.uiId] = currentRow;
+        }
+    });
+
+    const submissionPayload = {
+        activityId: activityData.id,
+        activityName: activityData.activityname,
+        studentName: "Current Student", // Replace with user.LastName + ", " + user.FirstName
+        timestamp: new Date().toISOString(),
+        answers: answers,
+        // Optional: Save snapshot of questions to know what they answered if Qs are random
+        // questionSnapshot: questionData 
+    };
+
+    try {
+        await setDoc(doc(collection(db, "student_submissions")), submissionPayload);
+        alert("Submission Successful! Your answers have been recorded.");
+        document.getElementById('qa-runner-container').innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-green-600">
+                <i class="fas fa-check-circle text-6xl mb-6"></i>
+                <h2 class="text-3xl font-bold">Submitted Successfully</h2>
+                <p class="text-gray-500 mt-2 text-lg">Your response has been saved.</p>
+                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-8 text-blue-600 hover:underline">Select another activity</button>
+            </div>
+        `;
+    } catch (e) {
+        console.error("Submission Error:", e);
+        alert("Error submitting quiz. Please check your connection and try again.");
+    }
 }
