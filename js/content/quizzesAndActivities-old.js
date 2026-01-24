@@ -33,8 +33,8 @@ export async function renderQuizzesAndActivities(containerElement, user) {
                 <i class="fas fa-bars"></i>
             </button>
 
-            <div id="qa-runner-container" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                <div class="h-full flex flex-col items-center justify-center text-gray-400">
+            <div id="qa-runner-container" class="flex-1 overflow-y-auto relative">
+                <div class="h-full flex flex-col items-center justify-center text-gray-400 p-4 md:p-8">
                     <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
                     <p>Select an activity from the list to begin.</p>
                 </div>
@@ -128,12 +128,8 @@ async function renderQuizRunner(data) {
 
     container.innerHTML = `
         <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200">
-            <div class="bg-blue-800 text-white p-6">
+            <div class="bg-blue-800 text-white p-1">
                 <h1 class="text-2xl font-bold mb-2">${data.activityname}</h1>
-                <div class="flex flex-wrap gap-4 text-sm opacity-90">
-                    <span><i class="far fa-clock mr-1"></i> ${data.timeLimit} Minutes</span>
-                    <span><i class="fas fa-list mr-1"></i> ${data.topics}</span>
-                </div>                
             </div>
             
             <form id="quiz-form" class="p-6 space-y-8">
