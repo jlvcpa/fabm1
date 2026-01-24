@@ -133,7 +133,6 @@ async function renderQuizRunner(data) {
     const generatedContent = await generateQuizContent(data);
 
     // Header with Timer Layout
-    // MODIFICATION: changed form class from 'overflow-hidden' to 'overflow-y-auto' to enable scrolling of stacked content
     container.innerHTML = `
         <div class="flex flex-col h-full bg-gray-100">
             <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
@@ -186,7 +185,6 @@ async function generateQuizContent(activityData) {
     </div>`;
 
     // --- Generate Sections ---
-    // MODIFICATION: Removed absolute positioning and flex-1 to allow natural vertical stacking
     sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
 
     for (const [index, section] of activityData.testQuestions.entries()) {
@@ -194,7 +192,6 @@ async function generateQuizContent(activityData) {
         const isHidden = index === 0 ? '' : 'hidden'; // Only show first section initially
 
         // Section Wrapper
-        // MODIFICATION: Changed to standard block div (removed inset-0) and use flex-col for stacking
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
         // Fetch Questions Logic
@@ -245,8 +242,9 @@ async function generateQuizContent(activityData) {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
                 // Tracker Button
+                // MODIFICATION: Changed rounded to rounded-full for circle icon
                 trackerHtml += `
-                    <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
+                    <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
                         ${qIdx + 1}
                     </button>
                 `;
@@ -268,7 +266,6 @@ async function generateQuizContent(activityData) {
                     `;
                 }
 
-                // MODIFICATION: Height fits content (h-auto), removed overflow-y-auto internal scroll
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${hiddenClass}">
                         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-4">
@@ -306,7 +303,7 @@ async function generateQuizContent(activityData) {
                     const tActive = tIdx === 0 ? 'bg-blue-100 border-l-4 border-blue-600 text-blue-800' : 'bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
 
                     transTrackerList += `
-                        <button type="button" class="trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none ${tActive}" data-target-trans="${transUiId}">
+                        <button type="button" class="trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none ${tActive}" data-target-trans="${transUiId}" data-t-index="${tIdx}">
                             <div class="font-bold whitespace-nowrap">${trans.date}</div>
                             <div class="truncate opacity-80 text-xs">${trans.description}</div>
                         </button>
@@ -325,7 +322,7 @@ async function generateQuizContent(activityData) {
                         </tr>`;
                     }
 
-                    // MODIFICATION: Removed fixed height, added overflow-x-auto for table
+                    // MODIFICATION: Added navigation buttons BELOW the transaction table
                     transContent += `
                         <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
                             <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
@@ -345,12 +342,20 @@ async function generateQuizContent(activityData) {
                                     <tbody>${rows}</tbody>
                                 </table>
                             </div>
+
+                            <div class="flex justify-between items-center mt-4 mb-2">
+                                <div>
+                                    ${tIdx > 0 ? `<button type="button" class="btn-prev-trans px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium border border-gray-300" data-target-idx="${tIdx - 1}"><i class="fas fa-chevron-left mr-1"></i> Previous Transaction</button>` : ''}
+                                </div>
+                                <div>
+                                    ${tIdx < transactions.length - 1 ? `<button type="button" class="btn-next-trans px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow-sm" data-target-idx="${tIdx + 1}">Next Transaction <i class="fas fa-chevron-right ml-1"></i></button>` : ''}
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
 
                 // Wrap entire journal question
-                // MODIFICATION: Flex-col on mobile, Row on Desktop. No fixed heights.
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
                         <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
@@ -360,8 +365,8 @@ async function generateQuizContent(activityData) {
                                  
                                  ${questions.length > 1 ? `
                                  <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                                     <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Prev</button>
-                                     <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next</button>
+                                     <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
+                                     <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
                                  </div>` : ''}
                              </div>
                              
@@ -380,7 +385,6 @@ async function generateQuizContent(activityData) {
         });
 
         // Assemble Layout for this Section
-        // MODIFICATION: Combined Question and Tracker into one responsive container.
         if (section.type !== "Journalizing") {
             sectionsHtml += `
                 <div class="flex flex-col md:flex-row md:items-start gap-4">
@@ -401,7 +405,6 @@ async function generateQuizContent(activityData) {
                 </div>
             `;
         } else {
-            // Journaling handles its own internal layout, just output the html
             sectionsHtml += `
                 <div class="w-full">
                     ${questionsHtml}
@@ -454,7 +457,6 @@ function initializeQuizManager(activityData, questionData) {
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            // UI Toggle
             tabs.forEach(t => {
                 t.classList.remove('border-blue-800', 'text-blue-800', 'bg-blue-50');
                 t.classList.add('border-transparent', 'text-gray-600');
@@ -462,7 +464,6 @@ function initializeQuizManager(activityData, questionData) {
             tab.classList.remove('border-transparent', 'text-gray-600');
             tab.classList.add('border-blue-800', 'text-blue-800', 'bg-blue-50');
 
-            // Section Visibility
             const targetId = tab.dataset.target;
             sections.forEach(sec => sec.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
@@ -476,7 +477,6 @@ function initializeQuizManager(activityData, questionData) {
         if (type !== 'Journalizing') {
             const questions = section.querySelectorAll('.question-block');
             const trackers = section.querySelectorAll('.tracker-btn');
-            // Nav buttons are now inside each question block, so we select them all
             const prevBtns = section.querySelectorAll('.nav-prev-btn');
             const nextBtns = section.querySelectorAll('.nav-next-btn');
             
@@ -489,10 +489,19 @@ function initializeQuizManager(activityData, questionData) {
                 });
                 // Update tracker
                 trackers.forEach((t, i) => {
+                    // Check if answered logic is handled in checkCompletion. 
+                    // Here we strictly handle ACTIVE state.
                     if (i === index) {
-                        t.className = "tracker-btn w-9 h-9 m-0.5 rounded border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
+                        // Force Active Blue State
+                        t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
                     } else {
-                        t.className = "tracker-btn w-9 h-9 m-0.5 rounded border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        // Reset to default (checked logic will re-apply green if needed in checkCompletion or we rely on 'data-answered' attribute)
+                        // To allow green to persist, we need to check data attribute or checkCompletion state
+                        if (t.dataset.isAnswered === "true") {
+                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
+                        } else {
+                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        }
                     }
                 });
                 currentIndex = index;
@@ -503,7 +512,7 @@ function initializeQuizManager(activityData, questionData) {
                 t.addEventListener('click', () => showQuestion(idx));
             });
 
-            // Prev/Next Logic (Attached to all buttons)
+            // Prev/Next Logic
             prevBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (currentIndex > 0) showQuestion(currentIndex - 1);
@@ -524,45 +533,128 @@ function initializeQuizManager(activityData, questionData) {
             questions.forEach(qBlock => {
                 const transBtns = qBlock.querySelectorAll('.trans-tracker-btn');
                 const transBlocks = qBlock.querySelectorAll('.journal-trans-block');
-                
-                transBtns.forEach((btn, idx) => {
-                    btn.addEventListener('click', () => {
-                        // Hide all blocks
-                        transBlocks.forEach(b => b.classList.add('hidden'));
-                        // Show target
-                        const targetId = btn.dataset.targetTrans;
-                        document.getElementById(targetId).classList.remove('hidden');
+                // Select new Previous/Next Transaction buttons
+                const internalPrevBtns = qBlock.querySelectorAll('.btn-prev-trans');
+                const internalNextBtns = qBlock.querySelectorAll('.btn-next-trans');
 
-                        // Update Active State
-                        transBtns.forEach(b => {
-                            b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-                        });
-                        btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
+                // Function to switch transaction
+                const switchTransaction = (idx) => {
+                     // Hide all blocks
+                     transBlocks.forEach(b => b.classList.add('hidden'));
+                     // Show target (Assuming 1-to-1 mapping order)
+                     if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
+
+                     // Update Active State on Sidebar
+                     transBtns.forEach((b, bIdx) => {
+                         if (bIdx === idx) {
+                             b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
+                         } else {
+                             // Check for green status
+                             if (b.dataset.isAnswered === "true") {
+                                 b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
+                             } else {
+                                 b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+                             }
+                         }
+                     });
+                };
+                
+                // Sidebar Clicks
+                transBtns.forEach((btn, idx) => {
+                    btn.addEventListener('click', () => switchTransaction(idx));
+                });
+
+                // Internal Button Clicks (Previous)
+                internalPrevBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetIdx = parseInt(btn.dataset.targetIdx);
+                        switchTransaction(targetIdx);
+                    });
+                });
+
+                // Internal Button Clicks (Next)
+                internalNextBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetIdx = parseInt(btn.dataset.targetIdx);
+                        switchTransaction(targetIdx);
                     });
                 });
             });
         }
     });
 
-    // 4. Input Validation (Unlock Submit Button)
-    // Listens to any change in the form
+    // 4. Input Validation (Unlock Submit Button) & Color Updates
     form.addEventListener('input', checkCompletion);
     
     function checkCompletion() {
         let allAnswered = true;
         
+        // MODIFICATION: Logic to update Tracker Colors to Green
         for (const q of questionData) {
+            let isQuestionAnswered = false;
+
             if (q.type === 'Multiple Choice') {
                 const checked = form.querySelector(`input[name="${q.uiId}"]:checked`);
-                if (!checked) { allAnswered = false; break; }
+                if (checked) isQuestionAnswered = true;
+                else allAnswered = false;
+                
+                // Update Tracker UI
+                const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
+                if (trackerBtn) {
+                    trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
+                    // Only change color if NOT currently active (blue)
+                    if (!trackerBtn.classList.contains('bg-blue-600')) {
+                        if (isQuestionAnswered) {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
+                        } else {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        }
+                    }
+                }
+
             } else if (q.type === 'Problem Solving') {
                 const val = form.querySelector(`textarea[name="${q.uiId}"]`).value;
-                if (!val || val.trim() === '') { allAnswered = false; break; }
+                if (val && val.trim() !== '') isQuestionAnswered = true;
+                else allAnswered = false;
+
+                // Update Tracker UI
+                const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
+                if (trackerBtn) {
+                    trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
+                    if (!trackerBtn.classList.contains('bg-blue-600')) {
+                        if (isQuestionAnswered) {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
+                        } else {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        }
+                    }
+                }
+
             } else if (q.type === 'Journalizing') {
-                const inputs = form.querySelectorAll(`input[name^="${q.uiId}"]`);
-                let hasData = false;
-                inputs.forEach(i => { if(i.value) hasData = true; });
-                if(!hasData) { allAnswered = false; break; } // Very loose check
+                // Check Journaling per transaction
+                const transBtns = document.querySelectorAll(`button[data-target-trans^="${q.uiId}_t"]`);
+                let questionHasData = false;
+                
+                transBtns.forEach(btn => {
+                    const transUiId = btn.dataset.targetTrans; // e.g., s0_q1_t0
+                    const inputs = form.querySelectorAll(`input[name^="${transUiId}"]`);
+                    let transHasData = false;
+                    inputs.forEach(i => { if(i.value) transHasData = true; });
+
+                    btn.dataset.isAnswered = transHasData ? "true" : "false";
+                    if(transHasData) questionHasData = true;
+
+                    // Update Sidebar Item Color (Green if answered, unless active blue)
+                    if (!btn.classList.contains('bg-blue-100')) { // Check active class
+                        if (transHasData) {
+                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
+                        } else {
+                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+                        }
+                    }
+                });
+
+                if(!questionHasData) allAnswered = false; 
             }
         }
 
