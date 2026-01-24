@@ -33,8 +33,8 @@ export async function renderQuizzesAndActivities(containerElement, user) {
                 <i class="fas fa-bars"></i>
             </button>
 
-            <div id="qa-runner-container" class="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                <div class="h-full flex flex-col items-center justify-center text-gray-400">
+            <div id="qa-runner-container" class="flex-1 overflow-y-auto relative">
+                <div class="h-full flex flex-col items-center justify-center text-gray-400 p-4 md:p-8">
                     <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
                     <p>Select an activity from the list to begin.</p>
                 </div>
