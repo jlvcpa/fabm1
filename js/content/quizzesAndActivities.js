@@ -167,6 +167,11 @@ async function generateQuizContent(activityData) {
         html += `
             <div class="test-section">
                 <h3 class="text-xl font-bold text-gray-800 mb-2 border-b pb-2">Test ${index + 1}: ${section.type}</h3>
+                
+                <div class="text-sm text-gray-600 mb-2">
+                    <strong>Topics:</strong> <span class="text-blue-700">${section.topics || 'General'}</span>
+                </div>
+
                 <div class="bg-blue-50 p-3 rounded text-sm text-blue-800 mb-4 italic">
                     <strong>Instructions:</strong> ${section.instructions}
                 </div>
