@@ -36,7 +36,7 @@ export async function renderQuizzesAndActivities(containerElement, user) {
                 <i class="fas fa-bars"></i>
             </button>
 
-            <div id="qa-runner-container" class="flex-1 overflow-y-auto relative bg-gray-100">
+            <div id="qa-runner-container" class="flex-1 overflow-hidden relative bg-gray-100">
                 <div class="h-full flex flex-col items-center justify-center text-gray-400 p-4 md:p-8">
                     <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
                     <p>Select an activity from the list to begin.</p>
@@ -133,9 +133,10 @@ async function renderQuizRunner(data) {
     const generatedContent = await generateQuizContent(data);
 
     // Header with Timer Layout
+    // MODIFICATION: changed form class from 'overflow-hidden' to 'overflow-y-auto' to enable scrolling of stacked content
     container.innerHTML = `
         <div class="flex flex-col h-full bg-gray-100">
-            <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-20">
+            <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
                  <h1 class="text-xl md:text-2xl font-bold truncate pl-2">${data.activityname}</h1>
                  <div class="flex items-center space-x-2 bg-blue-900 px-3 py-1 rounded border border-blue-700">
                     <i class="fas fa-stopwatch text-yellow-400"></i>
@@ -143,7 +144,7 @@ async function renderQuizRunner(data) {
                  </div>
             </div>
             
-            <form id="quiz-form" class="flex-1 flex flex-col overflow-hidden">
+            <form id="quiz-form" class="flex-1 flex flex-col overflow-y-auto relative scrollbar-thin">
                 ${generatedContent.html}
             </form>
         </div>
@@ -164,12 +165,12 @@ async function generateQuizContent(activityData) {
     }
 
     // --- Generate Tabs Header ---
-    tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0 h-14">`;
+    tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap shrink-0 z-20 sticky top-0 shadow-sm">`;
     
     activityData.testQuestions.forEach((section, index) => {
         const isActive = index === 0 ? 'border-blue-800 text-blue-800 bg-blue-50' : 'border-transparent text-gray-600 hover:text-blue-600';
         tabsHtml += `
-            <button type="button" class="tab-btn px-4 py-2 mr-2 font-semibold text-sm border-b-2 transition-colors focus:outline-none ${isActive}" data-target="test-section-${index}">
+            <button type="button" class="tab-btn px-4 py-3 mr-2 font-semibold text-sm border-b-2 transition-colors focus:outline-none ${isActive}" data-target="test-section-${index}">
                 Test ${index + 1}
             </button>
         `;
@@ -177,22 +178,24 @@ async function generateQuizContent(activityData) {
 
     // Add Submit Button to the right end of Tabs
     tabsHtml += `
-        <div class="ml-auto pl-4">
-            <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-6 py-2 rounded shadow transition">
-                Submit Activity
+        <div class="ml-auto pl-4 py-2">
+            <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-4 py-1.5 rounded shadow transition whitespace-nowrap">
+                Submit
             </button>
         </div>
     </div>`;
 
     // --- Generate Sections ---
-    sectionsHtml = `<div class="flex-1 relative overflow-hidden">`; // Container for all sections
+    // MODIFICATION: Removed absolute positioning and flex-1 to allow natural vertical stacking
+    sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
 
     for (const [index, section] of activityData.testQuestions.entries()) {
         const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
         const isHidden = index === 0 ? '' : 'hidden'; // Only show first section initially
 
         // Section Wrapper
-        sectionsHtml += `<div id="test-section-${index}" class="test-section-panel absolute inset-0 flex flex-col md:flex-row ${isHidden}" data-section-type="${section.type}">`;
+        // MODIFICATION: Changed to standard block div (removed inset-0) and use flex-col for stacking
+        sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
         // Fetch Questions Logic
         let questions = [];
@@ -221,9 +224,8 @@ async function generateQuizContent(activityData) {
             }
         }
 
-        // --- Render Content Area (Left/Top) & Tracker Area (Right/Bottom) ---
+        // --- Render Content Area & Tracker Area ---
         
-        // 1. Questions Container
         let questionsHtml = '';
         let trackerHtml = '';
 
@@ -244,7 +246,7 @@ async function generateQuizContent(activityData) {
                 
                 // Tracker Button
                 trackerHtml += `
-                    <button type="button" class="tracker-btn w-10 h-10 m-1 rounded border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
+                    <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
                         ${qIdx + 1}
                     </button>
                 `;
@@ -253,42 +255,46 @@ async function generateQuizContent(activityData) {
                 let innerContent = '';
                 if (section.type === "Multiple Choice") {
                     const opts = q.options ? q.options.map((opt, optIdx) => `
-                        <label class="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-3 shadow-sm">
-                            <input type="radio" name="${uiId}" value="${optIdx}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <span class="text-sm md:text-base text-gray-700">${opt}</span>
+                        <label class="flex items-start p-3 border border-gray-200 rounded hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-2 shadow-sm">
+                            <input type="radio" name="${uiId}" value="${optIdx}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0">
+                            <span class="text-sm text-gray-700">${opt}</span>
                         </label>
                     `).join('') : '';
                     
-                    innerContent = `<div class="flex flex-col">${opts}</div>`;
+                    innerContent = `<div class="flex flex-col mt-2">${opts}</div>`;
                 } else {
                     innerContent = `
-                        <textarea name="${uiId}" class="input-checker w-full p-4 border border-gray-300 rounded-lg h-64 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-none" placeholder="Type your answer here..."></textarea>
+                        <textarea name="${uiId}" class="input-checker w-full mt-2 p-3 border border-gray-300 rounded h-32 md:h-48 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-y" placeholder="Type your answer here..."></textarea>
                     `;
                 }
 
+                // MODIFICATION: Height fits content (h-auto), removed overflow-y-auto internal scroll
                 questionsHtml += `
-                    <div id="${uiId}" class="question-block h-full flex flex-col p-4 md:p-8 overflow-y-auto ${hiddenClass}">
-                        <div class="mb-4">
-                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
-                            <p class="text-lg md:text-xl font-bold text-gray-800 mt-1 leading-relaxed">${q.question}</p>
+                    <div id="${uiId}" class="question-block w-full ${hiddenClass}">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-4">
+                            <div class="mb-2">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
+                                <p class="text-base md:text-lg font-bold text-gray-800 mt-1 leading-snug">${q.question}</p>
+                            </div>
+                            ${innerContent}
+                            
+                            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+                                <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100">
+                                    <i class="fas fa-arrow-left mr-1"></i> Previous
+                                </button>
+                                <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">
+                                    Next <i class="fas fa-arrow-right ml-1"></i>
+                                </button>
+                            </div>
                         </div>
-                        ${innerContent}
                     </div>
                 `;
             } 
             
-            // --- Journalizing Logic (Nested Tracker) ---
+            // --- Journalizing Logic ---
             else {
-                // For Journalizing, the "Question" is the header, but functionality is per-transaction.
-                // We will render ALL questions, but within them, the transactions are navigated.
-                // Note: If multiple Journalizing questions exist, we need outer logic. 
-                // Assuming "One Journalizing Question set" per test usually, but loop handles multiple.
-                
                 const transactions = q.transactions || [];
-                
-                // Wrap the whole journalizing question setup
-                const jHiddenClass = qIdx === 0 ? '' : 'hidden'; // If multiple journal problems, nav between them? 
-                // Let's simplify: If section is Journalizing, usually 1 big problem. If multiple, we treat them as questions.
+                const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
                 
                 // Tracker for Transactions
                 let transTrackerList = '';
@@ -299,11 +305,10 @@ async function generateQuizContent(activityData) {
                     const tHidden = tIdx === 0 ? '' : 'hidden';
                     const tActive = tIdx === 0 ? 'bg-blue-100 border-l-4 border-blue-600 text-blue-800' : 'bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
 
-                    // 1. Transaction Tracker Item
                     transTrackerList += `
                         <button type="button" class="trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none ${tActive}" data-target-trans="${transUiId}">
-                            <div class="font-bold">${trans.date}</div>
-                            <div class="truncate opacity-80">${trans.description}</div>
+                            <div class="font-bold whitespace-nowrap">${trans.date}</div>
+                            <div class="truncate opacity-80 text-xs">${trans.description}</div>
                         </button>
                     `;
 
@@ -313,28 +318,29 @@ async function generateQuizContent(activityData) {
                     for(let r=0; r < rowCount; r++) {
                         rows += `
                         <tr class="border-b border-gray-200 bg-white">
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full h-full p-2 text-center outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="Date"></td>
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full h-full p-2 text-left outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="Account Title"></td>
-                            <td class="p-0 border-r border-gray-300 w-24 md:w-32"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full h-full p-2 text-right outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="0.00"></td>
-                            <td class="p-0 w-24 md:w-32"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full h-full p-2 text-right outline-none bg-transparent font-mono text-xs md:text-sm" placeholder="0.00"></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-center outline-none bg-transparent font-mono text-sm" placeholder="Date"></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder="Account Title"></td>
+                            <td class="p-0 border-r border-gray-300 w-24"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00"></td>
+                            <td class="p-0 w-24"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00"></td>
                         </tr>`;
                     }
 
+                    // MODIFICATION: Removed fixed height, added overflow-x-auto for table
                     transContent += `
-                        <div id="${transUiId}" class="journal-trans-block h-full flex flex-col ${tHidden}">
-                            <div class="bg-blue-50 p-4 rounded-lg mb-6 border border-blue-100">
+                        <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
+                            <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
                                 <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
-                                <p class="text-lg font-bold text-gray-800 mt-1">${trans.description}</p>
-                                <p class="text-sm text-gray-600 mt-1">Date: ${trans.date}</p>
+                                <p class="text-md font-bold text-gray-800">${trans.description}</p>
+                                <p class="text-xs text-gray-600">Date: ${trans.date}</p>
                             </div>
 
-                            <div class="flex-1 overflow-auto border border-gray-300 rounded shadow-sm bg-gray-50">
-                                <table class="w-full border-collapse min-w-[500px]">
-                                    <thead><tr class="bg-gray-200 text-xs text-gray-600 font-bold uppercase border-b border-gray-300 sticky top-0">
+                            <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
+                                <table class="w-full border-collapse min-w-[600px]">
+                                    <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
                                         <th class="py-2 border-r border-gray-300 w-24">Date</th>
                                         <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles</th>
-                                        <th class="py-2 border-r border-gray-300 w-24 md:w-32 text-right pr-2">Debit</th>
-                                        <th class="py-2 w-24 md:w-32 text-right pr-2">Credit</th>
+                                        <th class="py-2 border-r border-gray-300 w-24 text-right pr-2">Debit</th>
+                                        <th class="py-2 w-24 text-right pr-2">Credit</th>
                                     </tr></thead>
                                     <tbody>${rows}</tbody>
                                 </table>
@@ -344,21 +350,26 @@ async function generateQuizContent(activityData) {
                 });
 
                 // Wrap entire journal question
+                // MODIFICATION: Flex-col on mobile, Row on Desktop. No fixed heights.
                 questionsHtml += `
-                    <div id="${uiId}" class="question-block h-full w-full ${jHiddenClass}" data-is-journal="true">
-                        <div class="flex h-full flex-col md:flex-row">
-                             <div class="flex-1 p-4 md:p-6 h-full overflow-hidden flex flex-col">
-                                 <h3 class="font-bold text-gray-800 mb-2 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
-                                 <div class="flex-1 relative">
-                                    ${transContent}
-                                 </div>
+                    <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
+                        <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
+                             <div class="flex-1 p-4 md:p-6 border-b md:border-b-0 md:border-r border-gray-200">
+                                 <h3 class="font-bold text-gray-800 mb-3 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
+                                 ${transContent}
+                                 
+                                 ${questions.length > 1 ? `
+                                 <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
+                                     <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Prev</button>
+                                     <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next</button>
+                                 </div>` : ''}
                              </div>
                              
-                             <div class="w-full md:w-72 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col h-64 md:h-full">
-                                <div class="p-3 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                                    Transactions List
+                             <div class="w-full md:w-64 bg-gray-50 flex flex-col max-h-64 md:max-h-full overflow-y-auto">
+                                <div class="p-2 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200 sticky top-0">
+                                    Transactions
                                 </div>
-                                <div class="flex-1 overflow-y-auto">
+                                <div class="flex-1">
                                     ${transTrackerList}
                                 </div>
                              </div>
@@ -369,42 +380,33 @@ async function generateQuizContent(activityData) {
         });
 
         // Assemble Layout for this Section
+        // MODIFICATION: Combined Question and Tracker into one responsive container.
         if (section.type !== "Journalizing") {
             sectionsHtml += `
-                <div class="flex-1 relative bg-white overflow-hidden flex flex-col">
-                    <div class="flex-1 relative overflow-hidden">
+                <div class="flex flex-col md:flex-row md:items-start gap-4">
+                    <div class="flex-1 min-w-0">
                         ${questionsHtml}
                     </div>
-                    <div class="p-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50">
-                        <button type="button" class="nav-prev-btn px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100 text-gray-700">Previous</button>
-                        <button type="button" class="nav-next-btn px-4 py-2 bg-blue-800 text-white rounded text-sm font-medium hover:bg-blue-900 shadow">Next</button>
-                    </div>
-                </div>
 
-                <div class="w-full md:w-72 bg-gray-100 border-t md:border-t-0 md:border-l border-gray-200 flex flex-col h-auto md:h-full">
-                    <div class="p-3 bg-gray-200 font-bold text-xs text-gray-600 uppercase tracking-wider">
-                        Question Tracker
-                    </div>
-                    <div class="p-3 flex-1 overflow-y-auto flex content-start flex-wrap">
-                        ${trackerHtml}
+                    <div class="w-full md:w-64 shrink-0">
+                        <div class="bg-white rounded shadow-sm border border-gray-200 p-3 sticky top-20">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 pb-1 border-b border-gray-100">
+                                Question Tracker
+                            </div>
+                            <div class="flex flex-wrap content-start">
+                                ${trackerHtml}
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
         } else {
-            // Journalizing already has internal tracker structure built in 'questionsHtml' loop
-            // But we need the prev/next for switching between multiple Journal problems if they exist
-             sectionsHtml += `
-                <div class="flex-1 relative bg-white overflow-hidden flex flex-col">
-                    <div class="flex-1 relative overflow-hidden">
-                        ${questionsHtml}
-                    </div>
-                    ${ questions.length > 1 ? `
-                    <div class="p-4 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50">
-                        <button type="button" class="nav-prev-btn px-4 py-2 bg-white border border-gray-300 rounded text-sm font-medium hover:bg-gray-100">Previous Problem</button>
-                        <button type="button" class="nav-next-btn px-4 py-2 bg-blue-800 text-white rounded text-sm font-medium hover:bg-blue-900 shadow">Next Problem</button>
-                    </div>` : ''}
+            // Journaling handles its own internal layout, just output the html
+            sectionsHtml += `
+                <div class="w-full">
+                    ${questionsHtml}
                 </div>
-             `;
+            `;
         }
 
         sectionsHtml += `</div>`; // End Section Wrapper
@@ -474,8 +476,9 @@ function initializeQuizManager(activityData, questionData) {
         if (type !== 'Journalizing') {
             const questions = section.querySelectorAll('.question-block');
             const trackers = section.querySelectorAll('.tracker-btn');
-            const prevBtn = section.querySelector('.nav-prev-btn');
-            const nextBtn = section.querySelector('.nav-next-btn');
+            // Nav buttons are now inside each question block, so we select them all
+            const prevBtns = section.querySelectorAll('.nav-prev-btn');
+            const nextBtns = section.querySelectorAll('.nav-next-btn');
             
             let currentIndex = 0;
 
@@ -487,11 +490,9 @@ function initializeQuizManager(activityData, questionData) {
                 // Update tracker
                 trackers.forEach((t, i) => {
                     if (i === index) {
-                        t.className = "tracker-btn w-10 h-10 m-1 rounded border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
+                        t.className = "tracker-btn w-9 h-9 m-0.5 rounded border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
                     } else {
-                        // Check if answered (simple check)
-                        // This logic can be expanded, currently just resets styling
-                        t.className = "tracker-btn w-10 h-10 m-1 rounded border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        t.className = "tracker-btn w-9 h-9 m-0.5 rounded border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
                     }
                 });
                 currentIndex = index;
@@ -502,19 +503,22 @@ function initializeQuizManager(activityData, questionData) {
                 t.addEventListener('click', () => showQuestion(idx));
             });
 
-            // Prev/Next
-            if(prevBtn) prevBtn.addEventListener('click', () => {
-                if (currentIndex > 0) showQuestion(currentIndex - 1);
+            // Prev/Next Logic (Attached to all buttons)
+            prevBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (currentIndex > 0) showQuestion(currentIndex - 1);
+                });
             });
-            if(nextBtn) nextBtn.addEventListener('click', () => {
-                if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
+            
+            nextBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
+                });
             });
         } 
         
         // --- Journalizing Navigation (Internal Transactions) ---
         else if (type === 'Journalizing') {
-            // Handle Navigation between multiple journal problems if they exist (rare)
-            // Focus: Handle Transaction Clicking
             const questions = section.querySelectorAll('.question-block');
             
             questions.forEach(qBlock => {
@@ -547,10 +551,6 @@ function initializeQuizManager(activityData, questionData) {
     function checkCompletion() {
         let allAnswered = true;
         
-        // Check standard inputs (Radio/Textarea)
-        // This is a simplified check. For strict "All Answered", we iterate `questionData`
-        // and check if specific fields related to them have values.
-        
         for (const q of questionData) {
             if (q.type === 'Multiple Choice') {
                 const checked = form.querySelector(`input[name="${q.uiId}"]:checked`);
@@ -559,10 +559,6 @@ function initializeQuizManager(activityData, questionData) {
                 const val = form.querySelector(`textarea[name="${q.uiId}"]`).value;
                 if (!val || val.trim() === '') { allAnswered = false; break; }
             } else if (q.type === 'Journalizing') {
-                // Check if at least one row in every transaction has data? 
-                // Or just check that inputs exist. 
-                // Strict check: Ensure at least one debit/credit is entered per transaction.
-                // Loose check for UI enabling:
                 const inputs = form.querySelectorAll(`input[name^="${q.uiId}"]`);
                 let hasData = false;
                 inputs.forEach(i => { if(i.value) hasData = true; });
