@@ -588,10 +588,9 @@ async function generateQuizContent(activityData) {
                              <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
                                  ${stickyHeader}
                                  
-                                 <div class="p-4 md:p-6 flex-1">
-                                     <h3 class="font-bold text-gray-800 mb-3 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
+                                 <div class="p-4 md:p-2 flex-1">
                                      ${transContent}
-                                     
+                                   
                                      ${questions.length > 1 ? `
                                      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
                                          <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
