@@ -553,14 +553,14 @@ async function generateQuizContent(activityData) {
                         <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
                             <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
                                 <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
-                                <p class="text-md font-bold text-gray-800">${trans.description}</p>
+                                <p class="text-md font-bold text-gray-800">${trans.date} ${trans.description}</p>
                                 <p class="text-xs text-gray-600">Date: ${trans.date}</p>
                             </div>
 
                             <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
                                 <table class="w-full border-collapse min-w-[600px]">
                                     <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
-                                        <th class="py-2 border-r border-gray-300 w-24">Date</th>
+                                        <th class="py-2 border-r border-gray-300 w-24 text-right">Date</th>
                                         <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles</th>
                                         <th class="py-2 border-r border-gray-300 w-24 text-right pr-2">Debit</th>
                                         <th class="py-2 w-24 text-right pr-2">Credit</th>
