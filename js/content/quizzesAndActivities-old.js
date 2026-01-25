@@ -247,24 +247,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             return aIdx - bIdx;
         });
 
-        // Sticky Header Data
-        const instructionText = section.instructions || "Refer to specific question details.";
-        const stickyHeaderHtml = `
-            <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                <div class="flex flex-col gap-.5 text-xs text-gray-700">
-                    <div class="border-b pb-1">
-                        <span class="font-bold text-blue-800">Topic:</span> ${section.topics || 'N/A'}
-                    </div>
-                    <div class="border-b pb-1">
-                        <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
-                    </div>
-                    <div class="border-b pb-1">
-                        <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                    </div>
-                </div>
-            </div>
-        `;
-
         // Section Title
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
             <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>`;
@@ -275,6 +257,30 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
         sectionQuestions.forEach((q, qIdx) => {
             const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : null;
+
+            // --- FIXED: DYNAMIC HEADER LOGIC ---
+            // For Journalizing, prioritize specific question instructions (q.instructions).
+            // Fallback to section instructions if q.instructions is missing.
+            const instructionText = (section.type === 'Journalizing' && q.instructions) 
+                ? q.instructions 
+                : (section.instructions || "Refer to specific question details.");
+
+            const stickyHeaderHtml = `
+                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics || 'N/A'}
+                        </div>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
+                        </div>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            // -----------------------------------
             
             // --- 1. MULTIPLE CHOICE ---
             if (section.type === "Multiple Choice") {
@@ -325,7 +331,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         </div>
                     </div>`;
 
-            // --- 3. JOURNALIZING (UPDATED) ---
+            // --- 3. JOURNALIZING ---
             } else if (section.type === "Journalizing") {
                 let transactionsHtml = '';
                 const transactions = q.transactions || [];
@@ -422,7 +428,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     `;
                 });
 
-                // REMOVED: questionText paragraph block for Journalizing as requested
                 contentHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                          ${stickyHeaderHtml}
@@ -563,7 +568,8 @@ async function generateQuizContent(activityData) {
                 correctAnswer: q.answer || q.solution,
                 options: q.options || [],
                 explanation: q.explanation || '',
-                transactions: q.transactions || []
+                transactions: q.transactions || [],
+                instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
             });
 
             // --- Sticky Info Header Content ---
@@ -1032,7 +1038,8 @@ async function submitQuiz(activityData, questionData, user) {
             explanation: q.explanation,
             type: q.type,
             options: q.options || null,
-            transactions: q.transactions || null
+            transactions: q.transactions || null,
+            instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
         };
 
         // 2. Capture Student Answer
