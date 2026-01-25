@@ -344,20 +344,34 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 sectionBodyHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                         ${stickyHeaderHtml}
-                        <div class="p-4">
-                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                            <div class="mb-2">
-                                <p class="text-xs font-bold text-blue-600">Your Answer:</p>
-                                <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer || "No Answer"}</div>
-                            </div>
-                            <div class="mb-2">
-                                <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                                <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer || "N/A"}</div>
-                            </div>
-                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
-                            </div>
-                        </div>
+                        <div class="p-4 space-y-4">
+    <!-- Question -->
+    <p class="font-bold text-gray-800">${qIdx+1}. ${q.questionText}</p>
+
+    <!-- Student Answer -->
+    <div class="space-y-1">
+        <p class="text-xs font-bold text-blue-600">Your Answer:</p>
+        <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">
+            ${studentAnswer || "No Answer"}
+        </div>
+    </div>
+
+    <!-- Correct Answer -->
+    <div class="space-y-1">
+        <p class="text-xs font-bold text-green-600">Answer Key:</p>
+        <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">
+            ${q.correctAnswer || "N/A"}
+        </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="space-y-1">
+        <p class="text-xs font-bold text-gray-600">Explanation:</p>
+        <div class="bg-gray-50 p-2 rounded text-xs text-gray-700 whitespace-pre-wrap">
+            ${q.explanation || "No explanation provided."}
+        </div>
+    </div>
+</div>
                     </div>`;
 
             // --- 3. JOURNALIZING (FIXED LAYOUT) ---
