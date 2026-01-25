@@ -206,7 +206,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
     let contentHtml = '';
     
-    // ENHANCEMENT: Use the saved questions in resultData instead of fetching randomly again
+    // Use the saved questions in resultData
     const savedQuestions = resultData.questionsTaken || {};
 
     // Group saved questions by section index (s0, s1, etc.)
@@ -228,19 +228,36 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             return aIdx - bIdx;
         });
 
-        // Generate Section HTML
+        // Sticky Header Data
+        const instructionText = section.instructions || "Refer to specific question details.";
+        const stickyHeaderHtml = `
+            <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                <div class="flex flex-col gap-.5 text-xs text-gray-700">
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Topic:</span> ${section.topics || 'N/A'}
+                    </div>
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
+                    </div>
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Section Title
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
-            <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>
-            `;
+            <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>`;
 
         if (sectionQuestions.length === 0) {
             contentHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
         }
 
         sectionQuestions.forEach((q, qIdx) => {
-            const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : "No Answer";
+            const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : null;
             
-            // Render logic based on type
+            // --- 1. MULTIPLE CHOICE ---
             if (section.type === "Multiple Choice") {
                 const optionsHtml = (q.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
@@ -257,52 +274,146 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 }).join('');
 
                 contentHtml += `
-                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                        <div class="mb-3">${optionsHtml}</div>
-                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                            <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
+                        ${stickyHeaderHtml}
+                        <div class="p-4">
+                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
+                            <div class="mb-3">${optionsHtml}</div>
+                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
+            
+            // --- 2. PROBLEM SOLVING ---
             } else if (section.type === "Problem Solving") {
                 contentHtml += `
-                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                        <div class="mb-2">
-                            <p class="text-xs font-bold text-blue-600">Your Answer:</p>
-                            <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer}</div>
+                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
+                        ${stickyHeaderHtml}
+                        <div class="p-4">
+                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
+                            <div class="mb-2">
+                                <p class="text-xs font-bold text-blue-600">Your Answer:</p>
+                                <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer || "No Answer"}</div>
+                            </div>
+                            <div class="mb-2">
+                                <p class="text-xs font-bold text-green-600">Answer Key:</p>
+                                <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer || "N/A"}</div>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                            </div>
                         </div>
-                        <div class="mb-2">
-                            <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                            <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer}</div>
-                        </div>
-                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                            <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
-                        </div>
-                    </div>
-                `;
+                    </div>`;
+
+            // --- 3. JOURNALIZING (CORRECTED) ---
             } else if (section.type === "Journalizing") {
-                // Simplified preview for Journalizing
+                let transactionsHtml = '';
+                const transactions = q.transactions || [];
+
+                transactions.forEach((trans, tIdx) => {
+                    
+                    // --- A. Build Student Answer Table ---
+                    const rowCount = trans.rows || 2;
+                    let studentRowsHtml = '';
+                    
+                    for(let r=0; r < rowCount; r++) {
+                        // FIX: Key must match "t0_r0" format from JSON
+                        const cellKey = `t${tIdx}_r${r}`; 
+                        const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
+
+                        studentRowsHtml += `
+                        <tr class="border-b border-gray-100 bg-white">
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle">${cellData.date || ''}</td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left h-8 align-middle whitespace-pre-wrap">${cellData.acct || ''}</td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle">${cellData.dr || ''}</td>
+                            <td class="p-1.5 font-mono text-xs text-right h-8 align-middle">${cellData.cr || ''}</td>
+                        </tr>`;
+                    }
+
+                    // --- B. Build Correct Solution Table ---
+                    let solutionRowsHtml = '';
+                    // The solution is inside the transaction object in the JSON
+                    if (trans.solution && Array.isArray(trans.solution)) {
+                        trans.solution.forEach(solRow => {
+                            if (solRow.isExplanation) {
+                                // Formatting for Explanation Row
+                                solutionRowsHtml += `
+                                <tr class="border-b border-gray-100 bg-green-50/30">
+                                    <td class="p-1.5 border-r border-green-100"></td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left italic text-gray-500 pl-4">(${solRow.account})</td>
+                                    <td class="p-1.5 border-r border-green-100"></td>
+                                    <td class="p-1.5"></td>
+                                </tr>`;
+                            } else {
+                                // Formatting for Account Entry Row
+                                solutionRowsHtml += `
+                                <tr class="border-b border-gray-100 bg-white">
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${solRow.date || ''}</td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left font-semibold text-gray-800">${solRow.account || ''}</td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${solRow.debit ? Number(solRow.debit).toLocaleString() : ''}</td>
+                                    <td class="p-1.5 font-mono text-xs text-right text-gray-800">${solRow.credit ? Number(solRow.credit).toLocaleString() : ''}</td>
+                                </tr>`;
+                            }
+                        });
+                    } else {
+                        solutionRowsHtml = '<tr><td colspan="4" class="p-2 text-center text-xs italic text-gray-400">No solution key available.</td></tr>';
+                    }
+
+                    // Combine Side-by-Side View
+                    transactionsHtml += `
+                        <div class="mb-6 border border-gray-300 rounded overflow-hidden">
+                            <div class="bg-gray-100 px-3 py-2 border-b border-gray-300">
+                                <span class="font-bold text-gray-700 text-sm">Transaction ${tIdx + 1}:</span>
+                                <span class="text-xs text-gray-600 ml-2 italic">${trans.date} - ${trans.description}</span>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-300">
+                                <div>
+                                    <div class="bg-blue-50 py-1 px-3 text-[10px] font-bold text-blue-800 uppercase border-b border-blue-100">Your Answer</div>
+                                    <table class="w-full border-collapse">
+                                        <thead>
+                                            <tr class="bg-gray-50 text-[10px] text-gray-500 uppercase border-b border-gray-200">
+                                                <th class="py-1 px-1 w-12 text-right">Date</th>
+                                                <th class="py-1 px-2 text-left">Account</th>
+                                                <th class="py-1 px-1 w-16 text-right">Dr</th>
+                                                <th class="py-1 px-1 w-16 text-right">Cr</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${studentRowsHtml}</tbody>
+                                    </table>
+                                </div>
+
+                                <div>
+                                    <div class="bg-green-50 py-1 px-3 text-[10px] font-bold text-green-800 uppercase border-b border-green-100">Standard Solution</div>
+                                    <table class="w-full border-collapse">
+                                        <thead>
+                                            <tr class="bg-green-50/50 text-[10px] text-green-700 uppercase border-b border-green-100">
+                                                <th class="py-1 px-1 w-12 text-right">Date</th>
+                                                <th class="py-1 px-2 text-left">Account</th>
+                                                <th class="py-1 px-1 w-16 text-right">Dr</th>
+                                                <th class="py-1 px-1 w-16 text-right">Cr</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${solutionRowsHtml}</tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
                 contentHtml += `
-                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${q.questionText || 'Journal Entry'}</p>
-                        <div class="p-2 bg-gray-100 rounded text-sm text-center italic text-gray-500">
-                            Journal entry preview details are complex to render here. <br>
-                            Please refer to the Answer Key below.
+                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
+                         ${stickyHeaderHtml}
+                        <div class="p-4">
+                            <p class="font-bold text-gray-800 mb-4 text-md border-b pb-2">${q.questionText || 'Journalizing Activity'}</p>
+                            ${transactionsHtml}
                         </div>
-                        <div class="mt-2">
-                             <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                             <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">
-                                 Check standard solution provided in class or click to view details if available.
-                             </div>
-                        </div>
-                    </div>
-                `;
+                    </div>`;
             }
         });
-        
-        contentHtml += `</div>`;
+        contentHtml += `</div>`; // End Section
     });
 
     // Render Full Preview Layout
@@ -310,7 +421,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
     
     container.innerHTML = `
         <div class="h-full bg-gray-100 overflow-y-auto p-4 md:p-8">
-            <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
                 <div class="bg-blue-900 text-white p-6 text-center">
                     <h1 class="text-2xl font-bold uppercase tracking-wider">FABM 1</h1>
                     <h2 class="text-xl font-semibold mt-1">${activityData.activityname}</h2>
@@ -332,7 +443,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     </div>
                 </div>
 
-                <div class="p-6">
+                <div class="p-6 bg-gray-50/50">
                     ${contentHtml}
                 </div>
                 
@@ -542,10 +653,10 @@ async function generateQuizContent(activityData) {
                     for(let r=0; r < rowCount; r++) {
                         rows += `
                         <tr class="border-b border-gray-200 bg-white">
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-center outline-none bg-transparent font-mono text-sm" placeholder="Date"></td>
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder="Account Title"></td>
-                            <td class="p-0 border-r border-gray-300 w-24"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00"></td>
-                            <td class="p-0 w-24"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00"></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-24"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
+                            <td class="p-0 w-24"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
                         </tr>`;
                     }
 
@@ -553,8 +664,7 @@ async function generateQuizContent(activityData) {
                         <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
                             <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
                                 <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
-                                <p class="text-md font-bold text-gray-800">${trans.description}</p>
-                                <p class="text-xs text-gray-600">Date: ${trans.date}</p>
+                                <p class="text-md font-bold text-gray-800">${trans.date} ${trans.description}</p>
                             </div>
 
                             <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
@@ -588,10 +698,9 @@ async function generateQuizContent(activityData) {
                              <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
                                  ${stickyHeader}
                                  
-                                 <div class="p-4 md:p-6 flex-1">
-                                     <h3 class="font-bold text-gray-800 mb-3 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
+                                 <div class="p-4 md:p-2 flex-1">
                                      ${transContent}
-                                     
+                                   
                                      ${questions.length > 1 ? `
                                      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
                                          <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
