@@ -1,7 +1,7 @@
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
 // Added Import as requested
-import { getLetterGrade } from "../utils.js"; 
+import { getLetterGrade } from "./utils.js"; 
 
 const firebaseConfig = {
     apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
@@ -208,7 +208,6 @@ async function renderQuizRunner(data, user) {
     initializeQuizManager(data, generatedContent.data, user);
 }
 
-// --- RESULT PREVIEW GENERATOR ---
 // --- RESULT PREVIEW GENERATOR ---
 async function renderQuizResultPreview(activityData, user, resultData) {
     const container = document.getElementById('qa-runner-container');
@@ -464,24 +463,26 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
                         const checkMark = '<i class="fas fa-check text-green-600 text-[10px] ml-1"></i>';
 
-                        // REMOVED 'h-8' FROM ALL TD ELEMENTS TO ALLOW WRAPPING
+                        // --- MODIFIED LAYOUT ---
+                        // For DATE, DR, CR: checkMark is on LEFT (absolute left-0)
+                        // For ACCT: checkMark is on RIGHT (absolute right-0)
                         studentRowsHtml += `
                         <tr class="border-b border-gray-100 bg-white">
                             <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right align-middle relative">
+                                ${dateValid ? `<span class="absolute top-0 left-0 pl-1">${checkMark}</span>` : ''}
                                 ${cellData.date}
-                                ${dateValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
                             <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left align-middle whitespace-pre-wrap relative">
                                 ${cellData.acct}
-                                ${acctValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
+                                ${acctValid ? `<span class="absolute top-0 right-0 pr-1">${checkMark}</span>` : ''}
                             </td>
                             <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right align-middle relative">
+                                ${drValid ? `<span class="absolute top-0 left-0 pl-1">${checkMark}</span>` : ''}
                                 ${cellData.dr}
-                                ${drValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
                             <td class="p-1.5 font-mono text-xs text-right align-middle relative">
+                                ${crValid ? `<span class="absolute top-0 left-0 pl-1">${checkMark}</span>` : ''}
                                 ${cellData.cr}
-                                ${crValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
                         </tr>`;
                     }
