@@ -248,8 +248,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         });
 
         // Sticky Header Data
-        const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : (section.instructions || "Refer to specific question details.");
-
+        const instructionText = section.instructions || "Refer to specific question details.";
         const stickyHeaderHtml = `
             <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
                 <div class="flex flex-col gap-.5 text-xs text-gray-700">
@@ -326,7 +325,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         </div>
                     </div>`;
 
-            // --- 3. JOURNALIZING (CORRECTED) ---
+            // --- 3. JOURNALIZING (UPDATED) ---
             } else if (section.type === "Journalizing") {
                 let transactionsHtml = '';
                 const transactions = q.transactions || [];
@@ -338,7 +337,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     let studentRowsHtml = '';
                     
                     for(let r=0; r < rowCount; r++) {
-                        // FIX: Key must match "t0_r0" format from JSON
+                        // Key must match "t0_r0" format from JSON
                         const cellKey = `t${tIdx}_r${r}`; 
                         const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
 
@@ -423,6 +422,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     `;
                 });
 
+                // REMOVED: questionText paragraph block for Journalizing as requested
                 contentHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                          ${stickyHeaderHtml}
@@ -475,7 +475,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         </div>
     `;
 }
-
 
 // --- CONTENT GENERATOR ---
 async function generateQuizContent(activityData) {
