@@ -1,5 +1,7 @@
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+// Added Import as requested
+import { getLetterGrade } from "../utils.js"; 
 
 const firebaseConfig = {
     apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
@@ -74,7 +76,6 @@ async function loadStudentActivities(user) {
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
-            // Store ID in data object for easier access
             data.id = docSnap.id; 
             
             // --- ENHANCEMENT: SECTION FILTERING ---
@@ -107,14 +108,11 @@ async function loadStudentActivities(user) {
             `;
 
             card.onclick = () => {
-                // MODIFIED: We allow clicking even if expired so renderQuizRunner can check for results.
-                // We only block strictly future activities here.
                 if (isFuture) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
                 } else {
-                    if(quizTimerInterval) clearInterval(quizTimerInterval); // Clear any existing timer
+                    if(quizTimerInterval) clearInterval(quizTimerInterval); 
                     renderQuizRunner(data, user);
-                    // Close mobile sidebar if open
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
             };
@@ -122,7 +120,6 @@ async function loadStudentActivities(user) {
             listContainer.appendChild(card);
         });
         
-        // Handle case where filtering resulted in empty list
         if (listContainer.innerHTML === '') {
              listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
         }
@@ -140,7 +137,6 @@ async function renderQuizRunner(data, user) {
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
     
     // 1. ACCESS CONTROL CHECK
-    // Check if user is in the student list for this activity
     if (data.students && !data.students.includes(user.Idnumber)) {
         container.innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
@@ -162,7 +158,6 @@ async function renderQuizRunner(data, user) {
         const resultDoc = await getDoc(doc(db, collectionName, docId));
         
         if (resultDoc.exists()) {
-            // Student has already answered -> Render PREVIEW
             await renderQuizResultPreview(data, user, resultDoc.data());
             return;
         }
@@ -170,8 +165,7 @@ async function renderQuizRunner(data, user) {
         console.error("Error checking submission:", e);
     }
 
-    // --- NEW CHECK: BLOCK EXPIRED IF NO SUBMISSION FOUND ---
-    // If we reached here, no submission exists. Check if time has passed.
+    // 3. CHECK EXPIRED
     const now = new Date();
     const expireTime = new Date(data.dateTimeExpire);
 
@@ -189,15 +183,12 @@ async function renderQuizRunner(data, user) {
         `;
         return;
     }
-    // -------------------------------------------------------
 
-    // 3. START QUIZ (No submission found and time is valid)
+    // 4. START QUIZ
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
-    // Generate Questions
     const generatedContent = await generateQuizContent(data);
 
-    // Header with Timer Layout
     container.innerHTML = `
         <div class="flex flex-col h-full bg-gray-100">
             <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
@@ -214,7 +205,6 @@ async function renderQuizRunner(data, user) {
         </div>
     `;
 
-    // Initialize Logic (Timer, Tabs, Pagination, Validation)
     initializeQuizManager(data, generatedContent.data, user);
 }
 
@@ -225,42 +215,114 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
     let contentHtml = '';
     
-    // Use the saved questions in resultData
-    const savedQuestions = resultData.questionsTaken || {};
+    // Legacy Polyfill
+    let savedQuestions = resultData.questionsTaken;
+    if (!savedQuestions || Object.keys(savedQuestions).length === 0) {
+        savedQuestions = {};
+        const answers = resultData.answers || {};
+        
+        const ensureQ = (key, type) => {
+            if (!savedQuestions[key]) {
+                savedQuestions[key] = {
+                    uiId: key,
+                    type: type,
+                    questionText: "Legacy Submission",
+                    correctAnswer: "N/A",
+                    explanation: "Details not available",
+                    options: [], 
+                    transactions: [],
+                    instructions: null
+                };
+            }
+            return savedQuestions[key];
+        };
 
-    // Group saved questions by section index (s0, s1, etc.)
+        Object.keys(answers).forEach(k => {
+            const parts = k.split('_'); 
+            if (parts.length < 2) return;
+            const sectionIdx = parseInt(parts[0].replace('s',''));
+            const qKey = `${parts[0]}_${parts[1]}`;
+            const sectionType = activityData.testQuestions[sectionIdx] ? activityData.testQuestions[sectionIdx].type : 'Unknown';
+            const qObj = ensureQ(qKey, sectionType);
+
+            if (sectionType === 'Journalizing' && parts.length >= 4) {
+                const tIdx = parseInt(parts[2].replace('t',''));
+                const rIdx = parseInt(parts[3].replace('r',''));
+                if (!qObj.transactions[tIdx]) qObj.transactions[tIdx] = { date: `Trans ${tIdx+1}`, description: "Legacy", rows: 0 };
+                if (rIdx >= qObj.transactions[tIdx].rows) qObj.transactions[tIdx].rows = rIdx + 1;
+            } 
+        });
+    }
+
     const questionsBySection = {};
     Object.keys(savedQuestions).forEach(key => {
-        // Key format: s0_q1
-        const sectionIdx = key.split('_')[0].replace('s',''); // 0
+        const sectionIdx = key.split('_')[0].replace('s',''); 
         if(!questionsBySection[sectionIdx]) questionsBySection[sectionIdx] = [];
         questionsBySection[sectionIdx].push({ uiId: key, ...savedQuestions[key] });
     });
 
+    // --- RENDER SECTIONS ---
     activityData.testQuestions.forEach((section, index) => {
         const sectionQuestions = questionsBySection[index] || [];
         
-        // Sort questions by their q index to maintain order (q0, q1, q2...)
         sectionQuestions.sort((a, b) => {
             const aIdx = parseInt(a.uiId.split('_')[1].replace('q',''));
             const bIdx = parseInt(b.uiId.split('_')[1].replace('q',''));
             return aIdx - bIdx;
         });
 
-        // Section Title
-        contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
-            <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>`;
+        // SCORING LOGIC FOR THIS SECTION
+        let sectionScore = 0;
+        let sectionMaxScore = 0;
+
+        // PRE-CALCULATE SCORE TO DISPLAY IN HEADER
+        // Note: For journalizing, score is calculated per valid row/field match
+        sectionQuestions.forEach(q => {
+             const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : null;
+             
+             if(section.type === "Multiple Choice") {
+                 sectionMaxScore++;
+                 if(String(studentAnswer) === String(q.correctAnswer)) sectionScore++;
+             } 
+             else if(section.type === "Problem Solving") {
+                 sectionMaxScore++;
+                 // Simple exact match for now, or Teacher needs to grade manually
+                 if(studentAnswer && q.correctAnswer && studentAnswer.trim() === q.correctAnswer.trim()) sectionScore++;
+             }
+             else if(section.type === "Journalizing") {
+                 const transactions = q.transactions || [];
+                 transactions.forEach(trans => {
+                     const solRows = trans.solution || [];
+                     solRows.forEach((sol, rIdx) => {
+                         if(sol.isExplanation) {
+                             sectionMaxScore++; // 1 point for indentation check
+                             // Logic handled below in render
+                         } else {
+                             sectionMaxScore += 4; // Date, Account, Dr, Cr
+                             // Logic handled below
+                         }
+                     });
+                 });
+             }
+        });
+
+        // Actual scoring is complex for Journalizing, so we will calculate it dynamically during render 
+        // and update the header DOM element later, or calculate inline.
+        // For simplicity in this layout, we will accumulate points as we generate HTML.
+        
+        // Reset counters for the HTML generation loop
+        sectionScore = 0;
+        sectionMaxScore = 0;
+
+        let sectionBodyHtml = '';
 
         if (sectionQuestions.length === 0) {
-            contentHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
+            sectionBodyHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
         }
 
         sectionQuestions.forEach((q, qIdx) => {
             const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : null;
 
-            // --- FIXED: DYNAMIC HEADER LOGIC ---
-            // For Journalizing, prioritize specific question instructions (q.instructions).
-            // Fallback to section instructions if q.instructions is missing.
             const instructionText = (section.type === 'Journalizing' && q.instructions) 
                 ? q.instructions 
                 : (section.instructions || "Refer to specific question details.");
@@ -280,25 +342,28 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     </div>
                 </div>
             `;
-            // -----------------------------------
             
             // --- 1. MULTIPLE CHOICE ---
             if (section.type === "Multiple Choice") {
+                sectionMaxScore++;
+                const isCorrect = String(studentAnswer) === String(q.correctAnswer);
+                if(isCorrect) sectionScore++;
+
                 const optionsHtml = (q.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
-                    const isCorrect = String(q.correctAnswer) === String(optIdx); 
+                    const isOptCorrect = String(q.correctAnswer) === String(optIdx); 
                     
                     let bgClass = "bg-white border-gray-200";
                     let icon = "";
                     
-                    if (isSelected && isCorrect) { bgClass = "bg-green-100 border-green-400 font-bold text-green-800"; icon = '<i class="fas fa-check text-green-600 ml-auto"></i>'; }
-                    else if (isSelected && !isCorrect) { bgClass = "bg-red-100 border-red-400 text-red-800"; icon = '<i class="fas fa-times text-red-600 ml-auto"></i>'; }
-                    else if (!isSelected && isCorrect) { bgClass = "bg-green-50 border-green-300 text-green-800 border-dashed"; icon = '<i class="fas fa-check text-green-600 ml-auto opacity-50"></i>'; }
+                    if (isSelected && isOptCorrect) { bgClass = "bg-green-100 border-green-400 font-bold text-green-800"; icon = '<i class="fas fa-check text-green-600 ml-auto"></i>'; }
+                    else if (isSelected && !isOptCorrect) { bgClass = "bg-red-100 border-red-400 text-red-800"; icon = '<i class="fas fa-times text-red-600 ml-auto"></i>'; }
+                    else if (!isSelected && isOptCorrect) { bgClass = "bg-green-50 border-green-300 text-green-800 border-dashed"; icon = '<i class="fas fa-check text-green-600 ml-auto opacity-50"></i>'; }
 
                     return `<div class="p-2 border rounded mb-1 text-sm flex items-center ${bgClass}">${opt} ${icon}</div>`;
                 }).join('');
 
-                contentHtml += `
+                sectionBodyHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                         ${stickyHeaderHtml}
                         <div class="p-4">
@@ -312,7 +377,11 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             
             // --- 2. PROBLEM SOLVING ---
             } else if (section.type === "Problem Solving") {
-                contentHtml += `
+                sectionMaxScore++;
+                const isCorrect = studentAnswer && q.correctAnswer && studentAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+                if(isCorrect) sectionScore++;
+
+                sectionBodyHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                         ${stickyHeaderHtml}
                         <div class="p-4">
@@ -331,53 +400,165 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         </div>
                     </div>`;
 
-            // --- 3. JOURNALIZING ---
+            // --- 3. JOURNALIZING (ENHANCED SCORING) ---
             } else if (section.type === "Journalizing") {
                 let transactionsHtml = '';
                 const transactions = q.transactions || [];
 
                 transactions.forEach((trans, tIdx) => {
-                    
-                    // --- A. Build Student Answer Table ---
                     const rowCount = trans.rows || 2;
                     let studentRowsHtml = '';
-                    
+                    let solutionRowsHtml = ''; // Re-building solution to match strict format
+
+                    // Prepare Solution Data to compare against
+                    const solRows = trans.solution || [];
+
+                    // --- Build Student Answer Table WITH SCORING ---
                     for(let r=0; r < rowCount; r++) {
-                        // Key must match "t0_r0" format from JSON
                         const cellKey = `t${tIdx}_r${r}`; 
                         const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
+                        
+                        // Get corresponding solution row for validation
+                        const solRow = solRows[r] || null;
+
+                        // Validation Flags
+                        let dateValid = false;
+                        let acctValid = false;
+                        let drValid = false;
+                        let crValid = false;
+                        
+                        // === DATE VALIDATION ===
+                        // Logic: First transaction (tIdx 0) must be Mmm d/dd. Subsequent (tIdx > 0) d/dd.
+                        // Strictly Row 0 of the table gets the date.
+                        if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
+                             sectionMaxScore++;
+                             const sDate = cellData.date.trim();
+                             if (r === 0) {
+                                 const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
+                                 if (sDate.match(expectedRegex) && sDate === solRow.date) {
+                                     dateValid = true;
+                                     sectionScore++;
+                                 }
+                             } else {
+                                 // Non-first rows should be empty
+                                 if (sDate === '') { dateValid = true; sectionScore++; }
+                             }
+                        }
+
+                        // === ACCOUNT / EXPLANATION VALIDATION ===
+                        if (solRow) {
+                             sectionMaxScore++;
+                             const sAcct = cellData.acct; // Raw input (preserved spaces)
+                             
+                             if (solRow.isExplanation) {
+                                 // Requirement: 5 to 8 spaces indentation. Content ignored.
+                                 if (sAcct.match(/^\s{5,8}\S/)) {
+                                     acctValid = true;
+                                     sectionScore++;
+                                 }
+                             } else {
+                                 // Check Indentation: Debit (0 spaces), Credit (3-5 spaces)
+                                 // AND Check Content Match
+                                 const cleanInput = sAcct.trim();
+                                 const cleanSol = solRow.account.trim();
+                                 const contentMatch = cleanInput.toLowerCase() === cleanSol.toLowerCase();
+
+                                 if (contentMatch) {
+                                     if (solRow.credit) {
+                                         // Expect 3-5 spaces
+                                         if (sAcct.match(/^\s{3,5}\S/)) { acctValid = true; sectionScore++; }
+                                     } else {
+                                         // Expect 0 spaces (Debit)
+                                         if (sAcct.match(/^\S/)) { acctValid = true; sectionScore++; }
+                                     }
+                                 }
+                             }
+                        }
+
+                        // === DEBIT AMOUNT VALIDATION ===
+                        if (solRow && !solRow.isExplanation) {
+                            sectionMaxScore++;
+                            const sDr = cellData.dr.trim();
+                            const cleanSolDr = solRow.debit ? Number(solRow.debit).toFixed(2) : "";
+                            
+                            if (cleanSolDr === "") {
+                                if(sDr === "") { drValid = true; sectionScore++; }
+                            } else {
+                                // No comma, 2 decimal places strict check
+                                if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) {
+                                    drValid = true;
+                                    sectionScore++;
+                                }
+                            }
+                        }
+
+                        // === CREDIT AMOUNT VALIDATION ===
+                        if (solRow && !solRow.isExplanation) {
+                            sectionMaxScore++;
+                            const sCr = cellData.cr.trim();
+                            const cleanSolCr = solRow.credit ? Number(solRow.credit).toFixed(2) : "";
+                            
+                            if (cleanSolCr === "") {
+                                if(sCr === "") { crValid = true; sectionScore++; }
+                            } else {
+                                if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) {
+                                    crValid = true;
+                                    sectionScore++;
+                                }
+                            }
+                        }
+
+                        // HTML Generation with Checkmarks
+                        const checkMark = '<i class="fas fa-check text-green-600 text-[10px] ml-1"></i>';
 
                         studentRowsHtml += `
                         <tr class="border-b border-gray-100 bg-white">
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle">${cellData.date || ''}</td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left h-8 align-middle whitespace-pre-wrap">${cellData.acct || ''}</td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle">${cellData.dr || ''}</td>
-                            <td class="p-1.5 font-mono text-xs text-right h-8 align-middle">${cellData.cr || ''}</td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle relative">
+                                ${cellData.date}
+                                ${dateValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
+                            </td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left h-8 align-middle whitespace-pre-wrap relative">
+                                ${cellData.acct}
+                                ${acctValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
+                            </td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle relative">
+                                ${cellData.dr}
+                                ${drValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
+                            </td>
+                            <td class="p-1.5 font-mono text-xs text-right h-8 align-middle relative">
+                                ${cellData.cr}
+                                ${crValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
+                            </td>
                         </tr>`;
                     }
 
-                    // --- B. Build Correct Solution Table ---
-                    let solutionRowsHtml = '';
-                    // The solution is inside the transaction object in the JSON
+                    // --- B. Build Correct Solution Table (FORMATTED STRICTLY) ---
                     if (trans.solution && Array.isArray(trans.solution)) {
                         trans.solution.forEach(solRow => {
                             if (solRow.isExplanation) {
-                                // Formatting for Explanation Row
+                                // Explanation: Indent 5 spaces standard for display
+                                const indentHtml = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                                 solutionRowsHtml += `
                                 <tr class="border-b border-gray-100 bg-green-50/30">
                                     <td class="p-1.5 border-r border-green-100"></td>
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left italic text-gray-500 pl-4">(${solRow.account})</td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left italic text-gray-500">${indentHtml}(${solRow.account})</td>
                                     <td class="p-1.5 border-r border-green-100"></td>
                                     <td class="p-1.5"></td>
                                 </tr>`;
                             } else {
-                                // Formatting for Account Entry Row
+                                // Account Entry
+                                // If Credit, indent 3 spaces. If Debit, 0.
+                                const indentHtml = solRow.credit ? '&nbsp;&nbsp;&nbsp;' : '';
+                                // Format Amounts: 2 decimals, no commas
+                                const drFmt = solRow.debit ? Number(solRow.debit).toFixed(2) : '';
+                                const crFmt = solRow.credit ? Number(solRow.credit).toFixed(2) : '';
+
                                 solutionRowsHtml += `
                                 <tr class="border-b border-gray-100 bg-white">
                                     <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${solRow.date || ''}</td>
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left font-semibold text-gray-800">${solRow.account || ''}</td>
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${solRow.debit ? Number(solRow.debit).toLocaleString() : ''}</td>
-                                    <td class="p-1.5 font-mono text-xs text-right text-gray-800">${solRow.credit ? Number(solRow.credit).toLocaleString() : ''}</td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left font-semibold text-gray-800">${indentHtml}${solRow.account || ''}</td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${drFmt}</td>
+                                    <td class="p-1.5 font-mono text-xs text-right text-gray-800">${crFmt}</td>
                                 </tr>`;
                             }
                         });
@@ -392,7 +573,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                                 <span class="font-bold text-gray-700 text-sm">Transaction ${tIdx + 1}:</span>
                                 <span class="text-xs text-gray-600 ml-2 italic">${trans.date} - ${trans.description}</span>
                             </div>
-                            
                             <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-300">
                                 <div>
                                     <div class="bg-blue-50 py-1 px-3 text-[10px] font-bold text-blue-800 uppercase border-b border-blue-100">Your Answer</div>
@@ -408,7 +588,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                                         <tbody>${studentRowsHtml}</tbody>
                                     </table>
                                 </div>
-
                                 <div>
                                     <div class="bg-green-50 py-1 px-3 text-[10px] font-bold text-green-800 uppercase border-b border-green-100">Standard Solution</div>
                                     <table class="w-full border-collapse">
@@ -428,7 +607,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     `;
                 });
 
-                contentHtml += `
+                sectionBodyHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                          ${stickyHeaderHtml}
                         <div class="p-4">
@@ -437,7 +616,19 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     </div>`;
             }
         });
-        contentHtml += `</div>`; // End Section
+
+        // --- SECTION HEADER WITH SCORE ---
+        contentHtml += `
+            <div class="mb-8 border-b border-gray-300 pb-4">
+                <div class="flex justify-between items-center mb-2">
+                     <h3 class="font-bold text-lg text-blue-900 uppercase">Test ${index + 1}: ${section.type}</h3>
+                     <span class="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded">
+                        Score: ${sectionScore} / ${sectionMaxScore}
+                     </span>
+                </div>
+                ${sectionBodyHtml}
+            </div>
+        `;
     });
 
     // Render Full Preview Layout
@@ -459,11 +650,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     <div class="flex flex-col md:flex-row justify-between">
                         <div><strong>Name:</strong> ${user.LastName}, ${user.FirstName}</div>
                         <div><strong>Section:</strong> ${activityData.section}</div>
-                    </div>
-                    <div class="mt-2 text-right">
-                        <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-sm border border-yellow-300">
-                            Score: <span class="italic">Pending Computation</span>
-                        </span>
                     </div>
                 </div>
 
@@ -569,7 +755,7 @@ async function generateQuizContent(activityData) {
                 options: q.options || [],
                 explanation: q.explanation || '',
                 transactions: q.transactions || [],
-                instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
+                instructions: q.instructions || null
             });
 
             // --- Sticky Info Header Content ---
@@ -893,20 +1079,20 @@ function initializeQuizManager(activityData, questionData, user) {
                 const internalNextBtns = qBlock.querySelectorAll('.btn-next-trans');
 
                 const switchTransaction = (idx) => {
-                     transBlocks.forEach(b => b.classList.add('hidden'));
-                     if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
+                      transBlocks.forEach(b => b.classList.add('hidden'));
+                      if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
 
-                     transBtns.forEach((b, bIdx) => {
-                         if (bIdx === idx) {
-                             b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
-                         } else {
-                             if (b.dataset.isAnswered === "true") {
-                                 b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
-                             } else {
-                                 b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-                             }
-                         }
-                     });
+                      transBtns.forEach((b, bIdx) => {
+                          if (bIdx === idx) {
+                              b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
+                          } else {
+                              if (b.dataset.isAnswered === "true") {
+                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
+                              } else {
+                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+                              }
+                          }
+                      });
                 };
                 
                 transBtns.forEach((btn, idx) => {
@@ -1031,7 +1217,6 @@ async function submitQuiz(activityData, questionData, user) {
     const questionsTaken = {};
 
     questionData.forEach(q => {
-        // 1. Capture the full details of this specific random question
         questionsTaken[q.uiId] = {
             questionText: q.questionText,
             correctAnswer: q.correctAnswer,
@@ -1039,10 +1224,9 @@ async function submitQuiz(activityData, questionData, user) {
             type: q.type,
             options: q.options || null,
             transactions: q.transactions || null,
-            instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
+            instructions: q.instructions || null 
         };
 
-        // 2. Capture Student Answer
         if(q.type === 'Multiple Choice') { 
             answers[q.uiId] = formData.get(q.uiId);
         } else if (q.type === 'Problem Solving') {
@@ -1052,7 +1236,7 @@ async function submitQuiz(activityData, questionData, user) {
             let currentRow = {};
             inputs.forEach(input => {
                  const name = input.name;
-                 const parts = name.split('_'); // [s0, q1, t0, r0, field]
+                 const parts = name.split('_'); 
                  const tIdx = parts[2];
                  const rIdx = parts[3];
                  const field = parts[4];
@@ -1077,7 +1261,6 @@ async function submitQuiz(activityData, questionData, user) {
         section: activityData.section,
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
-        // Save the rich question data here
         questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v))
     };
 
