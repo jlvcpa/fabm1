@@ -569,6 +569,7 @@ async function generateQuizContent(activityData) {
                 options: q.options || [],
                 explanation: q.explanation || '',
                 transactions: q.transactions || []
+                instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
             });
 
             // --- Sticky Info Header Content ---
@@ -1038,6 +1039,7 @@ async function submitQuiz(activityData, questionData, user) {
             type: q.type,
             options: q.options || null,
             transactions: q.transactions || null
+            instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
         };
 
         // 2. Capture Student Answer
