@@ -80,7 +80,7 @@ async function loadStudentActivities(user) {
             // --- ENHANCEMENT: SECTION FILTERING ---
             // If user is a student, only show activities for their section.
             // If user is a teacher (or any other role), show all.
-            if (user.role === 'student' && data.section !== user.Section) {
+            if (user.role === 'student' && data.section !== user.section) {
                 return; // Skip this iteration
             }
             
@@ -209,9 +209,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
     // ENHANCEMENT: Use the saved questions in resultData instead of fetching randomly again
     const savedQuestions = resultData.questionsTaken || {};
 
-    // We can iterate through the sections defined in activityData to maintain structure
-    // But we pull the specific Question details from resultData
-    
     // Group saved questions by section index (s0, s1, etc.)
     const questionsBySection = {};
     Object.keys(savedQuestions).forEach(key => {
@@ -234,10 +231,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         // Generate Section HTML
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
             <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>
-            <p class="text-sm text-gray-600 mb-2">topics: ${section.topics}</p>
-            <p class="text-sm italic text-gray-500 mb-4">${section.instructions}</p>
-            <p class="text-xs text-gray-400 mb-4">Rubrics: ${section.gradingRubrics || 'N/A'}</p>
-        `;
+            `;
 
         if (sectionQuestions.length === 0) {
             contentHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
@@ -264,7 +258,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
                 contentHtml += `
                     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.question}</p>
+                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
                         <div class="mb-3">${optionsHtml}</div>
                         <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
                             <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
@@ -274,7 +268,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             } else if (section.type === "Problem Solving") {
                 contentHtml += `
                     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.question}</p>
+                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
                         <div class="mb-2">
                             <p class="text-xs font-bold text-blue-600">Your Answer:</p>
                             <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer}</div>
@@ -292,7 +286,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 // Simplified preview for Journalizing
                 contentHtml += `
                     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${q.question || 'Journal Entry'}</p>
+                        <p class="font-bold text-gray-800 mb-2">${q.questionText || 'Journal Entry'}</p>
                         <div class="p-2 bg-gray-100 rounded text-sm text-center italic text-gray-500">
                             Journal entry preview details are complex to render here. <br>
                             Please refer to the Answer Key below.
@@ -443,6 +437,19 @@ async function generateQuizContent(activityData) {
                 transactions: q.transactions || []
             });
 
+            // --- Sticky Info Header Content ---
+            const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
+            const stickyHeader = `
+                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+                        <div><span class="font-bold text-blue-800">Type:</span> ${section.type}</div>
+                        <div class="truncate"><span class="font-bold text-blue-800">Topic:</span> ${section.topics}</div>
+                        <div><span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}</div>
+                        <div class="truncate md:col-span-1 col-span-2"><span class="font-bold text-blue-800">Instruction:</span> ${instructionText}</div>
+                    </div>
+                </div>
+            `;
+
             // --- Multiple Choice & Problem Solving Logic ---
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
@@ -473,20 +480,24 @@ async function generateQuizContent(activityData) {
 
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${hiddenClass}">
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-4">
-                            <div class="mb-2">
-                                <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
-                                <p class="text-base md:text-lg font-bold text-gray-800 mt-1 leading-snug">${q.question}</p>
-                            </div>
-                            ${innerContent}
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
+                            ${stickyHeader}
                             
-                            <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
-                                <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100">
-                                    <i class="fas fa-arrow-left mr-1"></i> Previous
-                                </button>
-                                <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">
-                                    Next <i class="fas fa-arrow-right ml-1"></i>
-                                </button>
+                            <div class="p-4 md:p-6">
+                                <div class="mb-2">
+                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
+                                    <p class="text-base md:text-lg font-bold text-gray-800 mt-1 leading-snug">${q.question}</p>
+                                </div>
+                                ${innerContent}
+                                
+                                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+                                    <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100">
+                                        <i class="fas fa-arrow-left mr-1"></i> Previous
+                                    </button>
+                                    <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">
+                                        Next <i class="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -563,15 +574,19 @@ async function generateQuizContent(activityData) {
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
                         <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
-                             <div class="flex-1 p-4 md:p-6 border-b md:border-b-0 md:border-r border-gray-200">
-                                 <h3 class="font-bold text-gray-800 mb-3 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
-                                 ${transContent}
+                             <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
+                                 ${stickyHeader}
                                  
-                                 ${questions.length > 1 ? `
-                                 <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                                     <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
-                                     <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
-                                 </div>` : ''}
+                                 <div class="p-4 md:p-6 flex-1">
+                                     <h3 class="font-bold text-gray-800 mb-3 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
+                                     ${transContent}
+                                     
+                                     ${questions.length > 1 ? `
+                                     <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
+                                         <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
+                                         <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
+                                     </div>` : ''}
+                                 </div>
                              </div>
                              
                              <div class="w-full md:w-64 bg-gray-50 flex flex-col max-h-64 md:max-h-full overflow-y-auto">
@@ -874,7 +889,7 @@ async function submitQuiz(activityData, questionData, user) {
     questionData.forEach(q => {
         // 1. Capture the full details of this specific random question
         questionsTaken[q.uiId] = {
-            question: q.questionText,
+            questionText: q.questionText,
             correctAnswer: q.correctAnswer,
             explanation: q.explanation,
             type: q.type,
