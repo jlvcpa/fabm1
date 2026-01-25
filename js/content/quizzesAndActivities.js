@@ -72,16 +72,29 @@ async function loadStudentActivities(user) {
 
         const now = new Date();
 
+        // --- ENHANCEMENT: ROBUST SECTION EXTRACTION ---
+        // Handle cases where the database field might be 'Section' or 'section'
+        const userSection = user.section || user.Section || ""; 
+
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
             // Store ID in data object for easier access
             data.id = docSnap.id; 
             
             // --- ENHANCEMENT: SECTION FILTERING ---
-            // If user is a student, only show activities for their section.
-            // If user is a teacher (or any other role), show all.
-            if (user.role === 'student' && data.section !== user.Section) {
-                return; // Skip this iteration
+            // If user is a student, we MUST filter by section.
+            if (user.role === 'student') {
+                // 1. Check if the activity has a section defined
+                if (data.section) {
+                    // 2. Normalize both strings (uppercase + trim) to ensure "11-Aequitas" matches "11-AEQUITAS"
+                    const activitySec = String(data.section).trim().toUpperCase();
+                    const studentSec = String(userSection).trim().toUpperCase();
+
+                    // 3. If they don't match, SKIP this activity
+                    if (activitySec !== studentSec) {
+                        return; 
+                    }
+                }
             }
             
             const start = new Date(data.dateTimeStart);
@@ -124,7 +137,7 @@ async function loadStudentActivities(user) {
             listContainer.appendChild(card);
         });
         
-        // Handle case where filtering resulted in empty list
+        // Handle case where filtering resulted in empty list (student has no activities for their section)
         if (listContainer.innerHTML === '') {
              listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
         }
@@ -158,7 +171,7 @@ async function renderQuizRunner(data, user) {
 
     // 2. CHECK FOR EXISTING SUBMISSION
     const collectionName = `results_${data.activityname}_${data.section}`;
-    const docId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    const docId = `${user.ClassNumber}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
     
     try {
         const resultDoc = await getDoc(doc(db, collectionName, docId));
@@ -324,7 +337,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 
                 <div class="bg-blue-50 p-4 border-b border-gray-200 text-sm md:text-base">
                     <div class="flex flex-col md:flex-row justify-between mb-2">
-                        <div><strong>Class Number:</strong> ${user.CN || 'N/A'}</div>
+                        <div><strong>Class Number:</strong> ${user.ClassNumber || 'N/A'}</div>
                         <div><strong>Date:</strong> ${dateTaken}</div>
                     </div>
                     <div class="flex flex-col md:flex-row justify-between">
@@ -906,14 +919,14 @@ async function submitQuiz(activityData, questionData, user) {
     });
 
     const collectionName = `results_${activityData.activityname}_${activityData.section}`;
-    const docName = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    const docName = `${user.ClassNumber}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
     
     const submissionPayload = {
         activityId: activityData.id,
         activityName: activityData.activityname,
         studentName: `${user.LastName}, ${user.FirstName}`,
         studentId: user.Idnumber,
-        CN: user.CN,
+        classNumber: user.ClassNumber,
         section: activityData.section,
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
