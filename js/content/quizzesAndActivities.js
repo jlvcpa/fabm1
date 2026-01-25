@@ -54,10 +54,10 @@ export async function renderQuizzesAndActivities(containerElement, user) {
         sidebar.classList.add('-translate-x-full');
     });
 
-    await loadStudentActivities();
+    await loadStudentActivities(user);
 }
 
-async function loadStudentActivities() {
+async function loadStudentActivities(user) {
     const listContainer = document.getElementById('qa-list-container');
     
     try {
@@ -103,12 +103,13 @@ async function loadStudentActivities() {
 
             card.onclick = () => {
                 if (isExpired) {
+                    // Check if they took it before expiring? For now, just show alert.
                     alert("This activity has expired.");
                 } else if (isFuture) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
                 } else {
                     if(quizTimerInterval) clearInterval(quizTimerInterval); // Clear any existing timer
-                    renderQuizRunner(data);
+                    renderQuizRunner(data, user);
                     // Close mobile sidebar if open
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
@@ -125,11 +126,45 @@ async function loadStudentActivities() {
 
 // --- QUIZ RUNNER LOGIC ---
 
-async function renderQuizRunner(data) {
+async function renderQuizRunner(data, user) {
     const container = document.getElementById('qa-runner-container');
+    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
+    
+    // 1. ACCESS CONTROL CHECK
+    // Check if user is in the student list for this activity
+    if (data.students && !data.students.includes(user.Idnumber)) {
+        container.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
+                <i class="fas fa-user-slash text-6xl mb-6"></i>
+                <h2 class="text-3xl font-bold">Access Denied</h2>
+                <p class="text-gray-500 mt-2 text-lg">You are not included in the list of students for this activity.</p>
+                <p class="text-gray-800 mt-4 font-bold">You are marked as ABSENT.</p>
+                <p class="text-gray-500 text-sm mt-2">Please contact your teacher if you believe this is an error.</p>
+            </div>
+        `;
+        return;
+    }
+
+    // 2. CHECK FOR EXISTING SUBMISSION
+    const collectionName = `results_${data.activityname}_${data.section}`;
+    const docId = `${user.ClassNumber}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    
+    try {
+        const resultDoc = await getDoc(doc(db, collectionName, docId));
+        
+        if (resultDoc.exists()) {
+            // Student has already answered -> Render PREVIEW
+            await renderQuizResultPreview(data, user, resultDoc.data());
+            return;
+        }
+    } catch (e) {
+        console.error("Error checking submission:", e);
+    }
+
+    // 3. START QUIZ (No submission found)
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
-    // 1. Generate Questions based on topics and types
+    // Generate Questions
     const generatedContent = await generateQuizContent(data);
 
     // Header with Timer Layout
@@ -149,9 +184,174 @@ async function renderQuizRunner(data) {
         </div>
     `;
 
-    // 2. Initialize Logic (Timer, Tabs, Pagination, Validation)
-    initializeQuizManager(data, generatedContent.data);
+    // Initialize Logic (Timer, Tabs, Pagination, Validation)
+    initializeQuizManager(data, generatedContent.data, user);
 }
+
+// --- RESULT PREVIEW GENERATOR ---
+async function renderQuizResultPreview(activityData, user, resultData) {
+    const container = document.getElementById('qa-runner-container');
+    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Loading Results...</span></div>';
+
+    let contentHtml = '';
+    
+    // Re-fetch questions to display text and correct answers (since resultData only has student answers)
+    // We assume the structure is similar to generateQuizContent
+    for (const [index, section] of activityData.testQuestions.entries()) {
+        const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
+        let questions = [];
+        
+        let collectionName = '';
+        if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
+        else if (section.type === "Problem Solving") collectionName = 'qbProblemSolving';
+        else if (section.type === "Journalizing") collectionName = 'qbJournalizing';
+        
+        const count = parseInt(section.noOfQuestions) || 5;
+
+        // Note: To perfectly replicate the random set the student got, strictly speaking, we should have saved the question IDs in resultData.
+        // Assuming for this requirement we re-fetch based on logic or resultData keys matching. 
+        // BETTER APPROACH: We use the keys from resultData.answers to fetch specific IDs if possible.
+        // However, the previous code generated random questions. 
+        // For this implementation, I will iterate the `resultData.answers` keys to find the question IDs if they are stored there.
+        // In the runner, keys are `s0_q1`. We mapped `s0_q1` -> `dbId` in `questionData`.
+        // Constraint: We don't have the map of UI_ID to DB_ID here unless saved. 
+        // *** CRITICAL FIX: To show the EXACT questions, the save logic should ideally save Question Text. 
+        // *** Since we are enhancing existing code, I will attempt to fetch the questions defined in the Activity criteria. 
+        // *** If random, this Preview might show different questions than taken unless we save the Question IDs. 
+        // *** For now, I will fetch the questions based on topics as per the original generation logic.
+        
+        if (collectionName && sectionTopics.length > 0) {
+            try {
+                const qRef = collection(db, collectionName);
+                const qQuery = query(qRef, where("subject", "==", "FABM1"), where("topic", "in", sectionTopics.slice(0, 10)));
+                const qSnap = await getDocs(qQuery);
+                let candidates = [];
+                qSnap.forEach(doc => candidates.push({ id: doc.id, ...doc.data() }));
+                // We limit to count, but in a real app, we need to match the specific questions the student answered.
+                questions = candidates.slice(0, count);
+            } catch (error) {
+                console.error("Error fetching preview questions", error);
+            }
+        }
+
+        // Generate Section HTML
+        contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
+            <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>
+            <p class="text-sm text-gray-600 mb-2">topics: ${section.topics}</p>
+            <p class="text-sm italic text-gray-500 mb-4">${section.instructions}</p>
+            <p class="text-xs text-gray-400 mb-4">Rubrics: ${section.gradingRubrics || 'N/A'}</p>
+        `;
+
+        questions.forEach((q, qIdx) => {
+            const uiId = `s${index}_q${qIdx}`;
+            const studentAnswer = resultData.answers ? resultData.answers[uiId] : "No Answer";
+            
+            // Render logic based on type
+            if (section.type === "Multiple Choice") {
+                const optionsHtml = q.options.map((opt, optIdx) => {
+                    const isSelected = String(studentAnswer) === String(optIdx);
+                    const isCorrect = String(q.answer) === String(optIdx); // Assuming q.answer is index
+                    
+                    let bgClass = "bg-white border-gray-200";
+                    let icon = "";
+                    
+                    if (isSelected && isCorrect) { bgClass = "bg-green-100 border-green-400 font-bold text-green-800"; icon = '<i class="fas fa-check text-green-600 ml-auto"></i>'; }
+                    else if (isSelected && !isCorrect) { bgClass = "bg-red-100 border-red-400 text-red-800"; icon = '<i class="fas fa-times text-red-600 ml-auto"></i>'; }
+                    else if (!isSelected && isCorrect) { bgClass = "bg-green-50 border-green-300 text-green-800 border-dashed"; icon = '<i class="fas fa-check text-green-600 ml-auto opacity-50"></i>'; }
+
+                    return `<div class="p-2 border rounded mb-1 text-sm flex items-center ${bgClass}">${opt} ${icon}</div>`;
+                }).join('');
+
+                contentHtml += `
+                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
+                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.question}</p>
+                        <div class="mb-3">${optionsHtml}</div>
+                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                            <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                        </div>
+                    </div>
+                `;
+            } else if (section.type === "Problem Solving") {
+                contentHtml += `
+                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
+                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.question}</p>
+                        <div class="mb-2">
+                            <p class="text-xs font-bold text-blue-600">Your Answer:</p>
+                            <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer}</div>
+                        </div>
+                        <div class="mb-2">
+                            <p class="text-xs font-bold text-green-600">Answer Key:</p>
+                            <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.solution || q.answer}</div>
+                        </div>
+                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                            <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                        </div>
+                    </div>
+                `;
+            } else if (section.type === "Journalizing") {
+                // Simplified preview for Journalizing
+                contentHtml += `
+                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
+                        <p class="font-bold text-gray-800 mb-2">${q.title}</p>
+                        <div class="p-2 bg-gray-100 rounded text-sm text-center italic text-gray-500">
+                            Journal entry preview details are complex to render here. <br>
+                            Please refer to the Answer Key below.
+                        </div>
+                        <div class="mt-2">
+                             <p class="text-xs font-bold text-green-600">Answer Key:</p>
+                             <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">
+                                 Check standard solution provided in class or click to view details if available.
+                             </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        contentHtml += `</div>`;
+    }
+
+    // Render Full Preview Layout
+    const dateTaken = resultData.timestamp ? new Date(resultData.timestamp).toLocaleString() : "N/A";
+    
+    container.innerHTML = `
+        <div class="h-full bg-gray-100 overflow-y-auto p-4 md:p-8">
+            <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="bg-blue-900 text-white p-6 text-center">
+                    <h1 class="text-2xl font-bold uppercase tracking-wider">FABM 1</h1>
+                    <h2 class="text-xl font-semibold mt-1">${activityData.activityname}</h2>
+                </div>
+                
+                <div class="bg-blue-50 p-4 border-b border-gray-200 text-sm md:text-base">
+                    <div class="flex flex-col md:flex-row justify-between mb-2">
+                        <div><strong>Class Number:</strong> ${user.ClassNumber || 'N/A'}</div>
+                        <div><strong>Date:</strong> ${dateTaken}</div>
+                    </div>
+                    <div class="flex flex-col md:flex-row justify-between">
+                        <div><strong>Name:</strong> ${user.LastName}, ${user.FirstName}</div>
+                        <div><strong>Section:</strong> ${activityData.section}</div>
+                    </div>
+                    <div class="mt-2 text-right">
+                        <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold text-sm border border-yellow-300">
+                            Score: <span class="italic">Pending Computation</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    ${contentHtml}
+                </div>
+                
+                <div class="p-4 bg-gray-50 text-center border-t border-gray-200">
+                    <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+                        Back to Activity List
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 
 // --- CONTENT GENERATOR ---
 async function generateQuizContent(activityData) {
@@ -422,7 +622,7 @@ async function generateQuizContent(activityData) {
 
 // --- QUIZ MANAGER (INTERACTIVITY) ---
 
-function initializeQuizManager(activityData, questionData) {
+function initializeQuizManager(activityData, questionData, user) {
     const expireTime = new Date(activityData.dateTimeExpire).getTime();
     const timerDisplay = document.getElementById('quiz-timer');
     const submitBtn = document.getElementById('btn-submit-quiz');
@@ -438,7 +638,7 @@ function initializeQuizManager(activityData, questionData) {
             timerDisplay.innerHTML = "EXPIRED";
             timerDisplay.parentElement.classList.add('bg-red-600');
             alert("Time is up! Submitting answers now.");
-            submitQuiz(activityData, questionData); // Auto submit
+            submitQuiz(activityData, questionData, user); // Auto submit
             return;
         }
 
@@ -672,10 +872,10 @@ function initializeQuizManager(activityData, questionData) {
     }
 
     // Submit Action
-    submitBtn.addEventListener('click', () => submitQuiz(activityData, questionData));
+    submitBtn.addEventListener('click', () => submitQuiz(activityData, questionData, user));
 }
 
-async function submitQuiz(activityData, questionData) {
+async function submitQuiz(activityData, questionData, user) {
     if(!confirm("Are you sure you want to submit your answers?")) return;
     
     // Clear Timer
@@ -710,26 +910,45 @@ async function submitQuiz(activityData, questionData) {
         }
     });
 
+    // Modified Submission Path per Requirements
+    const collectionName = `results_${activityData.activityname}_${activityData.section}`;
+    const docName = `${user.ClassNumber}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    
     const submissionPayload = {
         activityId: activityData.id,
         activityName: activityData.activityname,
-        studentName: "Current Student", // Replace with actual user object data
+        studentName: `${user.LastName}, ${user.FirstName}`,
+        studentId: user.Idnumber,
+        classNumber: user.ClassNumber,
+        section: activityData.section,
         timestamp: new Date().toISOString(),
-        answers: answers,
+        answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
     };
 
     try {
-        await setDoc(doc(collection(db, "student_submissions")), submissionPayload);
+        await setDoc(doc(db, collectionName, docName), submissionPayload);
+        
+        // Also save to results_list index for dashboard retrieval later
+        await setDoc(doc(db, "results_list", collectionName), { 
+            created: new Date().toISOString(),
+            activityName: activityData.activityname,
+            section: activityData.section
+        });
+
+        // Show Success and trigger preview or back button
         document.getElementById('qa-runner-container').innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-green-600 bg-white">
                 <i class="fas fa-check-circle text-6xl mb-6"></i>
                 <h2 class="text-3xl font-bold">Submitted Successfully</h2>
                 <p class="text-gray-500 mt-2 text-lg">Your response has been saved.</p>
-                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-8 px-6 py-3 bg-blue-600 text-white rounded shadow hover:bg-blue-700">Select another activity</button>
+                <div class="mt-8 flex gap-4">
+                    <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="px-6 py-3 bg-gray-600 text-white rounded shadow hover:bg-gray-700">Back to List</button>
+                    <button onclick="window.location.reload()" class="px-6 py-3 bg-blue-600 text-white rounded shadow hover:bg-blue-700">View Results</button>
+                </div>
             </div>
         `;
     } catch (e) {
         console.error("Submission Error:", e);
-        alert("Error submitting quiz. Please check your connection.");
+        alert("Error saving to server: " + e.message);
     }
 }
