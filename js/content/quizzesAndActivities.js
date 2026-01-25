@@ -426,7 +426,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                          ${stickyHeaderHtml}
                         <div class="p-4">
-                            <p class="font-bold text-gray-800 mb-4 text-md border-b pb-2">${q.questionText || 'Journalizing Activity'}</p>
                             ${transactionsHtml}
                         </div>
                     </div>`;
