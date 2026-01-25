@@ -542,10 +542,10 @@ async function generateQuizContent(activityData) {
                     for(let r=0; r < rowCount; r++) {
                         rows += `
                         <tr class="border-b border-gray-200 bg-white">
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-center outline-none bg-transparent font-mono text-sm" placeholder="Date"></td>
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder="Account Title"></td>
-                            <td class="p-0 border-r border-gray-300 w-24"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00"></td>
-                            <td class="p-0 w-24"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder="0.00"></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-24"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 w-24"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
                         </tr>`;
                     }
 
@@ -554,13 +554,12 @@ async function generateQuizContent(activityData) {
                             <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
                                 <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
                                 <p class="text-md font-bold text-gray-800">${trans.date} ${trans.description}</p>
-                                <p class="text-xs text-gray-600">Date: ${trans.date}</p>
                             </div>
 
                             <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
                                 <table class="w-full border-collapse min-w-[600px]">
                                     <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
-                                        <th class="py-2 border-r border-gray-300 w-24 text-right">Date</th>
+                                        <th class="py-2 border-r border-gray-300 w-24">Date</th>
                                         <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles</th>
                                         <th class="py-2 border-r border-gray-300 w-24 text-right pr-2">Debit</th>
                                         <th class="py-2 w-24 text-right pr-2">Credit</th>
