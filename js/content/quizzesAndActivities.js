@@ -568,7 +568,7 @@ async function generateQuizContent(activityData) {
                 correctAnswer: q.answer || q.solution,
                 options: q.options || [],
                 explanation: q.explanation || '',
-                transactions: q.transactions || []
+                transactions: q.transactions || [],
                 instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
             });
 
@@ -1038,7 +1038,7 @@ async function submitQuiz(activityData, questionData, user) {
             explanation: q.explanation,
             type: q.type,
             options: q.options || null,
-            transactions: q.transactions || null
+            transactions: q.transactions || null,
             instructions: q.instructions || null // <--- ADDED: Save instructions to DB!
         };
 
