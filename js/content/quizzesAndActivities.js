@@ -248,7 +248,8 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         });
 
         // Sticky Header Data
-        const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions; || "Refer to specific question details.";
+        const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : (section.instructions || "Refer to specific question details.");
+
         const stickyHeaderHtml = `
             <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
                 <div class="flex flex-col gap-.5 text-xs text-gray-700">
