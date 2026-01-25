@@ -80,7 +80,7 @@ async function loadStudentActivities(user) {
             // --- ENHANCEMENT: SECTION FILTERING ---
             // If user is a student, only show activities for their section.
             // If user is a teacher (or any other role), show all.
-            if (user.role === 'student' && data.section !== user.section) {
+            if (user.role === 'student' && data.section !== user.Section) {
                 return; // Skip this iteration
             }
             
@@ -441,11 +441,11 @@ async function generateQuizContent(activityData) {
             const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
             const stickyHeader = `
                 <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-600">
+                    <div class="flex flex-col gap-1 text-xs text-gray-600">
                         <div><span class="font-bold text-blue-800">Type:</span> ${section.type}</div>
-                        <div class="truncate"><span class="font-bold text-blue-800">Topic:</span> ${section.topics}</div>
+                        <div><span class="font-bold text-blue-800">Topic:</span> ${section.topics}</div>
+                        <div><span class="font-bold text-blue-800">Instruction:</span> ${instructionText}</div>
                         <div><span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}</div>
-                        <div class="truncate md:col-span-1 col-span-2"><span class="font-bold text-blue-800">Instruction:</span> ${instructionText}</div>
                     </div>
                 </div>
             `;
