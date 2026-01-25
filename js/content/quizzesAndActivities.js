@@ -441,7 +441,7 @@ async function generateQuizContent(activityData) {
             const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
             const stickyHeader = `
 <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-    <div class="flex flex-col gap-2 text-xs text-gray-700">
+    <div class="flex flex-col gap-.5 text-xs text-gray-700">
         <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
             <span class="font-bold text-blue-800">Type:</span> ${section.type}
         </h3>
