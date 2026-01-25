@@ -147,7 +147,7 @@ async function renderQuizRunner(data, user) {
 
     // 2. CHECK FOR EXISTING SUBMISSION
     const collectionName = `results_${data.activityname}_${data.section}`;
-    const docId = `${user.ClassNumber}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    const docId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
     
     try {
         const resultDoc = await getDoc(doc(db, collectionName, docId));
@@ -324,7 +324,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 
                 <div class="bg-blue-50 p-4 border-b border-gray-200 text-sm md:text-base">
                     <div class="flex flex-col md:flex-row justify-between mb-2">
-                        <div><strong>Class Number:</strong> ${user.ClassNumber || 'N/A'}</div>
+                        <div><strong>Class Number:</strong> ${user.CN || 'N/A'}</div>
                         <div><strong>Date:</strong> ${dateTaken}</div>
                     </div>
                     <div class="flex flex-col md:flex-row justify-between">
@@ -912,14 +912,14 @@ async function submitQuiz(activityData, questionData, user) {
 
     // Modified Submission Path per Requirements
     const collectionName = `results_${activityData.activityname}_${activityData.section}`;
-    const docName = `${user.ClassNumber}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    const docName = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
     
     const submissionPayload = {
         activityId: activityData.id,
         activityName: activityData.activityname,
         studentName: `${user.LastName}, ${user.FirstName}`,
         studentId: user.Idnumber,
-        classNumber: user.ClassNumber,
+        CN: user.CN,
         section: activityData.section,
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
