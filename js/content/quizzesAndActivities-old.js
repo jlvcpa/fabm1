@@ -1,4 +1,3 @@
-
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
 
@@ -78,6 +77,13 @@ async function loadStudentActivities(user) {
             // Store ID in data object for easier access
             data.id = docSnap.id; 
             
+            // --- ENHANCEMENT: SECTION FILTERING ---
+            // If user is a student, only show activities for their section.
+            // If user is a teacher (or any other role), show all.
+            if (user.role === 'student' && data.section !== user.Section) {
+                return; // Skip this iteration
+            }
+            
             const start = new Date(data.dateTimeStart);
             const expire = new Date(data.dateTimeExpire);
             const isExpired = now > expire;
@@ -104,7 +110,6 @@ async function loadStudentActivities(user) {
 
             card.onclick = () => {
                 if (isExpired) {
-                    // Check if they took it before expiring? For now, just show alert.
                     alert("This activity has expired.");
                 } else if (isFuture) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
@@ -118,6 +123,11 @@ async function loadStudentActivities(user) {
 
             listContainer.appendChild(card);
         });
+        
+        // Handle case where filtering resulted in empty list
+        if (listContainer.innerHTML === '') {
+             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
+        }
 
     } catch (e) {
         console.error("Error loading activities:", e);
@@ -196,44 +206,30 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
     let contentHtml = '';
     
-    // Re-fetch questions to display text and correct answers (since resultData only has student answers)
-    // We assume the structure is similar to generateQuizContent
-    for (const [index, section] of activityData.testQuestions.entries()) {
-        const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
-        let questions = [];
-        
-        let collectionName = '';
-        if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
-        else if (section.type === "Problem Solving") collectionName = 'qbProblemSolving';
-        else if (section.type === "Journalizing") collectionName = 'qbJournalizing';
-        
-        const count = parseInt(section.noOfQuestions) || 5;
+    // ENHANCEMENT: Use the saved questions in resultData instead of fetching randomly again
+    const savedQuestions = resultData.questionsTaken || {};
 
-        // Note: To perfectly replicate the random set the student got, strictly speaking, we should have saved the question IDs in resultData.
-        // Assuming for this requirement we re-fetch based on logic or resultData keys matching. 
-        // BETTER APPROACH: We use the keys from resultData.answers to fetch specific IDs if possible.
-        // However, the previous code generated random questions. 
-        // For this implementation, I will iterate the `resultData.answers` keys to find the question IDs if they are stored there.
-        // In the runner, keys are `s0_q1`. We mapped `s0_q1` -> `dbId` in `questionData`.
-        // Constraint: We don't have the map of UI_ID to DB_ID here unless saved. 
-        // *** CRITICAL FIX: To show the EXACT questions, the save logic should ideally save Question Text. 
-        // *** Since we are enhancing existing code, I will attempt to fetch the questions defined in the Activity criteria. 
-        // *** If random, this Preview might show different questions than taken unless we save the Question IDs. 
-        // *** For now, I will fetch the questions based on topics as per the original generation logic.
+    // We can iterate through the sections defined in activityData to maintain structure
+    // But we pull the specific Question details from resultData
+    
+    // Group saved questions by section index (s0, s1, etc.)
+    const questionsBySection = {};
+    Object.keys(savedQuestions).forEach(key => {
+        // Key format: s0_q1
+        const sectionIdx = key.split('_')[0].replace('s',''); // 0
+        if(!questionsBySection[sectionIdx]) questionsBySection[sectionIdx] = [];
+        questionsBySection[sectionIdx].push({ uiId: key, ...savedQuestions[key] });
+    });
+
+    activityData.testQuestions.forEach((section, index) => {
+        const sectionQuestions = questionsBySection[index] || [];
         
-        if (collectionName && sectionTopics.length > 0) {
-            try {
-                const qRef = collection(db, collectionName);
-                const qQuery = query(qRef, where("subject", "==", "FABM1"), where("topic", "in", sectionTopics.slice(0, 10)));
-                const qSnap = await getDocs(qQuery);
-                let candidates = [];
-                qSnap.forEach(doc => candidates.push({ id: doc.id, ...doc.data() }));
-                // We limit to count, but in a real app, we need to match the specific questions the student answered.
-                questions = candidates.slice(0, count);
-            } catch (error) {
-                console.error("Error fetching preview questions", error);
-            }
-        }
+        // Sort questions by their q index to maintain order (q0, q1, q2...)
+        sectionQuestions.sort((a, b) => {
+            const aIdx = parseInt(a.uiId.split('_')[1].replace('q',''));
+            const bIdx = parseInt(b.uiId.split('_')[1].replace('q',''));
+            return aIdx - bIdx;
+        });
 
         // Generate Section HTML
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
@@ -243,15 +239,18 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             <p class="text-xs text-gray-400 mb-4">Rubrics: ${section.gradingRubrics || 'N/A'}</p>
         `;
 
-        questions.forEach((q, qIdx) => {
-            const uiId = `s${index}_q${qIdx}`;
-            const studentAnswer = resultData.answers ? resultData.answers[uiId] : "No Answer";
+        if (sectionQuestions.length === 0) {
+            contentHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
+        }
+
+        sectionQuestions.forEach((q, qIdx) => {
+            const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : "No Answer";
             
             // Render logic based on type
             if (section.type === "Multiple Choice") {
-                const optionsHtml = q.options.map((opt, optIdx) => {
+                const optionsHtml = (q.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
-                    const isCorrect = String(q.answer) === String(optIdx); // Assuming q.answer is index
+                    const isCorrect = String(q.correctAnswer) === String(optIdx); 
                     
                     let bgClass = "bg-white border-gray-200";
                     let icon = "";
@@ -282,7 +281,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         </div>
                         <div class="mb-2">
                             <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                            <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.solution || q.answer}</div>
+                            <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer}</div>
                         </div>
                         <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
                             <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
@@ -293,7 +292,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 // Simplified preview for Journalizing
                 contentHtml += `
                     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${q.title}</p>
+                        <p class="font-bold text-gray-800 mb-2">${q.question || 'Journal Entry'}</p>
                         <div class="p-2 bg-gray-100 rounded text-sm text-center italic text-gray-500">
                             Journal entry preview details are complex to render here. <br>
                             Please refer to the Answer Key below.
@@ -310,7 +309,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         });
         
         contentHtml += `</div>`;
-    }
+    });
 
     // Render Full Preview Layout
     const dateTaken = resultData.timestamp ? new Date(resultData.timestamp).toLocaleString() : "N/A";
@@ -430,12 +429,18 @@ async function generateQuizContent(activityData) {
         questions.forEach((q, qIdx) => {
             const uiId = `s${index}_q${qIdx}`;
             
-            // Store Metadata
+            // --- ENHANCEMENT: STORE RICH DATA ---
+            // Store Metadata AND Full content for saving later
             questionData.push({ 
                 uiId: uiId, 
                 dbId: q.id, 
                 type: section.type,
-                correctAnswer: q.answer || q.solution 
+                // Rich Data for Saving/Preview
+                questionText: q.question || (q.title || 'Journal Activity'),
+                correctAnswer: q.answer || q.solution,
+                options: q.options || [],
+                explanation: q.explanation || '',
+                transactions: q.transactions || []
             });
 
             // --- Multiple Choice & Problem Solving Logic ---
@@ -443,7 +448,6 @@ async function generateQuizContent(activityData) {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
                 // Tracker Button
-                // MODIFICATION: Changed rounded to rounded-full for circle icon
                 trackerHtml += `
                     <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
                         ${qIdx + 1}
@@ -523,7 +527,6 @@ async function generateQuizContent(activityData) {
                         </tr>`;
                     }
 
-                    // MODIFICATION: Added navigation buttons BELOW the transaction table
                     transContent += `
                         <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
                             <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
@@ -690,14 +693,9 @@ function initializeQuizManager(activityData, questionData, user) {
                 });
                 // Update tracker
                 trackers.forEach((t, i) => {
-                    // Check if answered logic is handled in checkCompletion. 
-                    // Here we strictly handle ACTIVE state.
                     if (i === index) {
-                        // Force Active Blue State
                         t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
                     } else {
-                        // Reset to default (checked logic will re-apply green if needed in checkCompletion or we rely on 'data-answered' attribute)
-                        // To allow green to persist, we need to check data attribute or checkCompletion state
                         if (t.dataset.isAnswered === "true") {
                              t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
                         } else {
@@ -708,12 +706,10 @@ function initializeQuizManager(activityData, questionData, user) {
                 currentIndex = index;
             }
 
-            // Click Tracker
             trackers.forEach((t, idx) => {
                 t.addEventListener('click', () => showQuestion(idx));
             });
 
-            // Prev/Next Logic
             prevBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (currentIndex > 0) showQuestion(currentIndex - 1);
@@ -734,23 +730,17 @@ function initializeQuizManager(activityData, questionData, user) {
             questions.forEach(qBlock => {
                 const transBtns = qBlock.querySelectorAll('.trans-tracker-btn');
                 const transBlocks = qBlock.querySelectorAll('.journal-trans-block');
-                // Select new Previous/Next Transaction buttons
                 const internalPrevBtns = qBlock.querySelectorAll('.btn-prev-trans');
                 const internalNextBtns = qBlock.querySelectorAll('.btn-next-trans');
 
-                // Function to switch transaction
                 const switchTransaction = (idx) => {
-                     // Hide all blocks
                      transBlocks.forEach(b => b.classList.add('hidden'));
-                     // Show target (Assuming 1-to-1 mapping order)
                      if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
 
-                     // Update Active State on Sidebar
                      transBtns.forEach((b, bIdx) => {
                          if (bIdx === idx) {
                              b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
                          } else {
-                             // Check for green status
                              if (b.dataset.isAnswered === "true") {
                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
                              } else {
@@ -760,12 +750,10 @@ function initializeQuizManager(activityData, questionData, user) {
                      });
                 };
                 
-                // Sidebar Clicks
                 transBtns.forEach((btn, idx) => {
                     btn.addEventListener('click', () => switchTransaction(idx));
                 });
 
-                // Internal Button Clicks (Previous)
                 internalPrevBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const targetIdx = parseInt(btn.dataset.targetIdx);
@@ -773,7 +761,6 @@ function initializeQuizManager(activityData, questionData, user) {
                     });
                 });
 
-                // Internal Button Clicks (Next)
                 internalNextBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const targetIdx = parseInt(btn.dataset.targetIdx);
@@ -790,7 +777,6 @@ function initializeQuizManager(activityData, questionData, user) {
     function checkCompletion() {
         let allAnswered = true;
         
-        // MODIFICATION: Logic to update Tracker Colors to Green
         for (const q of questionData) {
             let isQuestionAnswered = false;
 
@@ -799,11 +785,9 @@ function initializeQuizManager(activityData, questionData, user) {
                 if (checked) isQuestionAnswered = true;
                 else allAnswered = false;
                 
-                // Update Tracker UI
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
-                    // Only change color if NOT currently active (blue)
                     if (!trackerBtn.classList.contains('bg-blue-600')) {
                         if (isQuestionAnswered) {
                             trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
@@ -818,7 +802,6 @@ function initializeQuizManager(activityData, questionData, user) {
                 if (val && val.trim() !== '') isQuestionAnswered = true;
                 else allAnswered = false;
 
-                // Update Tracker UI
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
@@ -832,12 +815,11 @@ function initializeQuizManager(activityData, questionData, user) {
                 }
 
             } else if (q.type === 'Journalizing') {
-                // Check Journaling per transaction
                 const transBtns = document.querySelectorAll(`button[data-target-trans^="${q.uiId}_t"]`);
                 let questionHasData = false;
                 
                 transBtns.forEach(btn => {
-                    const transUiId = btn.dataset.targetTrans; // e.g., s0_q1_t0
+                    const transUiId = btn.dataset.targetTrans;
                     const inputs = form.querySelectorAll(`input[name^="${transUiId}"]`);
                     let transHasData = false;
                     inputs.forEach(i => { if(i.value) transHasData = true; });
@@ -845,8 +827,7 @@ function initializeQuizManager(activityData, questionData, user) {
                     btn.dataset.isAnswered = transHasData ? "true" : "false";
                     if(transHasData) questionHasData = true;
 
-                    // Update Sidebar Item Color (Green if answered, unless active blue)
-                    if (!btn.classList.contains('bg-blue-100')) { // Check active class
+                    if (!btn.classList.contains('bg-blue-100')) {
                         if (transHasData) {
                             btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
                         } else {
@@ -887,8 +868,21 @@ async function submitQuiz(activityData, questionData, user) {
     const formData = new FormData(form);
     const answers = {};
     
-    // Extraction logic
+    // --- ENHANCEMENT: CAPTURE RICH QUESTION DATA ---
+    const questionsTaken = {};
+
     questionData.forEach(q => {
+        // 1. Capture the full details of this specific random question
+        questionsTaken[q.uiId] = {
+            question: q.questionText,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            type: q.type,
+            options: q.options || null,
+            transactions: q.transactions || null
+        };
+
+        // 2. Capture Student Answer
         if(q.type === 'Multiple Choice') { 
             answers[q.uiId] = formData.get(q.uiId);
         } else if (q.type === 'Problem Solving') {
@@ -911,7 +905,6 @@ async function submitQuiz(activityData, questionData, user) {
         }
     });
 
-    // Modified Submission Path per Requirements
     const collectionName = `results_${activityData.activityname}_${activityData.section}`;
     const docName = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
     
@@ -924,19 +917,19 @@ async function submitQuiz(activityData, questionData, user) {
         section: activityData.section,
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
+        // Save the rich question data here
+        questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v))
     };
 
     try {
         await setDoc(doc(db, collectionName, docName), submissionPayload);
         
-        // Also save to results_list index for dashboard retrieval later
         await setDoc(doc(db, "results_list", collectionName), { 
             created: new Date().toISOString(),
             activityName: activityData.activityname,
             section: activityData.section
         });
 
-        // Show Success and trigger preview or back button
         document.getElementById('qa-runner-container').innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-green-600 bg-white">
                 <i class="fas fa-check-circle text-6xl mb-6"></i>
