@@ -271,49 +271,9 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             return aIdx - bIdx;
         });
 
-        // SCORING LOGIC FOR THIS SECTION
+        // Initialize Score Counters for this section
         let sectionScore = 0;
         let sectionMaxScore = 0;
-
-        // PRE-CALCULATE SCORE TO DISPLAY IN HEADER
-        // Note: For journalizing, score is calculated per valid row/field match
-        sectionQuestions.forEach(q => {
-             const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : null;
-             
-             if(section.type === "Multiple Choice") {
-                 sectionMaxScore++;
-                 if(String(studentAnswer) === String(q.correctAnswer)) sectionScore++;
-             } 
-             else if(section.type === "Problem Solving") {
-                 sectionMaxScore++;
-                 // Simple exact match for now, or Teacher needs to grade manually
-                 if(studentAnswer && q.correctAnswer && studentAnswer.trim() === q.correctAnswer.trim()) sectionScore++;
-             }
-             else if(section.type === "Journalizing") {
-                 const transactions = q.transactions || [];
-                 transactions.forEach(trans => {
-                     const solRows = trans.solution || [];
-                     solRows.forEach((sol, rIdx) => {
-                         if(sol.isExplanation) {
-                             sectionMaxScore++; // 1 point for indentation check
-                             // Logic handled below in render
-                         } else {
-                             sectionMaxScore += 4; // Date, Account, Dr, Cr
-                             // Logic handled below
-                         }
-                     });
-                 });
-             }
-        });
-
-        // Actual scoring is complex for Journalizing, so we will calculate it dynamically during render 
-        // and update the header DOM element later, or calculate inline.
-        // For simplicity in this layout, we will accumulate points as we generate HTML.
-        
-        // Reset counters for the HTML generation loop
-        sectionScore = 0;
-        sectionMaxScore = 0;
-
         let sectionBodyHtml = '';
 
         if (sectionQuestions.length === 0) {
@@ -408,9 +368,8 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 transactions.forEach((trans, tIdx) => {
                     const rowCount = trans.rows || 2;
                     let studentRowsHtml = '';
-                    let solutionRowsHtml = ''; // Re-building solution to match strict format
+                    let solutionRowsHtml = ''; 
 
-                    // Prepare Solution Data to compare against
                     const solRows = trans.solution || [];
 
                     // --- Build Student Answer Table WITH SCORING ---
@@ -418,29 +377,25 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         const cellKey = `t${tIdx}_r${r}`; 
                         const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
                         
-                        // Get corresponding solution row for validation
                         const solRow = solRows[r] || null;
 
-                        // Validation Flags
                         let dateValid = false;
                         let acctValid = false;
                         let drValid = false;
                         let crValid = false;
                         
                         // === DATE VALIDATION ===
-                        // Logic: First transaction (tIdx 0) must be Mmm d/dd. Subsequent (tIdx > 0) d/dd.
-                        // Strictly Row 0 of the table gets the date.
                         if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
                              sectionMaxScore++;
                              const sDate = cellData.date.trim();
                              if (r === 0) {
+                                 // Mmm d or Mmm dd for first trans, d or dd for subsequent
                                  const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
                                  if (sDate.match(expectedRegex) && sDate === solRow.date) {
                                      dateValid = true;
                                      sectionScore++;
                                  }
                              } else {
-                                 // Non-first rows should be empty
                                  if (sDate === '') { dateValid = true; sectionScore++; }
                              }
                         }
@@ -448,27 +403,25 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         // === ACCOUNT / EXPLANATION VALIDATION ===
                         if (solRow) {
                              sectionMaxScore++;
-                             const sAcct = cellData.acct; // Raw input (preserved spaces)
+                             const sAcct = cellData.acct; 
                              
                              if (solRow.isExplanation) {
-                                 // Requirement: 5 to 8 spaces indentation. Content ignored.
+                                 // Requirement: 5 to 8 spaces indentation.
                                  if (sAcct.match(/^\s{5,8}\S/)) {
                                      acctValid = true;
                                      sectionScore++;
                                  }
                              } else {
-                                 // Check Indentation: Debit (0 spaces), Credit (3-5 spaces)
-                                 // AND Check Content Match
                                  const cleanInput = sAcct.trim();
                                  const cleanSol = solRow.account.trim();
                                  const contentMatch = cleanInput.toLowerCase() === cleanSol.toLowerCase();
 
                                  if (contentMatch) {
                                      if (solRow.credit) {
-                                         // Expect 3-5 spaces
+                                         // Expect 3-5 spaces for Credit
                                          if (sAcct.match(/^\s{3,5}\S/)) { acctValid = true; sectionScore++; }
                                      } else {
-                                         // Expect 0 spaces (Debit)
+                                         // Expect 0 spaces for Debit
                                          if (sAcct.match(/^\S/)) { acctValid = true; sectionScore++; }
                                      }
                                  }
@@ -508,7 +461,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                             }
                         }
 
-                        // HTML Generation with Checkmarks
                         const checkMark = '<i class="fas fa-check text-green-600 text-[10px] ml-1"></i>';
 
                         studentRowsHtml += `
@@ -536,7 +488,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     if (trans.solution && Array.isArray(trans.solution)) {
                         trans.solution.forEach(solRow => {
                             if (solRow.isExplanation) {
-                                // Explanation: Indent 5 spaces standard for display
                                 const indentHtml = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
                                 solutionRowsHtml += `
                                 <tr class="border-b border-gray-100 bg-green-50/30">
@@ -546,10 +497,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                                     <td class="p-1.5"></td>
                                 </tr>`;
                             } else {
-                                // Account Entry
-                                // If Credit, indent 3 spaces. If Debit, 0.
                                 const indentHtml = solRow.credit ? '&nbsp;&nbsp;&nbsp;' : '';
-                                // Format Amounts: 2 decimals, no commas
                                 const drFmt = solRow.debit ? Number(solRow.debit).toFixed(2) : '';
                                 const crFmt = solRow.credit ? Number(solRow.credit).toFixed(2) : '';
 
@@ -566,7 +514,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         solutionRowsHtml = '<tr><td colspan="4" class="p-2 text-center text-xs italic text-gray-400">No solution key available.</td></tr>';
                     }
 
-                    // Combine Side-by-Side View
                     transactionsHtml += `
                         <div class="mb-6 border border-gray-300 rounded overflow-hidden">
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-300">
@@ -617,13 +564,16 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             }
         });
 
-        // --- SECTION HEADER WITH SCORE ---
+        // --- SECTION HEADER WITH SCORE, PERCENTAGE, AND GRADE ---
+        const percent = sectionMaxScore > 0 ? (sectionScore / sectionMaxScore) * 100 : 0;
+        const letter = getLetterGrade(sectionScore, sectionMaxScore);
+
         contentHtml += `
             <div class="mb-8 border-b border-gray-300 pb-4">
                 <div class="flex justify-between items-center mb-2">
                      <h3 class="font-bold text-lg text-blue-900 uppercase">Test ${index + 1}: ${section.type}</h3>
                      <span class="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded">
-                        Score: ${sectionScore} / ${sectionMaxScore}
+                        Score: ${sectionScore} / ${sectionMaxScore} | ${percent.toFixed(2)}% | ${letter}
                      </span>
                 </div>
                 ${sectionBodyHtml}
@@ -1249,6 +1199,103 @@ async function submitQuiz(activityData, questionData, user) {
         }
     });
 
+    // --- ENHANCEMENT: CALCULATE SCORES BEFORE SAVE ---
+    const sectionScores = {}; // To store results per section index (0, 1, 2...)
+
+    activityData.testQuestions.forEach((section, index) => {
+        let sectionScore = 0;
+        let sectionMaxScore = 0;
+
+        // Filter questions belonging to this section
+        const sectionQs = questionData.filter(q => q.uiId.startsWith(`s${index}_`));
+
+        sectionQs.forEach(q => {
+            const studentAnswer = answers[q.uiId];
+
+            if (section.type === "Multiple Choice") {
+                sectionMaxScore++;
+                if (String(studentAnswer) === String(q.correctAnswer)) sectionScore++;
+            } 
+            else if (section.type === "Problem Solving") {
+                sectionMaxScore++;
+                if (studentAnswer && q.correctAnswer && studentAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) sectionScore++;
+            } 
+            else if (section.type === "Journalizing") {
+                const transactions = q.transactions || [];
+                transactions.forEach((trans, tIdx) => {
+                    const solRows = trans.solution || [];
+                    const rowCount = trans.rows || 2;
+
+                    for(let r=0; r < rowCount; r++) {
+                        const cellKey = `${tIdx}_${r}`;
+                        const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
+                        const solRow = solRows[r] || null;
+
+                        if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
+                             sectionMaxScore++;
+                             const sDate = cellData.date.trim();
+                             if (r === 0) {
+                                 const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
+                                 if (sDate.match(expectedRegex) && sDate === solRow.date) sectionScore++;
+                             } else {
+                                 if (sDate === '') sectionScore++;
+                             }
+                        }
+
+                        if (solRow) {
+                             sectionMaxScore++;
+                             const sAcct = cellData.acct; 
+                             if (solRow.isExplanation) {
+                                 if (sAcct.match(/^\s{5,8}\S/)) sectionScore++;
+                             } else {
+                                 const cleanInput = sAcct.trim();
+                                 const cleanSol = solRow.account.trim();
+                                 const contentMatch = cleanInput.toLowerCase() === cleanSol.toLowerCase();
+                                 if (contentMatch) {
+                                     if (solRow.credit) {
+                                         if (sAcct.match(/^\s{3,5}\S/)) sectionScore++;
+                                     } else {
+                                         if (sAcct.match(/^\S/)) sectionScore++;
+                                     }
+                                 }
+                             }
+                        }
+
+                        if (solRow && !solRow.isExplanation) {
+                            sectionMaxScore++;
+                            const sDr = cellData.dr.trim();
+                            const cleanSolDr = solRow.debit ? Number(solRow.debit).toFixed(2) : "";
+                            if (cleanSolDr === "") {
+                                if(sDr === "") sectionScore++;
+                            } else {
+                                if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) sectionScore++;
+                            }
+                        }
+
+                        if (solRow && !solRow.isExplanation) {
+                            sectionMaxScore++;
+                            const sCr = cellData.cr.trim();
+                            const cleanSolCr = solRow.credit ? Number(solRow.credit).toFixed(2) : "";
+                            if (cleanSolCr === "") {
+                                if(sCr === "") sectionScore++;
+                            } else {
+                                if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) sectionScore++;
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+        sectionScores[index] = {
+            score: sectionScore,
+            maxScore: sectionMaxScore,
+            percentage: sectionMaxScore > 0 ? (sectionScore / sectionMaxScore) * 100 : 0,
+            letterGrade: getLetterGrade(sectionScore, sectionMaxScore),
+            type: section.type
+        };
+    });
+
     const collectionName = `results_${activityData.activityname}_${activityData.section}`;
     const docName = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
     
@@ -1261,7 +1308,8 @@ async function submitQuiz(activityData, questionData, user) {
         section: activityData.section,
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
-        questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v))
+        questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v)),
+        sectionScores: sectionScores // Saved here!
     };
 
     try {
