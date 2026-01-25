@@ -78,8 +78,6 @@ async function loadStudentActivities(user) {
             data.id = docSnap.id; 
             
             // --- ENHANCEMENT: SECTION FILTERING ---
-            // If user is a student, only show activities for their section.
-            // If user is a teacher (or any other role), show all.
             if (user.role === 'student' && data.section !== user.Section) {
                 return; // Skip this iteration
             }
@@ -109,9 +107,9 @@ async function loadStudentActivities(user) {
             `;
 
             card.onclick = () => {
-                if (isExpired) {
-                    alert("This activity has expired.");
-                } else if (isFuture) {
+                // MODIFIED: We allow clicking even if expired so renderQuizRunner can check for results.
+                // We only block strictly future activities here.
+                if (isFuture) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
                 } else {
                     if(quizTimerInterval) clearInterval(quizTimerInterval); // Clear any existing timer
@@ -172,7 +170,28 @@ async function renderQuizRunner(data, user) {
         console.error("Error checking submission:", e);
     }
 
-    // 3. START QUIZ (No submission found)
+    // --- NEW CHECK: BLOCK EXPIRED IF NO SUBMISSION FOUND ---
+    // If we reached here, no submission exists. Check if time has passed.
+    const now = new Date();
+    const expireTime = new Date(data.dateTimeExpire);
+
+    if (now > expireTime) {
+        container.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-gray-500 bg-white p-8 text-center">
+                <i class="fas fa-calendar-times text-6xl mb-6 text-red-400"></i>
+                <h2 class="text-3xl font-bold text-gray-700">Activity Expired</h2>
+                <p class="mt-2 text-lg">The due date for this activity has passed.</p>
+                <p class="text-sm mt-4 text-gray-400 font-bold">No submission recorded.</p>
+                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-6 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+                    Back to List
+                </button>
+            </div>
+        `;
+        return;
+    }
+    // -------------------------------------------------------
+
+    // 3. START QUIZ (No submission found and time is valid)
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
     // Generate Questions
