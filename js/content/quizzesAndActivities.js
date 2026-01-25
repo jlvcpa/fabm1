@@ -80,7 +80,7 @@ async function loadStudentActivities(user) {
             // --- ENHANCEMENT: SECTION FILTERING ---
             // If user is a student, only show activities for their section.
             // If user is a teacher (or any other role), show all.
-            if (user.role === 'student' && data.section !== user.section) {
+            if (user.role === 'student' && data.section !== user.Section) {
                 return; // Skip this iteration
             }
             
