@@ -209,6 +209,7 @@ async function renderQuizRunner(data, user) {
 }
 
 // --- RESULT PREVIEW GENERATOR ---
+// --- RESULT PREVIEW GENERATOR ---
 async function renderQuizResultPreview(activityData, user, resultData) {
     const container = document.getElementById('qa-runner-container');
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Loading Results...</span></div>';
@@ -360,7 +361,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         </div>
                     </div>`;
 
-            // --- 3. JOURNALIZING (ENHANCED SCORING) ---
+            // --- 3. JOURNALIZING (FIXED LAYOUT) ---
             } else if (section.type === "Journalizing") {
                 let transactionsHtml = '';
                 const transactions = q.transactions || [];
@@ -463,21 +464,22 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
                         const checkMark = '<i class="fas fa-check text-green-600 text-[10px] ml-1"></i>';
 
+                        // REMOVED 'h-8' FROM ALL TD ELEMENTS TO ALLOW WRAPPING
                         studentRowsHtml += `
                         <tr class="border-b border-gray-100 bg-white">
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle relative">
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right align-middle relative">
                                 ${cellData.date}
                                 ${dateValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left h-8 align-middle whitespace-pre-wrap relative">
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left align-middle whitespace-pre-wrap relative">
                                 ${cellData.acct}
                                 ${acctValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle relative">
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right align-middle relative">
                                 ${cellData.dr}
                                 ${drValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
-                            <td class="p-1.5 font-mono text-xs text-right h-8 align-middle relative">
+                            <td class="p-1.5 font-mono text-xs text-right align-middle relative">
                                 ${cellData.cr}
                                 ${crValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
                             </td>
