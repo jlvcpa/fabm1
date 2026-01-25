@@ -71,19 +71,17 @@ async function loadStudentActivities(user) {
         }
 
         const now = new Date();
-        const userSection = (user.section || user.Section || "").trim().toUpperCase();
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
+            // Store ID in data object for easier access
             data.id = docSnap.id; 
             
-            // --- ENHANCED SECTION FILTERING ---
-            // Case-insensitive check. Matches '11-Faculty' with '11-FACULTY'
-            if (user.role === 'student') {
-                const activitySection = (data.section || "").trim().toUpperCase();
-                if (activitySection !== userSection) {
-                    return; // Skip if section doesn't match
-                }
+            // --- ENHANCEMENT: SECTION FILTERING ---
+            // If user is a student, only show activities for their section.
+            // If user is a teacher (or any other role), show all.
+            if (user.role === 'student' && data.section !== user.Section) {
+                return; // Skip this iteration
             }
             
             const start = new Date(data.dateTimeStart);
@@ -116,15 +114,17 @@ async function loadStudentActivities(user) {
                 } else if (isFuture) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
                 } else {
-                    if(quizTimerInterval) clearInterval(quizTimerInterval); 
+                    if(quizTimerInterval) clearInterval(quizTimerInterval); // Clear any existing timer
                     renderQuizRunner(data, user);
+                    // Close mobile sidebar if open
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
             };
 
             listContainer.appendChild(card);
         });
-
+        
+        // Handle case where filtering resulted in empty list
         if (listContainer.innerHTML === '') {
              listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
         }
@@ -142,6 +142,7 @@ async function renderQuizRunner(data, user) {
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
     
     // 1. ACCESS CONTROL CHECK
+    // Check if user is in the student list for this activity
     if (data.students && !data.students.includes(user.Idnumber)) {
         container.innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
@@ -161,7 +162,9 @@ async function renderQuizRunner(data, user) {
     
     try {
         const resultDoc = await getDoc(doc(db, collectionName, docId));
+        
         if (resultDoc.exists()) {
+            // Student has already answered -> Render PREVIEW
             await renderQuizResultPreview(data, user, resultDoc.data());
             return;
         }
@@ -169,11 +172,13 @@ async function renderQuizRunner(data, user) {
         console.error("Error checking submission:", e);
     }
 
-    // 3. START QUIZ
+    // 3. START QUIZ (No submission found)
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
+    // Generate Questions
     const generatedContent = await generateQuizContent(data);
 
+    // Header with Timer Layout
     container.innerHTML = `
         <div class="flex flex-col h-full bg-gray-100">
             <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
@@ -190,6 +195,7 @@ async function renderQuizRunner(data, user) {
         </div>
     `;
 
+    // Initialize Logic (Timer, Tabs, Pagination, Validation)
     initializeQuizManager(data, generatedContent.data, user);
 }
 
@@ -200,12 +206,14 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
     let contentHtml = '';
     
-    // Use saved snapshot of questions
+    // ENHANCEMENT: Use the saved questions in resultData instead of fetching randomly again
     const savedQuestions = resultData.questionsTaken || {};
+
+    // Group saved questions by section index (s0, s1, etc.)
     const questionsBySection = {};
-    
     Object.keys(savedQuestions).forEach(key => {
-        const sectionIdx = key.split('_')[0].replace('s','');
+        // Key format: s0_q1
+        const sectionIdx = key.split('_')[0].replace('s',''); // 0
         if(!questionsBySection[sectionIdx]) questionsBySection[sectionIdx] = [];
         questionsBySection[sectionIdx].push({ uiId: key, ...savedQuestions[key] });
     });
@@ -213,15 +221,17 @@ async function renderQuizResultPreview(activityData, user, resultData) {
     activityData.testQuestions.forEach((section, index) => {
         const sectionQuestions = questionsBySection[index] || [];
         
+        // Sort questions by their q index to maintain order (q0, q1, q2...)
         sectionQuestions.sort((a, b) => {
             const aIdx = parseInt(a.uiId.split('_')[1].replace('q',''));
             const bIdx = parseInt(b.uiId.split('_')[1].replace('q',''));
             return aIdx - bIdx;
         });
 
+        // Generate Section HTML
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
             <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>
-        `;
+            `;
 
         if (sectionQuestions.length === 0) {
             contentHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
@@ -230,6 +240,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         sectionQuestions.forEach((q, qIdx) => {
             const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : "No Answer";
             
+            // Render logic based on type
             if (section.type === "Multiple Choice") {
                 const optionsHtml = (q.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
@@ -272,6 +283,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     </div>
                 `;
             } else if (section.type === "Journalizing") {
+                // Simplified preview for Journalizing
                 contentHtml += `
                     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
                         <p class="font-bold text-gray-800 mb-2">${q.questionText || 'Journal Entry'}</p>
@@ -293,6 +305,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         contentHtml += `</div>`;
     });
 
+    // Render Full Preview Layout
     const dateTaken = resultData.timestamp ? new Date(resultData.timestamp).toLocaleString() : "N/A";
     
     container.innerHTML = `
@@ -356,6 +369,7 @@ async function generateQuizContent(activityData) {
         `;
     });
 
+    // Add Submit Button to the right end of Tabs
     tabsHtml += `
         <div class="ml-auto pl-4 py-2">
             <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-4 py-1.5 rounded shadow transition whitespace-nowrap">
@@ -369,10 +383,12 @@ async function generateQuizContent(activityData) {
 
     for (const [index, section] of activityData.testQuestions.entries()) {
         const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
-        const isHidden = index === 0 ? '' : 'hidden'; 
+        const isHidden = index === 0 ? '' : 'hidden'; // Only show first section initially
 
+        // Section Wrapper
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
+        // Fetch Questions Logic
         let questions = [];
         let collectionName = '';
         if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
@@ -399,10 +415,8 @@ async function generateQuizContent(activityData) {
             }
         }
 
-        if (questions.length === 0) {
-            sectionsHtml += `<div class="p-8 text-center text-gray-400 italic">No questions found for topics: ${section.topics}</div>`;
-        }
-
+        // --- Render Content Area & Tracker Area ---
+        
         let questionsHtml = '';
         let trackerHtml = '';
 
@@ -410,11 +424,12 @@ async function generateQuizContent(activityData) {
             const uiId = `s${index}_q${qIdx}`;
             
             // --- ENHANCEMENT: STORE RICH DATA ---
+            // Store Metadata AND Full content for saving later
             questionData.push({ 
                 uiId: uiId, 
                 dbId: q.id, 
                 type: section.type,
-                // Rich Data Snapshot
+                // Rich Data for Saving/Preview
                 questionText: q.question || (q.title || 'Journal Activity'),
                 correctAnswer: q.answer || q.solution,
                 options: q.options || [],
@@ -424,35 +439,40 @@ async function generateQuizContent(activityData) {
 
             // --- Sticky Info Header Content ---
             const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
-            
-            // Sticky Header Layout
             const stickyHeader = `
-            <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                <div class="flex flex-col gap-1 text-xs text-gray-700">
-                    <div class="flex justify-between border-b border-blue-100 pb-1">
-                        <div><span class="font-bold text-blue-800">Type:</span> ${section.type}</div>
-                        <div><span class="font-bold text-blue-800">Topic:</span> <span class="truncate max-w-[150px] inline-block align-bottom">${section.topics}</span></div>
-                    </div>
-                    <div class="border-b border-blue-100 pb-1">
-                        <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                    </div>
-                    <div>
-                        <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
-                    </div>
-                </div>
-            </div>
+<div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+    <div class="flex flex-col gap-.5 text-xs text-gray-700">
+        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
+            <span class="font-bold text-blue-800">Type:</span> ${section.type}
+        </h3>
+
+        <div class="border-b pb-1">
+            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
+        </div>
+
+        <div class="border-b pb-1">
+            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
+        </div>
+
+        <div class="border-b pb-1">
+            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+        </div>
+    </div>
+</div>
             `;
 
             // --- Multiple Choice & Problem Solving Logic ---
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
+                // Tracker Button
                 trackerHtml += `
                     <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
                         ${qIdx + 1}
                     </button>
                 `;
 
+                // Question Content
                 let innerContent = '';
                 if (section.type === "Multiple Choice") {
                     const opts = q.options ? q.options.map((opt, optIdx) => `
@@ -461,6 +481,7 @@ async function generateQuizContent(activityData) {
                             <span class="text-sm text-gray-700">${opt}</span>
                         </label>
                     `).join('') : '';
+                    
                     innerContent = `<div class="flex flex-col mt-2">${opts}</div>`;
                 } else {
                     innerContent = `
@@ -472,15 +493,21 @@ async function generateQuizContent(activityData) {
                     <div id="${uiId}" class="question-block w-full ${hiddenClass}">
                         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
                             ${stickyHeader}
+                            
                             <div class="p-4 md:p-6">
                                 <div class="mb-2">
                                     <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
                                     <p class="text-base md:text-lg font-bold text-gray-800 mt-1 leading-snug">${q.question}</p>
                                 </div>
                                 ${innerContent}
+                                
                                 <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
-                                    <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100"><i class="fas fa-arrow-left mr-1"></i> Previous</button>
-                                    <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">Next <i class="fas fa-arrow-right ml-1"></i></button>
+                                    <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100">
+                                        <i class="fas fa-arrow-left mr-1"></i> Previous
+                                    </button>
+                                    <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">
+                                        Next <i class="fas fa-arrow-right ml-1"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -493,6 +520,7 @@ async function generateQuizContent(activityData) {
                 const transactions = q.transactions || [];
                 const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
                 
+                // Tracker for Transactions
                 let transTrackerList = '';
                 let transContent = '';
 
@@ -508,6 +536,7 @@ async function generateQuizContent(activityData) {
                         </button>
                     `;
 
+                    // 2. Transaction Content (Input Table)
                     const rowCount = trans.rows || 2;
                     let rows = '';
                     for(let r=0; r < rowCount; r++) {
@@ -527,6 +556,7 @@ async function generateQuizContent(activityData) {
                                 <p class="text-md font-bold text-gray-800">${trans.description}</p>
                                 <p class="text-xs text-gray-600">Date: ${trans.date}</p>
                             </div>
+
                             <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
                                 <table class="w-full border-collapse min-w-[600px]">
                                     <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
@@ -538,23 +568,30 @@ async function generateQuizContent(activityData) {
                                     <tbody>${rows}</tbody>
                                 </table>
                             </div>
+
                             <div class="flex justify-between items-center mt-4 mb-2">
-                                <div>${tIdx > 0 ? `<button type="button" class="btn-prev-trans px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium border border-gray-300" data-target-idx="${tIdx - 1}"><i class="fas fa-chevron-left mr-1"></i> Previous Transaction</button>` : ''}</div>
-                                <div>${tIdx < transactions.length - 1 ? `<button type="button" class="btn-next-trans px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow-sm" data-target-idx="${tIdx + 1}">Next Transaction <i class="fas fa-chevron-right ml-1"></i></button>` : ''}</div>
+                                <div>
+                                    ${tIdx > 0 ? `<button type="button" class="btn-prev-trans px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium border border-gray-300" data-target-idx="${tIdx - 1}"><i class="fas fa-chevron-left mr-1"></i> Previous Transaction</button>` : ''}
+                                </div>
+                                <div>
+                                    ${tIdx < transactions.length - 1 ? `<button type="button" class="btn-next-trans px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow-sm" data-target-idx="${tIdx + 1}">Next Transaction <i class="fas fa-chevron-right ml-1"></i></button>` : ''}
+                                </div>
                             </div>
                         </div>
                     `;
                 });
 
-                // Fixed: Removed overflow-hidden to prevent clipping, ensured flex structure
+                // Wrap entire journal question
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
-                        <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row">
-                             <div class="flex-1 p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col min-w-0">
+                        <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
+                             <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
                                  ${stickyHeader}
+                                 
                                  <div class="p-4 md:p-6 flex-1">
                                      <h3 class="font-bold text-gray-800 mb-3 border-b pb-2">${q.title || 'Journalize Transactions'}</h3>
                                      ${transContent}
+                                     
                                      ${questions.length > 1 ? `
                                      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
                                          <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
@@ -563,9 +600,13 @@ async function generateQuizContent(activityData) {
                                  </div>
                              </div>
                              
-                             <div class="w-full md:w-64 bg-gray-50 flex flex-col max-h-64 md:max-h-full overflow-y-auto border-l border-gray-200">
-                                <div class="p-2 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200 sticky top-0">Transactions</div>
-                                <div class="flex-1">${transTrackerList}</div>
+                             <div class="w-full md:w-64 bg-gray-50 flex flex-col max-h-64 md:max-h-full overflow-y-auto">
+                                <div class="p-2 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200 sticky top-0">
+                                    Transactions
+                                </div>
+                                <div class="flex-1">
+                                    ${transTrackerList}
+                                </div>
                              </div>
                         </div>
                     </div>
@@ -573,26 +614,39 @@ async function generateQuizContent(activityData) {
             }
         });
 
+        // Assemble Layout for this Section
         if (section.type !== "Journalizing") {
             sectionsHtml += `
                 <div class="flex flex-col md:flex-row md:items-start gap-4">
-                    <div class="flex-1 min-w-0">${questionsHtml}</div>
+                    <div class="flex-1 min-w-0">
+                        ${questionsHtml}
+                    </div>
+
                     <div class="w-full md:w-64 shrink-0">
                         <div class="bg-white rounded shadow-sm border border-gray-200 p-3 sticky top-20">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 pb-1 border-b border-gray-100">Question Tracker</div>
-                            <div class="flex flex-wrap content-start">${trackerHtml}</div>
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 pb-1 border-b border-gray-100">
+                                Question Tracker
+                            </div>
+                            <div class="flex flex-wrap content-start">
+                                ${trackerHtml}
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
         } else {
-            sectionsHtml += `<div class="w-full">${questionsHtml}</div>`;
+            sectionsHtml += `
+                <div class="w-full">
+                    ${questionsHtml}
+                </div>
+            `;
         }
 
-        sectionsHtml += `</div>`;
+        sectionsHtml += `</div>`; // End Section Wrapper
     }
 
-    sectionsHtml += `</div>`;
+    sectionsHtml += `</div>`; // End All Sections Container
+
     return { html: tabsHtml + sectionsHtml, data: questionData };
 }
 
@@ -604,6 +658,7 @@ function initializeQuizManager(activityData, questionData, user) {
     const submitBtn = document.getElementById('btn-submit-quiz');
     const form = document.getElementById('quiz-form');
 
+    // 1. Timer Logic
     function updateTimer() {
         const now = new Date().getTime();
         const dist = expireTime - now;
@@ -613,18 +668,20 @@ function initializeQuizManager(activityData, questionData, user) {
             timerDisplay.innerHTML = "EXPIRED";
             timerDisplay.parentElement.classList.add('bg-red-600');
             alert("Time is up! Submitting answers now.");
-            submitQuiz(activityData, questionData, user);
+            submitQuiz(activityData, questionData, user); // Auto submit
             return;
         }
 
         const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((dist % (1000 * 60)) / 1000);
+
         timerDisplay.innerHTML = `${h > 0 ? h + ':' : ''}${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
     }
-    updateTimer();
+    updateTimer(); // Initial call
     quizTimerInterval = setInterval(updateTimer, 1000);
 
+    // 2. Tab Switching Logic
     const tabs = document.querySelectorAll('.tab-btn');
     const sections = document.querySelectorAll('.test-section-panel');
 
@@ -643,6 +700,7 @@ function initializeQuizManager(activityData, questionData, user) {
         });
     });
 
+    // 3. Question Navigation & Tracker Logic (Scoped per section)
     sections.forEach(section => {
         const type = section.dataset.sectionType;
         
@@ -659,6 +717,7 @@ function initializeQuizManager(activityData, questionData, user) {
                     if (i === index) q.classList.remove('hidden');
                     else q.classList.add('hidden');
                 });
+                // Update tracker
                 trackers.forEach((t, i) => {
                     if (i === index) {
                         t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
@@ -673,12 +732,27 @@ function initializeQuizManager(activityData, questionData, user) {
                 currentIndex = index;
             }
 
-            trackers.forEach((t, idx) => t.addEventListener('click', () => showQuestion(idx)));
-            prevBtns.forEach(btn => btn.addEventListener('click', () => { if (currentIndex > 0) showQuestion(currentIndex - 1); }));
-            nextBtns.forEach(btn => btn.addEventListener('click', () => { if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1); }));
+            trackers.forEach((t, idx) => {
+                t.addEventListener('click', () => showQuestion(idx));
+            });
+
+            prevBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (currentIndex > 0) showQuestion(currentIndex - 1);
+                });
+            });
+            
+            nextBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
+                });
+            });
         } 
+        
+        // --- Journalizing Navigation (Internal Transactions) ---
         else if (type === 'Journalizing') {
             const questions = section.querySelectorAll('.question-block');
+            
             questions.forEach(qBlock => {
                 const transBtns = qBlock.querySelectorAll('.trans-tracker-btn');
                 const transBlocks = qBlock.querySelectorAll('.journal-trans-block');
@@ -702,13 +776,28 @@ function initializeQuizManager(activityData, questionData, user) {
                      });
                 };
                 
-                transBtns.forEach((btn, idx) => btn.addEventListener('click', () => switchTransaction(idx)));
-                internalPrevBtns.forEach(btn => btn.addEventListener('click', () => { const targetIdx = parseInt(btn.dataset.targetIdx); switchTransaction(targetIdx); }));
-                internalNextBtns.forEach(btn => btn.addEventListener('click', () => { const targetIdx = parseInt(btn.dataset.targetIdx); switchTransaction(targetIdx); }));
+                transBtns.forEach((btn, idx) => {
+                    btn.addEventListener('click', () => switchTransaction(idx));
+                });
+
+                internalPrevBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetIdx = parseInt(btn.dataset.targetIdx);
+                        switchTransaction(targetIdx);
+                    });
+                });
+
+                internalNextBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const targetIdx = parseInt(btn.dataset.targetIdx);
+                        switchTransaction(targetIdx);
+                    });
+                });
             });
         }
     });
 
+    // 4. Input Validation (Unlock Submit Button) & Color Updates
     form.addEventListener('input', checkCompletion);
     
     function checkCompletion() {
@@ -723,20 +812,34 @@ function initializeQuizManager(activityData, questionData, user) {
                 else allAnswered = false;
                 
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
-                if (trackerBtn && !trackerBtn.classList.contains('bg-blue-600')) {
+                if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
-                    trackerBtn.className = isQuestionAnswered ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center" : "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                    if (!trackerBtn.classList.contains('bg-blue-600')) {
+                        if (isQuestionAnswered) {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
+                        } else {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        }
+                    }
                 }
+
             } else if (q.type === 'Problem Solving') {
                 const val = form.querySelector(`textarea[name="${q.uiId}"]`).value;
                 if (val && val.trim() !== '') isQuestionAnswered = true;
                 else allAnswered = false;
 
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
-                if (trackerBtn && !trackerBtn.classList.contains('bg-blue-600')) {
+                if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
-                    trackerBtn.className = isQuestionAnswered ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center" : "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                    if (!trackerBtn.classList.contains('bg-blue-600')) {
+                        if (isQuestionAnswered) {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
+                        } else {
+                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                        }
+                    }
                 }
+
             } else if (q.type === 'Journalizing') {
                 const transBtns = document.querySelectorAll(`button[data-target-trans^="${q.uiId}_t"]`);
                 let questionHasData = false;
@@ -751,9 +854,14 @@ function initializeQuizManager(activityData, questionData, user) {
                     if(transHasData) questionHasData = true;
 
                     if (!btn.classList.contains('bg-blue-100')) {
-                        btn.className = transHasData ? 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100' : 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+                        if (transHasData) {
+                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
+                        } else {
+                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+                        }
                     }
                 });
+
                 if(!questionHasData) allAnswered = false; 
             }
         }
@@ -771,20 +879,26 @@ function initializeQuizManager(activityData, questionData, user) {
         }
     }
 
+    // Submit Action
     submitBtn.addEventListener('click', () => submitQuiz(activityData, questionData, user));
 }
 
 async function submitQuiz(activityData, questionData, user) {
     if(!confirm("Are you sure you want to submit your answers?")) return;
+    
+    // Clear Timer
     if(quizTimerInterval) clearInterval(quizTimerInterval);
 
+    // Collect Answers
     const form = document.getElementById('quiz-form');
     const formData = new FormData(form);
     const answers = {};
-    const questionsTaken = {}; // Rich Data Snapshot
+    
+    // --- ENHANCEMENT: CAPTURE RICH QUESTION DATA ---
+    const questionsTaken = {};
 
     questionData.forEach(q => {
-        // Snapshot the question details
+        // 1. Capture the full details of this specific random question
         questionsTaken[q.uiId] = {
             questionText: q.questionText,
             correctAnswer: q.correctAnswer,
@@ -794,6 +908,7 @@ async function submitQuiz(activityData, questionData, user) {
             transactions: q.transactions || null
         };
 
+        // 2. Capture Student Answer
         if(q.type === 'Multiple Choice') { 
             answers[q.uiId] = formData.get(q.uiId);
         } else if (q.type === 'Problem Solving') {
@@ -803,11 +918,12 @@ async function submitQuiz(activityData, questionData, user) {
             let currentRow = {};
             inputs.forEach(input => {
                  const name = input.name;
-                 const parts = name.split('_'); 
+                 const parts = name.split('_'); // [s0, q1, t0, r0, field]
                  const tIdx = parts[2];
                  const rIdx = parts[3];
                  const field = parts[4];
                  const key = `${tIdx}_${rIdx}`;
+
                  if(!currentRow[key]) currentRow[key] = {};
                  currentRow[key][field] = input.value;
             });
@@ -827,6 +943,7 @@ async function submitQuiz(activityData, questionData, user) {
         section: activityData.section,
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
+        // Save the rich question data here
         questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v))
     };
 
