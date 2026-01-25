@@ -206,7 +206,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
     let contentHtml = '';
     
-    // ENHANCEMENT: Use the saved questions in resultData instead of fetching randomly again
+    // Use the saved questions in resultData
     const savedQuestions = resultData.questionsTaken || {};
 
     // Group saved questions by section index (s0, s1, etc.)
@@ -228,7 +228,30 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             return aIdx - bIdx;
         });
 
-        // Generate Section HTML
+        // --- ENHANCEMENT: PREPARE STICKY HEADER DATA ---
+        // We get topics/rubrics from the activityData section definition
+        // Instructions: Journalizing usually has specific instructions per question, but we fallback to section
+        const instructionText = section.instructions || "Refer to specific question details.";
+        
+        const stickyHeaderHtml = `
+            <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                <div class="flex flex-col gap-.5 text-xs text-gray-700">
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Topic:</span> ${section.topics || 'N/A'}
+                    </div>
+
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
+                    </div>
+
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Generate Section HTML Wrapper
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
             <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>
             `;
@@ -257,45 +280,101 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 }).join('');
 
                 contentHtml += `
-                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                        <div class="mb-3">${optionsHtml}</div>
-                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                            <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
+                        ${stickyHeaderHtml}
+                        <div class="p-4">
+                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
+                            <div class="mb-3">${optionsHtml}</div>
+                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                            </div>
                         </div>
                     </div>
                 `;
             } else if (section.type === "Problem Solving") {
                 contentHtml += `
-                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                        <div class="mb-2">
-                            <p class="text-xs font-bold text-blue-600">Your Answer:</p>
-                            <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer}</div>
-                        </div>
-                        <div class="mb-2">
-                            <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                            <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer}</div>
-                        </div>
-                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                            <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
+                        ${stickyHeaderHtml}
+                        <div class="p-4">
+                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
+                            <div class="mb-2">
+                                <p class="text-xs font-bold text-blue-600">Your Answer:</p>
+                                <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer}</div>
+                            </div>
+                            <div class="mb-2">
+                                <p class="text-xs font-bold text-green-600">Answer Key:</p>
+                                <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer}</div>
+                            </div>
+                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
+                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                            </div>
                         </div>
                     </div>
                 `;
             } else if (section.type === "Journalizing") {
-                // Simplified preview for Journalizing
-                contentHtml += `
-                    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-                        <p class="font-bold text-gray-800 mb-2">${q.questionText || 'Journal Entry'}</p>
-                        <div class="p-2 bg-gray-100 rounded text-sm text-center italic text-gray-500">
-                            Journal entry preview details are complex to render here. <br>
-                            Please refer to the Answer Key below.
+                // --- ENHANCEMENT: JOURNALIZING RENDERER ---
+                
+                // 1. Build the Student Answer View (Reconstruct the table)
+                let transactionsHtml = '';
+                const transactions = q.transactions || [];
+
+                transactions.forEach((trans, tIdx) => {
+                    const rowCount = trans.rows || 2;
+                    let rowsHtml = '';
+                    
+                    for(let r=0; r < rowCount; r++) {
+                        // Retrieve saved answer cell data
+                        // Structure in firebase: answers[uiId] = { "tIdx_rIdx": { date:..., acct:..., ... } }
+                        const cellKey = `${tIdx}_${r}`;
+                        const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
+
+                        rowsHtml += `
+                        <tr class="border-b border-gray-200 bg-white">
+                            <td class="p-2 border-r border-gray-300 font-mono text-sm text-right">${cellData.date || ''}</td>
+                            <td class="p-2 border-r border-gray-300 font-mono text-sm text-left">${cellData.acct || ''}</td>
+                            <td class="p-2 border-r border-gray-300 font-mono text-sm text-right">${cellData.dr || ''}</td>
+                            <td class="p-2 font-mono text-sm text-right">${cellData.cr || ''}</td>
+                        </tr>`;
+                    }
+
+                    transactionsHtml += `
+                        <div class="mb-4 bg-gray-50 p-3 rounded border border-gray-200">
+                            <div class="mb-2 text-sm font-bold text-gray-700 border-b border-gray-300 pb-1">
+                                <span class="text-blue-600 mr-2">Trans ${tIdx + 1}:</span> ${trans.date} - ${trans.description}
+                            </div>
+                            <div class="overflow-x-auto bg-white border border-gray-300 shadow-sm">
+                                <table class="w-full border-collapse min-w-[500px]">
+                                    <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
+                                        <th class="py-1 border-r border-gray-300 w-24 text-right pr-2">Date</th>
+                                        <th class="py-1 border-r border-gray-300 text-left pl-2">Account Titles</th>
+                                        <th class="py-1 border-r border-gray-300 w-24 text-right pr-2">Debit</th>
+                                        <th class="py-1 w-24 text-right pr-2">Credit</th>
+                                    </tr></thead>
+                                    <tbody>${rowsHtml}</tbody>
+                                </table>
+                            </div>
                         </div>
-                        <div class="mt-2">
-                             <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                             <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">
-                                 Check standard solution provided in class or click to view details if available.
-                             </div>
+                    `;
+                });
+
+                contentHtml += `
+                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
+                         ${stickyHeaderHtml}
+                         
+                        <div class="p-4">
+                            <p class="font-bold text-gray-800 mb-4 text-lg border-b pb-2">${q.questionText || 'Journalizing Activity'}</p>
+                            
+                            <div class="mb-6">
+                                <p class="text-xs font-bold text-blue-600 uppercase mb-2">Your Answer:</p>
+                                ${transactionsHtml}
+                            </div>
+                            
+                            <div class="mt-4">
+                                <p class="text-xs font-bold text-green-600 uppercase mb-1">Answer Key / Standard Solution:</p>
+                                <div class="p-4 bg-green-50 border border-green-200 rounded text-sm font-mono whitespace-pre-wrap text-gray-800 shadow-inner">
+${q.correctAnswer || 'No solution key provided.'}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -310,7 +389,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
     
     container.innerHTML = `
         <div class="h-full bg-gray-100 overflow-y-auto p-4 md:p-8">
-            <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+            <div class="max-w-5xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
                 <div class="bg-blue-900 text-white p-6 text-center">
                     <h1 class="text-2xl font-bold uppercase tracking-wider">FABM 1</h1>
                     <h2 class="text-xl font-semibold mt-1">${activityData.activityname}</h2>
@@ -332,7 +411,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     </div>
                 </div>
 
-                <div class="p-6">
+                <div class="p-6 bg-gray-50/50">
                     ${contentHtml}
                 </div>
                 
