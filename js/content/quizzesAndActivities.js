@@ -77,9 +77,7 @@ async function loadStudentActivities(user) {
             // Store ID in data object for easier access
             data.id = docSnap.id; 
             
-            // --- ENHANCEMENT: SECTION FILTERING ---
             // If user is a student, only show activities for their section.
-            // If user is a teacher (or any other role), show all.
             if (user.role === 'student' && data.section !== user.Section) {
                 return; // Skip this iteration
             }
@@ -123,11 +121,6 @@ async function loadStudentActivities(user) {
 
             listContainer.appendChild(card);
         });
-        
-        // Handle case where filtering resulted in empty list
-        if (listContainer.innerHTML === '') {
-             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
-        }
 
     } catch (e) {
         console.error("Error loading activities:", e);
@@ -142,7 +135,6 @@ async function renderQuizRunner(data, user) {
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
     
     // 1. ACCESS CONTROL CHECK
-    // Check if user is in the student list for this activity
     if (data.students && !data.students.includes(user.Idnumber)) {
         container.innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
@@ -164,7 +156,6 @@ async function renderQuizRunner(data, user) {
         const resultDoc = await getDoc(doc(db, collectionName, docId));
         
         if (resultDoc.exists()) {
-            // Student has already answered -> Render PREVIEW
             await renderQuizResultPreview(data, user, resultDoc.data());
             return;
         }
@@ -175,10 +166,8 @@ async function renderQuizRunner(data, user) {
     // 3. START QUIZ (No submission found)
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
-    // Generate Questions
     const generatedContent = await generateQuizContent(data);
 
-    // Header with Timer Layout
     container.innerHTML = `
         <div class="flex flex-col h-full bg-gray-100">
             <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
@@ -195,7 +184,6 @@ async function renderQuizRunner(data, user) {
         </div>
     `;
 
-    // Initialize Logic (Timer, Tabs, Pagination, Validation)
     initializeQuizManager(data, generatedContent.data, user);
 }
 
@@ -206,14 +194,12 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
     let contentHtml = '';
     
-    // ENHANCEMENT: Use the saved questions in resultData instead of fetching randomly again
+    // ENHANCEMENT: Use the saved questions in resultData
     const savedQuestions = resultData.questionsTaken || {};
 
-    // Group saved questions by section index (s0, s1, etc.)
     const questionsBySection = {};
     Object.keys(savedQuestions).forEach(key => {
-        // Key format: s0_q1
-        const sectionIdx = key.split('_')[0].replace('s',''); // 0
+        const sectionIdx = key.split('_')[0].replace('s',''); 
         if(!questionsBySection[sectionIdx]) questionsBySection[sectionIdx] = [];
         questionsBySection[sectionIdx].push({ uiId: key, ...savedQuestions[key] });
     });
@@ -221,26 +207,19 @@ async function renderQuizResultPreview(activityData, user, resultData) {
     activityData.testQuestions.forEach((section, index) => {
         const sectionQuestions = questionsBySection[index] || [];
         
-        // Sort questions by their q index to maintain order (q0, q1, q2...)
         sectionQuestions.sort((a, b) => {
             const aIdx = parseInt(a.uiId.split('_')[1].replace('q',''));
             const bIdx = parseInt(b.uiId.split('_')[1].replace('q',''));
             return aIdx - bIdx;
         });
 
-        // Generate Section HTML
         contentHtml += `<div class="mb-8 border-b border-gray-300 pb-4">
             <h3 class="font-bold text-lg text-blue-900 uppercase mb-2">Part ${index + 1}: ${section.type}</h3>
-            `;
-
-        if (sectionQuestions.length === 0) {
-            contentHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
-        }
+        `;
 
         sectionQuestions.forEach((q, qIdx) => {
             const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : "No Answer";
             
-            // Render logic based on type
             if (section.type === "Multiple Choice") {
                 const optionsHtml = (q.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
@@ -283,7 +262,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                     </div>
                 `;
             } else if (section.type === "Journalizing") {
-                // Simplified preview for Journalizing
                 contentHtml += `
                     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
                         <p class="font-bold text-gray-800 mb-2">${q.questionText || 'Journal Entry'}</p>
@@ -305,7 +283,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         contentHtml += `</div>`;
     });
 
-    // Render Full Preview Layout
     const dateTaken = resultData.timestamp ? new Date(resultData.timestamp).toLocaleString() : "N/A";
     
     container.innerHTML = `
@@ -369,7 +346,6 @@ async function generateQuizContent(activityData) {
         `;
     });
 
-    // Add Submit Button to the right end of Tabs
     tabsHtml += `
         <div class="ml-auto pl-4 py-2">
             <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-4 py-1.5 rounded shadow transition whitespace-nowrap">
@@ -383,12 +359,10 @@ async function generateQuizContent(activityData) {
 
     for (const [index, section] of activityData.testQuestions.entries()) {
         const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
-        const isHidden = index === 0 ? '' : 'hidden'; // Only show first section initially
+        const isHidden = index === 0 ? '' : 'hidden'; 
 
-        // Section Wrapper
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
-        // Fetch Questions Logic
         let questions = [];
         let collectionName = '';
         if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
@@ -415,16 +389,13 @@ async function generateQuizContent(activityData) {
             }
         }
 
-        // --- Render Content Area & Tracker Area ---
-        
         let questionsHtml = '';
         let trackerHtml = '';
 
         questions.forEach((q, qIdx) => {
             const uiId = `s${index}_q${qIdx}`;
             
-            // --- ENHANCEMENT: STORE RICH DATA ---
-            // Store Metadata AND Full content for saving later
+            // Store Metadata
             questionData.push({ 
                 uiId: uiId, 
                 dbId: q.id, 
@@ -439,40 +410,34 @@ async function generateQuizContent(activityData) {
 
             // --- Sticky Info Header Content ---
             const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
+            
             const stickyHeader = `
-<div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-    <div class="flex flex-col gap-.5 text-xs text-gray-700">
-        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
-            <span class="font-bold text-blue-800">Type:</span> ${section.type}
-        </h3>
-
-        <div class="border-b pb-1">
-            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
-        </div>
-
-        <div class="border-b pb-1">
-            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
-        </div>
-
-        <div class="border-b pb-1">
-            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-        </div>
-    </div>
-</div>
+            <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                <div class="flex flex-col gap-1 text-xs text-gray-700">
+                    <div class="flex justify-between border-b border-blue-100 pb-1">
+                        <div><span class="font-bold text-blue-800">Type:</span> ${section.type}</div>
+                        <div><span class="font-bold text-blue-800">Topic:</span> <span class="truncate max-w-[150px] inline-block align-bottom">${section.topics}</span></div>
+                    </div>
+                    <div class="border-b border-blue-100 pb-1">
+                        <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                    </div>
+                    <div>
+                        <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
+                    </div>
+                </div>
+            </div>
             `;
 
             // --- Multiple Choice & Problem Solving Logic ---
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
-                // Tracker Button
                 trackerHtml += `
                     <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
                         ${qIdx + 1}
                     </button>
                 `;
 
-                // Question Content
                 let innerContent = '';
                 if (section.type === "Multiple Choice") {
                     const opts = q.options ? q.options.map((opt, optIdx) => `
@@ -481,7 +446,6 @@ async function generateQuizContent(activityData) {
                             <span class="text-sm text-gray-700">${opt}</span>
                         </label>
                     `).join('') : '';
-                    
                     innerContent = `<div class="flex flex-col mt-2">${opts}</div>`;
                 } else {
                     innerContent = `
@@ -520,7 +484,6 @@ async function generateQuizContent(activityData) {
                 const transactions = q.transactions || [];
                 const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
                 
-                // Tracker for Transactions
                 let transTrackerList = '';
                 let transContent = '';
 
@@ -536,7 +499,6 @@ async function generateQuizContent(activityData) {
                         </button>
                     `;
 
-                    // 2. Transaction Content (Input Table)
                     const rowCount = trans.rows || 2;
                     let rows = '';
                     for(let r=0; r < rowCount; r++) {
@@ -581,11 +543,10 @@ async function generateQuizContent(activityData) {
                     `;
                 });
 
-                // Wrap entire journal question
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
                         <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
-                             <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
+                             <div class="flex-1 p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col min-w-0">
                                  ${stickyHeader}
                                  
                                  <div class="p-4 md:p-6 flex-1">
@@ -614,7 +575,6 @@ async function generateQuizContent(activityData) {
             }
         });
 
-        // Assemble Layout for this Section
         if (section.type !== "Journalizing") {
             sectionsHtml += `
                 <div class="flex flex-col md:flex-row md:items-start gap-4">
@@ -719,9 +679,14 @@ function initializeQuizManager(activityData, questionData, user) {
                 });
                 // Update tracker
                 trackers.forEach((t, i) => {
+                    // Check if answered logic is handled in checkCompletion. 
+                    // Here we strictly handle ACTIVE state.
                     if (i === index) {
+                        // Force Active Blue State
                         t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
                     } else {
+                        // Reset to default (checked logic will re-apply green if needed in checkCompletion or we rely on 'data-answered' attribute)
+                        // To allow green to persist, we need to check data attribute or checkCompletion state
                         if (t.dataset.isAnswered === "true") {
                              t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
                         } else {
@@ -732,10 +697,12 @@ function initializeQuizManager(activityData, questionData, user) {
                 currentIndex = index;
             }
 
+            // Click Tracker
             trackers.forEach((t, idx) => {
                 t.addEventListener('click', () => showQuestion(idx));
             });
 
+            // Prev/Next Logic
             prevBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     if (currentIndex > 0) showQuestion(currentIndex - 1);
@@ -759,14 +726,19 @@ function initializeQuizManager(activityData, questionData, user) {
                 const internalPrevBtns = qBlock.querySelectorAll('.btn-prev-trans');
                 const internalNextBtns = qBlock.querySelectorAll('.btn-next-trans');
 
+                // Function to switch transaction
                 const switchTransaction = (idx) => {
+                     // Hide all blocks
                      transBlocks.forEach(b => b.classList.add('hidden'));
+                     // Show target (Assuming 1-to-1 mapping order)
                      if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
 
+                     // Update Active State on Sidebar
                      transBtns.forEach((b, bIdx) => {
                          if (bIdx === idx) {
                              b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
                          } else {
+                             // Check for green status
                              if (b.dataset.isAnswered === "true") {
                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
                              } else {
@@ -776,10 +748,12 @@ function initializeQuizManager(activityData, questionData, user) {
                      });
                 };
                 
+                // Sidebar Clicks
                 transBtns.forEach((btn, idx) => {
                     btn.addEventListener('click', () => switchTransaction(idx));
                 });
 
+                // Internal Button Clicks (Previous)
                 internalPrevBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const targetIdx = parseInt(btn.dataset.targetIdx);
@@ -787,6 +761,7 @@ function initializeQuizManager(activityData, questionData, user) {
                     });
                 });
 
+                // Internal Button Clicks (Next)
                 internalNextBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const targetIdx = parseInt(btn.dataset.targetIdx);
@@ -803,6 +778,7 @@ function initializeQuizManager(activityData, questionData, user) {
     function checkCompletion() {
         let allAnswered = true;
         
+        // MODIFICATION: Logic to update Tracker Colors to Green
         for (const q of questionData) {
             let isQuestionAnswered = false;
 
@@ -811,9 +787,11 @@ function initializeQuizManager(activityData, questionData, user) {
                 if (checked) isQuestionAnswered = true;
                 else allAnswered = false;
                 
+                // Update Tracker UI
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
+                    // Only change color if NOT currently active (blue)
                     if (!trackerBtn.classList.contains('bg-blue-600')) {
                         if (isQuestionAnswered) {
                             trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
@@ -828,6 +806,7 @@ function initializeQuizManager(activityData, questionData, user) {
                 if (val && val.trim() !== '') isQuestionAnswered = true;
                 else allAnswered = false;
 
+                // Update Tracker UI
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
@@ -841,11 +820,12 @@ function initializeQuizManager(activityData, questionData, user) {
                 }
 
             } else if (q.type === 'Journalizing') {
+                // Check Journaling per transaction
                 const transBtns = document.querySelectorAll(`button[data-target-trans^="${q.uiId}_t"]`);
                 let questionHasData = false;
                 
                 transBtns.forEach(btn => {
-                    const transUiId = btn.dataset.targetTrans;
+                    const transUiId = btn.dataset.targetTrans; // e.g., s0_q1_t0
                     const inputs = form.querySelectorAll(`input[name^="${transUiId}"]`);
                     let transHasData = false;
                     inputs.forEach(i => { if(i.value) transHasData = true; });
@@ -853,7 +833,8 @@ function initializeQuizManager(activityData, questionData, user) {
                     btn.dataset.isAnswered = transHasData ? "true" : "false";
                     if(transHasData) questionHasData = true;
 
-                    if (!btn.classList.contains('bg-blue-100')) {
+                    // Update Sidebar Item Color (Green if answered, unless active blue)
+                    if (!btn.classList.contains('bg-blue-100')) { // Check active class
                         if (transHasData) {
                             btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
                         } else {
