@@ -1,6 +1,6 @@
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-// Added Import as requested
+// Added Import as requested with correct path
 import { getLetterGrade } from "../utils.js"; 
 
 const firebaseConfig = {
@@ -271,7 +271,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             return aIdx - bIdx;
         });
 
-        // Initialize Score Counters for this section
+        // Initialize Score Counters
         let sectionScore = 0;
         let sectionMaxScore = 0;
         let sectionBodyHtml = '';
@@ -344,23 +344,24 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                 sectionBodyHtml += `
                     <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
                         ${stickyHeaderHtml}
-                        <div class="p-4">
-                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                            <div class="mb-2">
+                        <div class="p-4 space-y-4">
+                            <p class="font-bold text-gray-800">${qIdx+1}. ${q.questionText}</p>
+                            <div class="space-y-1">
                                 <p class="text-xs font-bold text-blue-600">Your Answer:</p>
                                 <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer || "No Answer"}</div>
                             </div>
-                            <div class="mb-2">
+                            <div class="space-y-1">
                                 <p class="text-xs font-bold text-green-600">Answer Key:</p>
                                 <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer || "N/A"}</div>
                             </div>
-                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
+                            <div class="space-y-1">
+                                <p class="text-xs font-bold text-gray-600">Explanation:</p>
+                                <div class="bg-gray-50 p-2 rounded text-xs text-gray-700 whitespace-pre-wrap">${q.explanation || "No explanation provided."}</div>
                             </div>
                         </div>
                     </div>`;
 
-            // --- 3. JOURNALIZING (ENHANCED SCORING) ---
+            // --- 3. JOURNALIZING (FIXED LAYOUT & SCORING) ---
             } else if (section.type === "Journalizing") {
                 let transactionsHtml = '';
                 const transactions = q.transactions || [];
@@ -384,44 +385,43 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         let drValid = false;
                         let crValid = false;
                         
+                        const checkMark = '<i class="fas fa-check text-green-600 text-[10px]"></i>';
+
                         // === DATE VALIDATION ===
+                        const sDate = cellData.date.trim();
+                        // 1. Is an answer expected here?
                         if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
-                             sectionMaxScore++;
-                             const sDate = cellData.date.trim();
+                             sectionMaxScore++; // Expecting answer
                              if (r === 0) {
-                                 // Mmm d or Mmm dd for first trans, d or dd for subsequent
                                  const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
                                  if (sDate.match(expectedRegex) && sDate === solRow.date) {
                                      dateValid = true;
                                      sectionScore++;
                                  }
                              } else {
+                                 // Non-first rows should be empty if row exists in solution
                                  if (sDate === '') { dateValid = true; sectionScore++; }
                              }
+                        } else {
+                            // NOT Expecting Answer
+                            if (sDate !== '') {
+                                sectionScore--; // DEDUCTION
+                            }
                         }
 
                         // === ACCOUNT / EXPLANATION VALIDATION ===
+                        const sAcct = cellData.acct;
                         if (solRow) {
-                             sectionMaxScore++;
-                             const sAcct = cellData.acct; 
-                             
+                             sectionMaxScore++; // Expecting answer
                              if (solRow.isExplanation) {
-                                 // Requirement: 5 to 8 spaces indentation.
-                                 if (sAcct.match(/^\s{5,8}\S/)) {
-                                     acctValid = true;
-                                     sectionScore++;
-                                 }
+                                 if (sAcct.match(/^\s{5,8}\S/)) { acctValid = true; sectionScore++; }
                              } else {
                                  const cleanInput = sAcct.trim();
                                  const cleanSol = solRow.account.trim();
-                                 const contentMatch = cleanInput.toLowerCase() === cleanSol.toLowerCase();
-
-                                 if (contentMatch) {
+                                 if (cleanInput.toLowerCase() === cleanSol.toLowerCase()) {
                                      if (solRow.credit) {
-                                         // Expect 3-5 spaces for Credit
                                          if (sAcct.match(/^\s{3,5}\S/)) { acctValid = true; sectionScore++; }
                                      } else {
-                                         // Expect 0 spaces for Debit
                                          if (sAcct.match(/^\S/)) { acctValid = true; sectionScore++; }
                                      }
                                  }
@@ -429,62 +429,68 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         }
 
                         // === DEBIT AMOUNT VALIDATION ===
-                        if (solRow && !solRow.isExplanation) {
-                            sectionMaxScore++;
-                            const sDr = cellData.dr.trim();
-                            const cleanSolDr = solRow.debit ? Number(solRow.debit).toFixed(2) : "";
-                            
-                            if (cleanSolDr === "") {
-                                if(sDr === "") { drValid = true; sectionScore++; }
-                            } else {
-                                // No comma, 2 decimal places strict check
-                                if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) {
-                                    drValid = true;
-                                    sectionScore++;
-                                }
+                        const sDr = cellData.dr.trim();
+                        const cleanSolDr = (solRow && solRow.debit) ? Number(solRow.debit).toFixed(2) : "";
+                        
+                        if (solRow && !solRow.isExplanation && cleanSolDr !== "") {
+                            sectionMaxScore++; // Expecting Answer
+                            if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) {
+                                drValid = true;
+                                sectionScore++;
                             }
+                        } else {
+                            // Not Expecting Answer
+                            if (sDr !== "") sectionScore--; // Deduction
                         }
 
                         // === CREDIT AMOUNT VALIDATION ===
-                        if (solRow && !solRow.isExplanation) {
-                            sectionMaxScore++;
-                            const sCr = cellData.cr.trim();
-                            const cleanSolCr = solRow.credit ? Number(solRow.credit).toFixed(2) : "";
-                            
-                            if (cleanSolCr === "") {
-                                if(sCr === "") { crValid = true; sectionScore++; }
-                            } else {
-                                if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) {
-                                    crValid = true;
-                                    sectionScore++;
-                                }
+                        const sCr = cellData.cr.trim();
+                        const cleanSolCr = (solRow && solRow.credit) ? Number(solRow.credit).toFixed(2) : "";
+                        
+                        if (solRow && !solRow.isExplanation && cleanSolCr !== "") {
+                            sectionMaxScore++; // Expecting Answer
+                            if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) {
+                                crValid = true;
+                                sectionScore++;
                             }
+                        } else {
+                            // Not Expecting Answer
+                            if (sCr !== "") sectionScore--; // Deduction
                         }
 
-                        const checkMark = '<i class="fas fa-check text-green-600 text-[10px] ml-1"></i>';
+                        // --- MODIFIED LAYOUT: CONCATENATED CHECKMARKS ---
+                        // DATE: Checkmark LEFT
+                        const dateContent = `
+                            <div class="flex justify-end items-center gap-1 w-full">
+                                ${dateValid ? checkMark : ''} <span>${cellData.date}</span>
+                            </div>`;
+                        
+                        // ACCOUNT: Checkmark RIGHT
+                        const acctContent = `
+                            <div class="flex justify-between items-center w-full">
+                                <span class="whitespace-pre-wrap">${cellData.acct}</span> ${acctValid ? checkMark : ''}
+                            </div>`;
+
+                        // DR/CR: Checkmark LEFT
+                        const drContent = `
+                            <div class="flex justify-end items-center gap-1 w-full">
+                                ${drValid ? checkMark : ''} <span>${cellData.dr}</span>
+                            </div>`;
+                        const crContent = `
+                            <div class="flex justify-end items-center gap-1 w-full">
+                                ${crValid ? checkMark : ''} <span>${cellData.cr}</span>
+                            </div>`;
 
                         studentRowsHtml += `
                         <tr class="border-b border-gray-100 bg-white">
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle relative">
-                                ${cellData.date}
-                                ${dateValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
-                            </td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-left h-8 align-middle whitespace-pre-wrap relative">
-                                ${cellData.acct}
-                                ${acctValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
-                            </td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs text-right h-8 align-middle relative">
-                                ${cellData.dr}
-                                ${drValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
-                            </td>
-                            <td class="p-1.5 font-mono text-xs text-right h-8 align-middle relative">
-                                ${cellData.cr}
-                                ${crValid ? `<span class="absolute top-0 right-0">${checkMark}</span>` : ''}
-                            </td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs align-middle w-24">${dateContent}</td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs align-middle w-auto">${acctContent}</td>
+                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs align-middle w-28">${drContent}</td>
+                            <td class="p-1.5 font-mono text-xs align-middle w-28">${crContent}</td>
                         </tr>`;
                     }
 
-                    // --- B. Build Correct Solution Table (FORMATTED STRICTLY) ---
+                    // --- B. Build Correct Solution Table ---
                     if (trans.solution && Array.isArray(trans.solution)) {
                         trans.solution.forEach(solRow => {
                             if (solRow.isExplanation) {
@@ -514,22 +520,24 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                         solutionRowsHtml = '<tr><td colspan="4" class="p-2 text-center text-xs italic text-gray-400">No solution key available.</td></tr>';
                     }
 
+                    // --- VERTICAL LAYOUT FOR PREVIEW ---
                     transactionsHtml += `
                         <div class="mb-6 border border-gray-300 rounded overflow-hidden">
                             <div class="bg-gray-100 px-3 py-2 border-b border-gray-300">
                                 <span class="font-bold text-gray-700 text-sm">Transaction ${tIdx + 1}:</span>
                                 <span class="text-xs text-gray-600 ml-2 italic">${trans.date} - ${trans.description}</span>
                             </div>
-                            <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-300">
+                            
+                            <div class="flex flex-col gap-0 divide-y divide-gray-300">
                                 <div>
                                     <div class="bg-blue-50 py-1 px-3 text-[10px] font-bold text-blue-800 uppercase border-b border-blue-100">Your Answer</div>
-                                    <table class="w-full border-collapse">
+                                    <table class="w-full border-collapse table-fixed">
                                         <thead>
                                             <tr class="bg-gray-50 text-[10px] text-gray-500 uppercase border-b border-gray-200">
-                                                <th class="py-1 px-1 w-12 text-right">Date</th>
-                                                <th class="py-1 px-2 text-left">Account</th>
-                                                <th class="py-1 px-1 w-16 text-right">Dr</th>
-                                                <th class="py-1 px-1 w-16 text-right">Cr</th>
+                                                <th class="py-1 px-1 w-24 text-right">Date</th>
+                                                <th class="py-1 px-2 text-left w-auto">Account</th>
+                                                <th class="py-1 px-1 w-28 text-right">Dr</th>
+                                                <th class="py-1 px-1 w-28 text-right">Cr</th>
                                             </tr>
                                         </thead>
                                         <tbody>${studentRowsHtml}</tbody>
@@ -537,13 +545,13 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                                 </div>
                                 <div>
                                     <div class="bg-green-50 py-1 px-3 text-[10px] font-bold text-green-800 uppercase border-b border-green-100">Standard Solution</div>
-                                    <table class="w-full border-collapse">
+                                    <table class="w-full border-collapse table-fixed">
                                         <thead>
                                             <tr class="bg-green-50/50 text-[10px] text-green-700 uppercase border-b border-green-100">
-                                                <th class="py-1 px-1 w-12 text-right">Date</th>
-                                                <th class="py-1 px-2 text-left">Account</th>
-                                                <th class="py-1 px-1 w-16 text-right">Dr</th>
-                                                <th class="py-1 px-1 w-16 text-right">Cr</th>
+                                                <th class="py-1 px-1 w-24 text-right">Date</th>
+                                                <th class="py-1 px-2 text-left w-auto">Account</th>
+                                                <th class="py-1 px-1 w-28 text-right">Dr</th>
+                                                <th class="py-1 px-1 w-28 text-right">Cr</th>
                                             </tr>
                                         </thead>
                                         <tbody>${solutionRowsHtml}</tbody>
@@ -564,7 +572,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             }
         });
 
-        // --- SECTION HEADER WITH SCORE, PERCENTAGE, AND GRADE ---
+        // Score Calculation
         const percent = sectionMaxScore > 0 ? (sectionScore / sectionMaxScore) * 100 : 0;
         const letter = getLetterGrade(sectionScore, sectionMaxScore);
 
@@ -581,7 +589,6 @@ async function renderQuizResultPreview(activityData, user, resultData) {
         `;
     });
 
-    // Render Full Preview Layout
     const dateTaken = resultData.timestamp ? new Date(resultData.timestamp).toLocaleString() : "N/A";
     
     container.innerHTML = `
@@ -627,7 +634,6 @@ async function generateQuizContent(activityData) {
         return { html: '<div class="p-8 text-center text-gray-500">No test sections defined.</div>', data: [] };
     }
 
-    // --- Generate Tabs Header ---
     tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap shrink-0 z-20 sticky top-0 shadow-sm">`;
     
     activityData.testQuestions.forEach((section, index) => {
@@ -639,7 +645,6 @@ async function generateQuizContent(activityData) {
         `;
     });
 
-    // Add Submit Button to the right end of Tabs
     tabsHtml += `
         <div class="ml-auto pl-4 py-2">
             <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-4 py-1.5 rounded shadow transition whitespace-nowrap">
@@ -648,17 +653,14 @@ async function generateQuizContent(activityData) {
         </div>
     </div>`;
 
-    // --- Generate Sections ---
     sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
 
     for (const [index, section] of activityData.testQuestions.entries()) {
         const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
-        const isHidden = index === 0 ? '' : 'hidden'; // Only show first section initially
+        const isHidden = index === 0 ? '' : 'hidden'; 
 
-        // Section Wrapper
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
-        // Fetch Questions Logic
         let questions = [];
         let collectionName = '';
         if (section.type === "Multiple Choice") collectionName = 'qbMultipleChoice';
@@ -684,8 +686,6 @@ async function generateQuizContent(activityData) {
                 console.error(`Error fetching questions:`, error);
             }
         }
-
-        // --- Render Content Area & Tracker Area ---
         
         let questionsHtml = '';
         let trackerHtml = '';
@@ -693,13 +693,10 @@ async function generateQuizContent(activityData) {
         questions.forEach((q, qIdx) => {
             const uiId = `s${index}_q${qIdx}`;
             
-            // --- ENHANCEMENT: STORE RICH DATA ---
-            // Store Metadata AND Full content for saving later
             questionData.push({ 
                 uiId: uiId, 
                 dbId: q.id, 
                 type: section.type,
-                // Rich Data for Saving/Preview
                 questionText: q.question || (q.title || 'Journal Activity'),
                 correctAnswer: q.answer || q.solution,
                 options: q.options || [],
@@ -708,7 +705,6 @@ async function generateQuizContent(activityData) {
                 instructions: q.instructions || null
             });
 
-            // --- Sticky Info Header Content ---
             const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
             const stickyHeader = `
 <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
@@ -732,18 +728,15 @@ async function generateQuizContent(activityData) {
 </div>
             `;
 
-            // --- Multiple Choice & Problem Solving Logic ---
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
-                // Tracker Button
                 trackerHtml += `
                     <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
                         ${qIdx + 1}
                     </button>
                 `;
 
-                // Question Content
                 let innerContent = '';
                 if (section.type === "Multiple Choice") {
                     const opts = q.options ? q.options.map((opt, optIdx) => `
@@ -785,13 +778,10 @@ async function generateQuizContent(activityData) {
                     </div>
                 `;
             } 
-            
-            // --- Journalizing Logic ---
             else {
                 const transactions = q.transactions || [];
                 const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
                 
-                // Tracker for Transactions
                 let transTrackerList = '';
                 let transContent = '';
 
@@ -807,16 +797,15 @@ async function generateQuizContent(activityData) {
                         </button>
                     `;
 
-                    // 2. Transaction Content (Input Table)
                     const rowCount = trans.rows || 2;
                     let rows = '';
                     for(let r=0; r < rowCount; r++) {
                         rows += `
                         <tr class="border-b border-gray-200 bg-white">
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
-                            <td class="p-0 border-r border-gray-300"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder=""></td>
-                            <td class="p-0 border-r border-gray-300 w-24"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
-                            <td class="p-0 w-24"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-24"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-auto"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-28"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
+                            <td class="p-0 w-28"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
                         </tr>`;
                     }
 
@@ -828,12 +817,12 @@ async function generateQuizContent(activityData) {
                             </div>
 
                             <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
-                                <table class="w-full border-collapse min-w-[600px]">
+                                <table class="w-full border-collapse table-fixed min-w-[600px]">
                                     <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
                                         <th class="py-2 border-r border-gray-300 w-24">Date</th>
-                                        <th class="py-2 border-r border-gray-300 text-left pl-4">Account Titles</th>
-                                        <th class="py-2 border-r border-gray-300 w-24 text-right pr-2">Debit</th>
-                                        <th class="py-2 w-24 text-right pr-2">Credit</th>
+                                        <th class="py-2 border-r border-gray-300 text-left pl-4 w-auto">Account Titles</th>
+                                        <th class="py-2 border-r border-gray-300 w-28 text-right pr-2">Debit</th>
+                                        <th class="py-2 w-28 text-right pr-2">Credit</th>
                                     </tr></thead>
                                     <tbody>${rows}</tbody>
                                 </table>
@@ -851,7 +840,6 @@ async function generateQuizContent(activityData) {
                     `;
                 });
 
-                // Wrap entire journal question
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
                         <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
@@ -883,7 +871,6 @@ async function generateQuizContent(activityData) {
             }
         });
 
-        // Assemble Layout for this Section
         if (section.type !== "Journalizing") {
             sectionsHtml += `
                 <div class="flex flex-col md:flex-row md:items-start gap-4">
@@ -911,10 +898,10 @@ async function generateQuizContent(activityData) {
             `;
         }
 
-        sectionsHtml += `</div>`; // End Section Wrapper
+        sectionsHtml += `</div>`; 
     }
 
-    sectionsHtml += `</div>`; // End All Sections Container
+    sectionsHtml += `</div>`; 
 
     return { html: tabsHtml + sectionsHtml, data: questionData };
 }
@@ -927,7 +914,6 @@ function initializeQuizManager(activityData, questionData, user) {
     const submitBtn = document.getElementById('btn-submit-quiz');
     const form = document.getElementById('quiz-form');
 
-    // 1. Timer Logic
     function updateTimer() {
         const now = new Date().getTime();
         const dist = expireTime - now;
@@ -947,10 +933,9 @@ function initializeQuizManager(activityData, questionData, user) {
 
         timerDisplay.innerHTML = `${h > 0 ? h + ':' : ''}${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
     }
-    updateTimer(); // Initial call
+    updateTimer(); 
     quizTimerInterval = setInterval(updateTimer, 1000);
 
-    // 2. Tab Switching Logic
     const tabs = document.querySelectorAll('.tab-btn');
     const sections = document.querySelectorAll('.test-section-panel');
 
@@ -969,7 +954,6 @@ function initializeQuizManager(activityData, questionData, user) {
         });
     });
 
-    // 3. Question Navigation & Tracker Logic (Scoped per section)
     sections.forEach(section => {
         const type = section.dataset.sectionType;
         
@@ -986,7 +970,6 @@ function initializeQuizManager(activityData, questionData, user) {
                     if (i === index) q.classList.remove('hidden');
                     else q.classList.add('hidden');
                 });
-                // Update tracker
                 trackers.forEach((t, i) => {
                     if (i === index) {
                         t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
@@ -1018,7 +1001,6 @@ function initializeQuizManager(activityData, questionData, user) {
             });
         } 
         
-        // --- Journalizing Navigation (Internal Transactions) ---
         else if (type === 'Journalizing') {
             const questions = section.querySelectorAll('.question-block');
             
@@ -1066,7 +1048,6 @@ function initializeQuizManager(activityData, questionData, user) {
         }
     });
 
-    // 4. Input Validation (Unlock Submit Button) & Color Updates
     form.addEventListener('input', checkCompletion);
     
     function checkCompletion() {
@@ -1148,22 +1129,18 @@ function initializeQuizManager(activityData, questionData, user) {
         }
     }
 
-    // Submit Action
     submitBtn.addEventListener('click', () => submitQuiz(activityData, questionData, user));
 }
 
 async function submitQuiz(activityData, questionData, user) {
     if(!confirm("Are you sure you want to submit your answers?")) return;
     
-    // Clear Timer
     if(quizTimerInterval) clearInterval(quizTimerInterval);
 
-    // Collect Answers
     const form = document.getElementById('quiz-form');
     const formData = new FormData(form);
     const answers = {};
     
-    // --- ENHANCEMENT: CAPTURE RICH QUESTION DATA ---
     const questionsTaken = {};
 
     questionData.forEach(q => {
@@ -1199,14 +1176,12 @@ async function submitQuiz(activityData, questionData, user) {
         }
     });
 
-    // --- ENHANCEMENT: CALCULATE SCORES BEFORE SAVE ---
-    const sectionScores = {}; // To store results per section index (0, 1, 2...)
+    const sectionScores = {};
 
     activityData.testQuestions.forEach((section, index) => {
         let sectionScore = 0;
         let sectionMaxScore = 0;
 
-        // Filter questions belonging to this section
         const sectionQs = questionData.filter(q => q.uiId.startsWith(`s${index}_`));
 
         sectionQs.forEach(q => {
@@ -1231,27 +1206,28 @@ async function submitQuiz(activityData, questionData, user) {
                         const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
                         const solRow = solRows[r] || null;
 
+                        const sDate = cellData.date.trim();
                         if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
-                             sectionMaxScore++;
-                             const sDate = cellData.date.trim();
+                             sectionMaxScore++; 
                              if (r === 0) {
                                  const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
                                  if (sDate.match(expectedRegex) && sDate === solRow.date) sectionScore++;
                              } else {
                                  if (sDate === '') sectionScore++;
                              }
+                        } else {
+                            if (sDate !== '') sectionScore--; 
                         }
 
+                        const sAcct = cellData.acct;
                         if (solRow) {
-                             sectionMaxScore++;
-                             const sAcct = cellData.acct; 
+                             sectionMaxScore++; 
                              if (solRow.isExplanation) {
                                  if (sAcct.match(/^\s{5,8}\S/)) sectionScore++;
                              } else {
                                  const cleanInput = sAcct.trim();
                                  const cleanSol = solRow.account.trim();
-                                 const contentMatch = cleanInput.toLowerCase() === cleanSol.toLowerCase();
-                                 if (contentMatch) {
+                                 if (cleanInput.toLowerCase() === cleanSol.toLowerCase()) {
                                      if (solRow.credit) {
                                          if (sAcct.match(/^\s{3,5}\S/)) sectionScore++;
                                      } else {
@@ -1261,26 +1237,22 @@ async function submitQuiz(activityData, questionData, user) {
                              }
                         }
 
-                        if (solRow && !solRow.isExplanation) {
-                            sectionMaxScore++;
-                            const sDr = cellData.dr.trim();
-                            const cleanSolDr = solRow.debit ? Number(solRow.debit).toFixed(2) : "";
-                            if (cleanSolDr === "") {
-                                if(sDr === "") sectionScore++;
-                            } else {
-                                if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) sectionScore++;
-                            }
+                        const sDr = cellData.dr.trim();
+                        const cleanSolDr = (solRow && solRow.debit) ? Number(solRow.debit).toFixed(2) : "";
+                        if (solRow && !solRow.isExplanation && cleanSolDr !== "") {
+                            sectionMaxScore++; 
+                            if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) sectionScore++;
+                        } else {
+                            if (sDr !== "") sectionScore--; 
                         }
 
-                        if (solRow && !solRow.isExplanation) {
-                            sectionMaxScore++;
-                            const sCr = cellData.cr.trim();
-                            const cleanSolCr = solRow.credit ? Number(solRow.credit).toFixed(2) : "";
-                            if (cleanSolCr === "") {
-                                if(sCr === "") sectionScore++;
-                            } else {
-                                if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) sectionScore++;
-                            }
+                        const sCr = cellData.cr.trim();
+                        const cleanSolCr = (solRow && solRow.credit) ? Number(solRow.credit).toFixed(2) : "";
+                        if (solRow && !solRow.isExplanation && cleanSolCr !== "") {
+                            sectionMaxScore++; 
+                            if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) sectionScore++;
+                        } else {
+                            if (sCr !== "") sectionScore--; 
                         }
                     }
                 });
@@ -1309,7 +1281,7 @@ async function submitQuiz(activityData, questionData, user) {
         timestamp: new Date().toISOString(),
         answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
         questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v)),
-        sectionScores: sectionScores // Saved here!
+        sectionScores: sectionScores
     };
 
     try {
