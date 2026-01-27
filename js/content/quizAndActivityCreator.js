@@ -258,21 +258,35 @@ async function loadTopicsForType(type, selectElement) {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            // Data structure: { "subject-topic-count": { topic: "..." } } 
-            // OR flattened? Assuming standard doc data has 'topic' field inside.
-            // Based on your prompt layout: { "qbMultipleChoice": { "id": { "topic": "..." } } }
-            // Firestore collection queries return documents. 
-            // If you uploaded using the importer: doc ID is key, data is value.
-            if(data.topic) topics.add(data.topic);
+
+            // 1. Check if the document ITSELF has a 'topic' (Flat structure)
+            if (data.topic) {
+                topics.add(data.topic.trim());
+            } 
+            
+            // 2. Check if the document contains nested objects (Map/Nested structure)
+            // This iterates through every field in the document to find hidden topics
+            Object.values(data).forEach(item => {
+                if (item && typeof item === 'object' && item.topic) {
+                    topics.add(item.topic.trim());
+                }
+            });
         });
 
-        selectElement.innerHTML = '<option value="">-- Add Topic --</option>';
-        Array.from(topics).sort().forEach(topic => {
-            const opt = document.createElement('option');
-            opt.value = topic;
-            opt.text = topic;
-            selectElement.appendChild(opt);
-        });
+        // Convert Set to Array, remove empty/null, and sort
+        const sortedTopics = Array.from(topics).filter(t => t).sort();
+
+        if (sortedTopics.length === 0) {
+            selectElement.innerHTML = '<option value="">No topics found</option>';
+        } else {
+            selectElement.innerHTML = '<option value="">-- Add Topic --</option>';
+            sortedTopics.forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = topic;
+                opt.text = topic;
+                selectElement.appendChild(opt);
+            });
+        }
 
     } catch (e) {
         console.error(`Error loading topics for ${type}:`, e);
