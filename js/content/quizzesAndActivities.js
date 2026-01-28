@@ -302,7 +302,7 @@ async function generateQuizContent(activityData) {
         questions.forEach((q, qIdx) => {
             const uiId = `s${index}_q${qIdx}`;
             
-            // FIXED: Robust helper to find correct answer even if 'answer' is missing or 0
+            // Robust helper to find correct answer even if 'answer' is missing or 0
             const getSafeCorrectAnswer = (q) => {
                 if (q.answer !== undefined && q.answer !== null && q.answer !== "") return q.answer;
                 if (q.solution !== undefined && q.solution !== null && q.solution !== "") return q.solution;
@@ -322,12 +322,9 @@ async function generateQuizContent(activityData) {
                 instructions: q.instructions || null
             });
 
-            // For Journalizing, instructions might be per question. 
-            // For MC, it's typically per section.
             const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
             
-            // Only generate sticky header HTML for Journalizing here (since we removed it for MC/Problem Solving)
-            // or we generate it but only include it if type matches
+            // Generate sticky header (used inside loop for Journalizing, outside for others)
             const stickyHeader = `
                 <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
                     <div class="flex flex-col gap-.5 text-xs text-gray-700">
@@ -398,8 +395,7 @@ async function generateQuizContent(activityData) {
                 `;
             } 
             else {
-                // JOURNALIZING: Keep sticky header here or as is, since instructions vary per question? 
-                // The request specifically asked to remove it for "MultipleChoice".
+                // JOURNALIZING: Keep sticky header here as instructions often vary per question
                 const transactions = q.transactions || [];
                 const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
                 
@@ -891,7 +887,9 @@ async function submitQuiz(activityData, questionData, user) {
 
             if (section.type === "Multiple Choice") {
                 sectionMaxScore++;
-                if (String(studentAnswer) === String(q.correctAnswer)) sectionScore++;
+                // FIXED: Treat matching strings OR student "0" matching null answer key as correct
+                const isZeroMatch = (String(studentAnswer) === "0" && (q.correctAnswer === null || q.correctAnswer === undefined));
+                if (String(studentAnswer) === String(q.correctAnswer) || isZeroMatch) sectionScore++;
             } 
             else if (section.type === "Problem Solving") {
                 sectionMaxScore++;
@@ -1128,12 +1126,17 @@ async function renderQuizResultPreview(activityData, user, resultData) {
             // --- 1. MULTIPLE CHOICE ---
             if (section.type === "Multiple Choice") {
                 sectionMaxScore++;
-                const isCorrect = String(studentAnswer) === String(q.correctAnswer);
+                // FIXED: Check match OR check if student 0 matches null key
+                const isCorrect = String(studentAnswer) === String(q.correctAnswer) || 
+                                  (String(studentAnswer) === "0" && (q.correctAnswer === null || q.correctAnswer === undefined));
+                
                 if(isCorrect) sectionScore++;
 
                 const optionsHtml = (q.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
-                    const isOptCorrect = String(q.correctAnswer) === String(optIdx); 
+                    // FIXED: Correct option is the defined one OR 0 if defined is null
+                    const isOptCorrect = String(q.correctAnswer) === String(optIdx) ||
+                                         (String(optIdx) === "0" && (q.correctAnswer === null || q.correctAnswer === undefined));
                     
                     let bgClass = "bg-white border-gray-200";
                     let icon = "";
