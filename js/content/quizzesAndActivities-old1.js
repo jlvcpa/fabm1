@@ -307,7 +307,8 @@ async function generateQuizContent(activityData) {
                 dbId: q.id, 
                 type: section.type,
                 questionText: q.question || (q.title || 'Journal Activity'),
-                correctAnswer: q.answer || q.solution,
+                // FIXED: Handle 0 as a valid answer index (was failing on falsy check)
+                correctAnswer: (q.answer !== undefined && q.answer !== null) ? q.answer : q.solution,
                 options: q.options || [],
                 explanation: q.explanation || '',
                 transactions: q.transactions || [],
@@ -461,8 +462,8 @@ async function generateQuizContent(activityData) {
                                      
                                      ${questions.length > 1 ? `
                                      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                                         <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
-                                         <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
+                                          <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
+                                          <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
                                      </div>` : ''}
                                  </div>
                              </div>
@@ -872,7 +873,8 @@ async function submitQuiz(activityData, questionData, user) {
                     const rowCount = trans.rows || 2;
 
                     for(let r=0; r < rowCount; r++) {
-                        const cellKey = `${tIdx}_${r}`;
+                        // FIXED: Adjusted key format to match saved data (t0_r0 instead of 0_0)
+                        const cellKey = `t${tIdx}_r${r}`;
                         const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
                         const solRow = solRows[r] || null;
 
@@ -1145,7 +1147,8 @@ async function renderQuizResultPreview(activityData, user, resultData) {
 
                     // --- Build Student Answer Table WITH SCORING ---
                     for(let r=0; r < rowCount; r++) {
-                        const cellKey = `${tIdx}_${r}`; 
+                        // FIXED: Adjusted key format to match saved data (t0_r0 instead of 0_0)
+                        const cellKey = `t${tIdx}_r${r}`; 
                         const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
                         
                         const solRow = solRows[r] || null;
