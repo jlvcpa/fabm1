@@ -3,6 +3,10 @@ import { courseData } from './content/syllabus.js';
 import { formatRanges } from './utils.js';
 import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js
+';
+js/content/accountingCycle/steps/Step05Worksheet.js
 
 // --- STATE MANAGEMENT ---
 let currentUser = null; 
@@ -129,7 +133,7 @@ function renderSidebar(role) {
     const container = elements.navContainer();
     container.innerHTML = ''; 
 
-    // Course Outline Button (Reduced padding to py-2)
+    // Course Outline Button
     const outlineBtn = document.createElement('button');
     outlineBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-blue-500 focus:outline-none whitespace-nowrap overflow-hidden";
     outlineBtn.innerHTML = '<i class="fas fa-home w-6"></i> <span class="sidebar-text-detail">Course Outline</span>';
@@ -151,7 +155,7 @@ function renderSidebar(role) {
             const unitPrefix = unitParts[0];
             const unitSuffix = unitParts.slice(1).join(':');
 
-            // --- UNIT BUTTON (Reduced padding to py-2) ---
+            // --- UNIT BUTTON ---
             const unitBtn = document.createElement('button');
             unitBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex justify-between items-center group whitespace-nowrap overflow-hidden";
             unitBtn.innerHTML = `
@@ -249,7 +253,7 @@ function renderSidebar(role) {
         });
     });
 
-    // --- QUIZZES AND ACTIVITIES (Visible to All) (Reduced padding to py-2) ---
+    // --- QUIZZES AND ACTIVITIES (Visible to All) ---
     const qaHeader = document.createElement('div');
     qaHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
     qaHeader.textContent = "Assessments";
@@ -266,31 +270,92 @@ function renderSidebar(role) {
 
     // --- TEACHER TOOLS (Teachers Only) ---
     if (role === 'teacher') {
-        const creatorHeader = document.createElement('div');
-        creatorHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
-        creatorHeader.textContent = "Teacher Tools";
-        container.appendChild(creatorHeader);
+        const creatorHeader = document.createElement('button');
+        creatorHeader.className = "w-full text-left px-6 py-3 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden flex justify-between items-center group hover:text-slate-300 focus:outline-none";
+        creatorHeader.innerHTML = '<span>Teacher Tools</span> <i class="fas fa-chevron-down text-xs transition-transform duration-300"></i>';
+        
+        const toolsSubmenu = document.createElement('div');
+        toolsSubmenu.className = "hidden bg-slate-950 border-l border-slate-800 ml-4 mb-4"; // Indented submenu
 
-        // 1. Quiz & Activity Creator (Reduced padding to py-2)
+        creatorHeader.onclick = () => {
+            toolsSubmenu.classList.toggle('hidden');
+            const icon = creatorHeader.querySelector('.fa-chevron-down');
+            if (toolsSubmenu.classList.contains('hidden')) {
+                icon.classList.remove('rotate-180');
+            } else {
+                icon.classList.add('rotate-180');
+            }
+        };
+
+        container.appendChild(creatorHeader);
+        
+        // 1. Quiz & Activity Creator
         const creatorBtn = document.createElement('button');
-        creatorBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-green-500 focus:outline-none whitespace-nowrap overflow-hidden";
-        creatorBtn.innerHTML = '<i class="fas fa-magic w-6"></i> <span class="sidebar-text-detail">Quiz & Activity Creator</span>';
+        creatorBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-green-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-green-500";
+        creatorBtn.innerHTML = '<i class="fas fa-magic text-xs"></i> <span class="text-sm">Creator</span>';
         creatorBtn.onclick = () => {
             renderCreatorPage(); 
             closeMobileSidebar();
         };
-        container.appendChild(creatorBtn);
+        toolsSubmenu.appendChild(creatorBtn);
 
-        // 2. Course Schedule (Moved here, Reduced padding to py-2)
+        // 2. Course Schedule
         const calendarBtn = document.createElement('button');
-        calendarBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-purple-500 focus:outline-none whitespace-nowrap overflow-hidden";
-        calendarBtn.innerHTML = '<i class="fas fa-calendar-alt w-6"></i> <span class="sidebar-text-detail">Course Schedule</span>';
+        calendarBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-purple-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-purple-500";
+        calendarBtn.innerHTML = '<i class="fas fa-calendar-alt text-xs"></i> <span class="text-sm">Schedule</span>';
         calendarBtn.onclick = () => {
             renderCalendarPage();
             closeMobileSidebar();
         };
-        container.appendChild(calendarBtn);
+        toolsSubmenu.appendChild(calendarBtn);
+
+        // 3. Question Bank Importer (NEW)
+        const importerBtn = document.createElement('button');
+        importerBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-blue-500";
+        importerBtn.innerHTML = '<i class="fas fa-file-import text-xs"></i> <span class="text-sm">Importer</span>';
+        importerBtn.onclick = () => {
+            renderQuestionImporterPage();
+            closeMobileSidebar();
+        };
+        toolsSubmenu.appendChild(importerBtn);
+
+        container.appendChild(toolsSubmenu);
     }
+}
+
+// --- QUESTION IMPORTER PAGE RENDERER ---
+function renderQuestionImporterPage() {
+    elements.pageTitle().innerText = "Question Bank Importer";
+    const content = elements.contentArea();
+    content.innerHTML = ''; // Clear container
+
+    const container = document.createElement('div');
+    container.id = "importer-container";
+    container.className = "w-full h-full p-4";
+    content.appendChild(container);
+
+    // Call imported function
+     if(typeof renderQuestionImporter === 'function') {
+         renderQuestionImporter('importer-container');
+     } else {
+         container.innerHTML = `<div class="p-8 text-center text-gray-500">Importer module not loaded. Uncomment import in app.js</div>`;
+     }
+
+    /*
+     Placeholder content until file is linked
+    container.innerHTML = `
+        <div class="w-full max-w-4xl mx-auto p-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                <div class="mb-4 text-blue-500">
+                    <i class="fas fa-file-import text-5xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Question Bank Importer</h2>
+                <p class="text-gray-600">The content for this module is being imported from <code>toolQuestionImporter.js</code>.</p>
+                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
+            </div>
+        </div>
+    `;
+    */
 }
 
 // --- QUIZZES & ACTIVITIES PAGE RENDERER ---
@@ -300,13 +365,13 @@ function renderQuizzesActivitiesPage() {
     content.innerHTML = '';
 
     // UNCOMMENT AND USE THIS BLOCK WHEN quizzesAndActivities.js IS READY
-    
+   
     if (typeof renderQuizzesAndActivities === 'function') {
         renderQuizzesAndActivities(content, currentUser);
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
-   
+    
     // Placeholder content until file is linked
     /*
     content.innerHTML = `
@@ -321,7 +386,7 @@ function renderQuizzesActivitiesPage() {
             </div>
         </div>
     `;
-     */
+    */
 }
 
 // --- CREATOR PAGE RENDERER ---
@@ -334,18 +399,20 @@ function renderCreatorPage() {
     renderQuizActivityCreator(content);
     
     // Placeholder content until file is linked
-    //content.innerHTML = `
-    //    <div class="w-full max-w-4xl mx-auto p-8">
-    //        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-    //            <div class="mb-4 text-green-500">
-     //               <i class="fas fa-magic text-5xl"></i>
-    //            </div>
-    //            <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
-    //            <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
-    //            <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-    //        </div>
-    //    </div>
-    //`;
+    /*
+    content.innerHTML = `
+        <div class="w-full max-w-4xl mx-auto p-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                <div class="mb-4 text-green-500">
+                    <i class="fas fa-magic text-5xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
+                <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
+                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
+            </div>
+        </div>
+    `;
+    */
 }
 
 function renderLandingPage() {
