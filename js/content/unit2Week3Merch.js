@@ -370,55 +370,94 @@ export const unit2Week3Data = {
                 </div>
             `,
             exercises: [
-                {
-                    type: "mcq",
-                    question: "In a Periodic Inventory System worksheet, the amount shown for Merchandise Inventory in the Trial Balance columns represents:",
-                    options: [
-                        "Ending Inventory",
-                        "Beginning Inventory",
-                        "Cost of Goods Sold",
-                        "Net Purchases"
-                    ],
-                    correctIndex: 1,
-                    explanation: "Under the periodic system, the inventory account is not touched during the year, so the Trial Balance still shows the balance from the start of the year."
-                },
-                {
-                    type: "mcq",
-                    question: "Where is the Ending Inventory entered in the worksheet under the Periodic System?",
-                    options: [
-                        "Income Statement Debit and Balance Sheet Credit",
-                        "Income Statement Credit and Balance Sheet Debit",
-                        "Trial Balance Debit only",
-                        "Adjusted Trial Balance Credit only"
-                    ],
-                    correctIndex: 1,
-                    explanation: "It is credited in the Income Statement (to reduce COGS/Cost available) and debited in the Balance Sheet (to record the asset)."
-                },
-                {
-                    type: "mcq",
-                    question: "In a Perpetual System, why is no special adjustment needed for Ending Inventory in the worksheet?",
-                    options: [
-                        "Because merchandisers don't use worksheets.",
-                        "Because the Cost of Goods Sold is estimated.",
-                        "Because the Inventory account balance is already updated to the current Ending Inventory amount.",
-                        "Because Inventory is an expense."
-                    ],
-                    correctIndex: 2,
-                    explanation: "Perpetual systems update the inventory account with every purchase and sale, so the Trial Balance already reflects the correct ending asset value."
-                },
-                {
-                    type: "problem",
-                    question: "In the Income Statement columns of a worksheet, the Debit column total is ₱500,000 and the Credit column total is ₱650,000. What is the result?",
-                    answer: "Net Income of ₱150,000",
-                    explanation: "Credits (Revenues) exceed Debits (Expenses). 650,000 - 500,000 = 150,000 Net Income."
-                },
-                {
-                    type: "problem",
-                    question: "If Beginning Inventory is ₱20,000 and Ending Inventory is ₱35,000. In the Periodic Worksheet Income Statement columns, you will enter:",
-                    answer: "Debit ₱20,000 and Credit ₱35,000",
-                    explanation: "Debit the Beginning Inventory (Cost) and Credit the Ending Inventory (Deduction from Cost)."
-                }
-            ]
+    // ... your existing MCQ and Problem items ...
+    {
+        type: "mcq",
+        question: "In a Periodic Inventory System worksheet, the amount shown for Merchandise Inventory in the Trial Balance columns represents:",
+        options: ["Ending Inventory", "Beginning Inventory", "Cost of Goods Sold", "Net Purchases"],
+        correctIndex: 1,
+        explanation: "Under the periodic system, the inventory account is not touched during the year, so the Trial Balance still shows the balance from the start of the year."
+    },
+    {
+        type: "mcq",
+        question: "Where is the Ending Inventory entered in the worksheet under the Periodic System?",
+        options: [
+            "Income Statement Debit and Balance Sheet Credit",
+            "Income Statement Credit and Balance Sheet Debit",
+            "Trial Balance Debit only",
+            "Adjusted Trial Balance Credit only"
+        ],
+        correctIndex: 1,
+        explanation: "It is credited in the Income Statement (to reduce COGS/Cost available) and debited in the Balance Sheet (to record the asset)."
+    },
+    {
+        type: "mcq",
+        question: "In a Perpetual System, why is no special adjustment needed for Ending Inventory in the worksheet?",
+        options: [
+            "Because merchandisers don't use worksheets.",
+            "Because the Cost of Goods Sold is estimated.",
+            "Because the Inventory account balance is already updated to the current Ending Inventory amount.",
+            "Because Inventory is an expense."
+        ],
+        correctIndex: 2,
+        explanation: "Perpetual systems update the inventory account with every purchase and sale, so the Trial Balance already reflects the correct ending asset value."
+    },
+    {
+        type: "problem",
+        question: "In the Income Statement columns of a worksheet, the Debit column total is ₱500,000 and the Credit column total is ₱650,000. What is the result?",
+        answer: "Net Income of ₱150,000",
+        explanation: "Credits (Revenues) exceed Debits (Expenses). 650,000 - 500,000 = 150,000 Net Income."
+    },
+    {
+        type: "problem",
+        question: "If Beginning Inventory is ₱20,000 and Ending Inventory is ₱35,000. In the Periodic Worksheet Income Statement columns, you will enter:",
+        answer: "Debit ₱20,000 and Credit ₱35,000",
+        explanation: "Debit the Beginning Inventory (Cost) and Credit the Ending Inventory (Deduction from Cost)."
+    },
+
+    // --- NEW WORKSHEET ACTIVITY TYPE ---
+    {
+        type: "worksheet",
+        id: "WS-SET1-FIFO",
+        title: "Worksheet Activity: Set 1 (Periodic FIFO)",
+        instructions: "Complete the 10-column worksheet based on the transactions from Set 1. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
+        // Pulling data from your SET 1 JSON
+        transactions: [
+            { "date": "Dec 1", "description": "Owner invested ₱100,000 cash and Equipment worth ₱50,000.", "solution": [ { "account": "Cash", "debit": 100000 }, { "account": "Equipment", "debit": 50000 }, { "account": "Owner's Capital", "credit": 150000 } ] },
+            { "date": "Dec 2", "description": "Purchased 2,000 units at ₱20 each on account.", "solution": [ { "account": "Purchases", "debit": 40000 }, { "account": "Accounts Payable", "credit": 40000 } ] },
+            { "date": "Dec 2", "description": "Paid ₱12,000 for 1-year insurance.", "solution": [ { "account": "Prepaid Insurance", "debit": 12000 }, { "account": "Cash", "credit": 12000 } ] },
+            { "date": "Dec 3", "description": "Paid freight in ₱1,000.", "solution": [ { "account": "Freight In", "debit": 1000 }, { "account": "Cash", "credit": 1000 } ] },
+            { "date": "Dec 5", "description": "Returned 200 units.", "solution": [ { "account": "Accounts Payable", "debit": 4000 }, { "account": "Purchase Returns and Allowances", "credit": 4000 } ] },
+            { "date": "Dec 7", "description": "Purchased 1,000 units at ₱25.", "solution": [ { "account": "Purchases", "debit": 25000 }, { "account": "Accounts Payable", "credit": 25000 } ] },
+            { "date": "Dec 10", "description": "Sold 1,500 units on account @ ₱50.", "solution": [ { "account": "Accounts Receivable", "debit": 75000 }, { "account": "Sales", "credit": 75000 } ] },
+            { "date": "Dec 12", "description": "Customer returned 100 units.", "solution": [ { "account": "Sales Returns and Allowances", "debit": 5000 }, { "account": "Accounts Receivable", "credit": 5000 } ] },
+            { "date": "Dec 15", "description": "Advance payment received.", "solution": [ { "account": "Cash", "debit": 5000 }, { "account": "Unearned Revenue", "credit": 5000 } ] },
+            { "date": "Dec 18", "description": "Paid partial payment.", "solution": [ { "account": "Accounts Payable", "debit": 10000 }, { "account": "Cash", "credit": 10000 } ] },
+            { "date": "Dec 20", "description": "Purchased supplies.", "solution": [ { "account": "Supplies", "debit": 1500 }, { "account": "Cash", "credit": 1500 } ] },
+            { "date": "Dec 22", "description": "Collection from customers.", "solution": [ { "account": "Cash", "debit": 15000 }, { "account": "Accounts Receivable", "credit": 15000 } ] },
+            { "date": "Dec 26", "description": "Equipment repairs.", "solution": [ { "account": "Repairs Expense", "debit": 800 }, { "account": "Cash", "credit": 800 } ] },
+            { "date": "Dec 29", "description": "Owner withdrawal.", "solution": [ { "account": "Owner's Drawings", "debit": 1000 }, { "account": "Cash", "credit": 1000 } ] },
+            { "date": "Dec 30", "description": "Paid salaries.", "solution": [ { "account": "Salaries Expense", "debit": 2000 }, { "account": "Cash", "credit": 2000 } ] }
+        ],
+        adjustments: [
+            { "description": "1. Accrued utilities expense ₱300." },
+            { "description": "2. Supplies on hand ₱500 (Used ₱1,000)." },
+            { "description": "3. Insurance expired ₱1,000." },
+            { "description": "4. Depreciation ₱833.33." },
+            { "description": "5. Accrued salaries ₱500." },
+            { "description": "6. Record Ending Inventory: ₱33,000 (Units: 1,400 via FIFO)." },
+            { "description": "7. Earned ₱2,000 from advanced payment." }
+        ],
+        mountLogic: () => {
+            // This matches the ID created in the renderDayContent function
+            const mountPoint = document.getElementById('worksheet-mount');
+            if (mountPoint && typeof Step05Worksheet !== 'undefined') {
+                // Logic to trigger the React render would go here
+                console.log("Worksheet Ready for Mounting");
+            }
+        }
+    }
+]
         },
         // ... (Keep Day 2, Day 3, and Day 4 objects exactly as they were in the previous code) ...
         {
