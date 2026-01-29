@@ -13,9 +13,37 @@ export const unit2Week3Data = {
                 <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
                 
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">1. The Merchandising Worksheet</h3>
+                    <p class="text-gray-700 mb-4">
+                        The worksheet for a merchandiser is similar to a service business, but with key differences depending on the inventory system used.
+                    </p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 class="font-bold text-green-800 mb-2">Perpetual System</h4>
+                            <p class="text-sm text-green-900 mb-2">Easier to handle in the worksheet.</p>
+                            <ul class="list-disc pl-5 text-sm text-green-900 space-y-1">
+                                <li><strong>Inventory Account:</strong> The Trial Balance already shows the <em>Ending Inventory</em> figure (because it's updated real-time).</li>
+                                <li><strong>COGS Account:</strong> Already exists in the Trial Balance.</li>
+                                <li><strong>Action:</strong> Simply extend the Inventory balance to the <strong>Balance Sheet Debit</strong> column.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h4 class="font-bold text-orange-800 mb-2">Periodic System</h4>
+                            <p class="text-sm text-orange-900 mb-2">Requires specific adjustment steps.</p>
+                            <ul class="list-disc pl-5 text-sm text-orange-900 space-y-1">
+                                <li><strong>Trial Balance:</strong> Shows <em>Beginning Inventory</em>.</li>
+                                <li><strong>Adjustment:</strong> There is no "COGS" account yet. We must calculate it using the Income Statement columns.</li>
+                                <li><strong>Action:</strong> Use the "Direct Extension" method or "Adjustment" method to replace Beginning Inv with Ending Inv.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Method 1: Direct Extension (The Closing Entry Method)</h3>
                     <div class="bg-gray-100 p-3 rounded text-sm text-gray-700 mb-4 italic border-l-4 border-gray-400">
-                        <p><strong>Concept:</strong> No entries are made in the "Adjustments" columns. Inventory is updated later via Closing Entries. In the worksheet, we simply "extend" the figures to where they belong.</p>
+                        <p><strong>Concept:</strong> No entries are made in the "Adjustments" columns for inventory. Instead, we extend the Beginning Inventory to the Income Statement Debit column (as a cost) and the Ending Inventory to both the Income Statement Credit column (as a deduction) and Balance Sheet Debit column (as an asset).</p>
                     </div>
 
                     <p class="text-gray-700 mb-4 text-sm">
@@ -24,7 +52,7 @@ export const unit2Week3Data = {
                         • Ending Inventory (Dec 31): <strong>₱350,000</strong> (from Note #4)
                     </p>
 
-                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-4">
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6">
                         <svg viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
                             <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
                             <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
@@ -72,12 +100,54 @@ export const unit2Week3Data = {
                             </defs>
                         </svg>
                     </div>
+
+                    <h4 class="font-bold text-gray-800 mb-2">Partial Worksheet: Direct Extension Method</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-center border border-gray-300">
+                            <thead class="bg-gray-100 font-bold text-gray-700">
+                                <tr>
+                                    <th class="p-2 border text-left w-1/4">Account Titles</th>
+                                    <th class="p-2 border" colspan="2">Trial Balance</th>
+                                    <th class="p-2 border" colspan="2">Adjustments</th>
+                                    <th class="p-2 border bg-red-50" colspan="2">Income Statement</th>
+                                    <th class="p-2 border bg-blue-50" colspan="2">Balance Sheet</th>
+                                </tr>
+                                <tr>
+                                    <th class="p-2 border text-left"></th>
+                                    <th class="p-1 border w-16">Dr</th>
+                                    <th class="p-1 border w-16">Cr</th>
+                                    <th class="p-1 border w-16">Dr</th>
+                                    <th class="p-1 border w-16">Cr</th>
+                                    <th class="p-1 border w-16 bg-red-50 text-red-800">Dr</th>
+                                    <th class="p-1 border w-16 bg-red-50 text-red-800">Cr</th>
+                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Dr</th>
+                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Cr</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-2 text-left font-medium">Merch. Inventory</td>
+                                    <td class="p-2 border bg-gray-50">285,000</td>
+                                    <td class="p-2 border"></td>
+                                    <td class="p-2 border"></td>
+                                    <td class="p-2 border"></td>
+                                    <td class="p-2 border font-bold text-red-700 bg-red-50">285,000</td>
+                                    <td class="p-2 border font-bold text-green-700 bg-red-50">350,000</td>
+                                    <td class="p-2 border font-bold text-blue-700 bg-blue-50">350,000</td>
+                                    <td class="p-2 border bg-blue-50"></td>
+                                </tr>
+                                <tr class="bg-gray-50 text-gray-500 italic">
+                                    <td class="p-2 text-left" colspan="9">Note: Beginning Inventory (285k) flows to IS Debit. Ending Inventory (350k) is inserted into IS Credit and BS Debit.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
                     <h3 class="text-xl font-bold text-gray-800 mb-3">Method 2: The Adjustment Method</h3>
                     <div class="bg-indigo-50 p-3 rounded text-sm text-indigo-900 mb-4 italic border-l-4 border-indigo-400">
-                        <p><strong>Concept:</strong> We use the <strong>Adjustments Columns</strong> to formally remove the old inventory and record the new one. We use the account <strong>Income Summary</strong> (or Cost of Goods Sold) to offset these entries.</p>
+                        <p><strong>Concept:</strong> We use the <strong>Adjustments Columns</strong> to formally remove the old inventory and record the new one. We use the account <strong>Income Summary</strong> to offset these entries.</p>
                     </div>
 
                     <div class="grid md:grid-cols-2 gap-6 mb-4">
@@ -99,7 +169,7 @@ export const unit2Week3Data = {
                         </div>
                     </div>
 
-                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg">
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6">
                         <svg viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
                             <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
                             <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
@@ -162,8 +232,58 @@ export const unit2Week3Data = {
                             </defs>
                         </svg>
                     </div>
-                    <div class="mt-2 text-xs text-gray-500 italic">
-                        <strong>Result:</strong> Merchandise Inventory in the Adjusted Trial Balance is now ₱350,000 (Ready for Balance Sheet). Income Summary holds both figures to be sent to Income Statement columns.
+
+                    <h4 class="font-bold text-gray-800 mb-2">Partial Worksheet: Adjustment Method</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-center border border-gray-300">
+                            <thead class="bg-gray-100 font-bold text-gray-700">
+                                <tr>
+                                    <th class="p-2 border text-left w-1/4">Account Titles</th>
+                                    <th class="p-2 border" colspan="2">Trial Balance</th>
+                                    <th class="p-2 border bg-yellow-50" colspan="2">Adjustments</th>
+                                    <th class="p-2 border bg-blue-50" colspan="2">Adjusted TB</th>
+                                    <th class="p-2 border" colspan="2">Income Statement</th>
+                                </tr>
+                                <tr>
+                                    <th class="p-2 border text-left"></th>
+                                    <th class="p-1 border w-16">Dr</th>
+                                    <th class="p-1 border w-16">Cr</th>
+                                    <th class="p-1 border w-16 bg-yellow-50">Dr</th>
+                                    <th class="p-1 border w-16 bg-yellow-50">Cr</th>
+                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Dr</th>
+                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Cr</th>
+                                    <th class="p-1 border w-16">Dr</th>
+                                    <th class="p-1 border w-16">Cr</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-2 text-left font-medium">Merch. Inventory</td>
+                                    <td class="p-2 border bg-gray-50">285,000</td>
+                                    <td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-green-700">350,000</td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-red-700">285,000</td>
+                                    <td class="p-2 border bg-blue-50 font-bold text-blue-700">350,000</td>
+                                    <td class="p-2 border bg-blue-50"></td>
+                                    <td class="p-2 border text-gray-400">-> To BS</td>
+                                    <td class="p-2 border"></td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-2 text-left font-medium">Income Summary</td>
+                                    <td class="p-2 border"></td>
+                                    <td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-red-700">285,000</td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-green-700">350,000</td>
+                                    <td class="p-2 border bg-blue-50">285,000</td>
+                                    <td class="p-2 border bg-blue-50">350,000</td>
+                                    <td class="p-2 border font-bold">285,000</td>
+                                    <td class="p-2 border font-bold">350,000</td>
+                                </tr>
+                                <tr class="bg-gray-50 text-gray-500 italic">
+                                    <td class="p-2 text-left" colspan="9">Note: Inventory is updated in Adjusted TB. Income Summary carries cost (Dr) and deduction (Cr) to Income Statement.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
