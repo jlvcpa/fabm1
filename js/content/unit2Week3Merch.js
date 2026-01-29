@@ -56,134 +56,123 @@ export const unit2Week3Data = {
                         <svg viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
                             <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
                             <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
-                            
                             <rect x="200" y="0" width="120" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
                             <text x="260" y="25" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Balance</text>
-
                             <rect x="320" y="0" width="240" height="40" fill="#fee2e2" stroke="#d1d5db"/>
                             <text x="440" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#991b1b">Income Statement</text>
                             <text x="380" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Dr</text>
                             <text x="500" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Cr</text>
-
                             <rect x="560" y="0" width="240" height="40" fill="#dbeafe" stroke="#d1d5db"/>
                             <text x="680" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Balance Sheet</text>
                             <text x="620" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Dr</text>
                             <text x="740" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Cr</text>
-
                             <text x="10" y="80" font-family="monospace" font-size="12" fill="#1f2937">Merch. Inventory</text>
-                            
                             <rect x="205" y="60" width="50" height="30" rx="4" fill="#f3f4f6" stroke="#9ca3af"/>
                             <text x="230" y="80" text-anchor="middle" font-family="monospace" font-size="11" fill="#000">285k</text>
                             <path d="M 260 75 Q 320 50 350 70" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
-                            
                             <rect x="355" y="60" width="50" height="30" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
                             <text x="380" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#991b1b">285k</text>
                             <text x="380" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#ef4444">(Beg)</text>
-
                             <rect x="475" y="60" width="50" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
                             <text x="500" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#166534">350k</text>
                             <text x="500" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#16a34a">(End)</text>
-
                             <path d="M 530 75 L 590 75" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowheadBlue)"/>
-
                             <rect x="595" y="60" width="50" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
                             <text x="620" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#1e40af">350k</text>
                             <text x="620" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#2563eb">(End)</text>
-
                             <defs>
-                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                  <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                                </marker>
-                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-                                </marker>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" /></marker>
+                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" /></marker>
                             </defs>
                         </svg>
                     </div>
 
                     <h4 class="font-bold text-gray-800 mb-2">Completed Worksheet: Direct Extension Method</h4>
-                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6 bg-white">
-                        <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 10px;">
-                            <style>
-                                .header { fill: #374151; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
-                                .cell { fill: none; stroke: #e5e7eb; stroke-width: 1px; }
-                                .num { text-anchor: end; }
-                                .acct { text-anchor: start; font-family: sans-serif; }
-                                .total-row { font-weight: bold; fill: #f9fafb; }
-                                .net-income { font-weight: bold; fill: #ecfdf5; }
-                                .highlight-inv { fill: #fef2f2; }
-                            </style>
-                            
-                            <rect x="0" y="0" width="900" height="60" fill="#f3f4f6" />
-                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" font-family="sans-serif">Account Titles</text>
-                            <text x="260" y="32" class="header" font-family="sans-serif">Trial Balance</text>
-                            <text x="230" y="50" class="header">Dr</text><text x="290" y="50" class="header">Cr</text>
-                            <text x="380" y="32" class="header" font-family="sans-serif">Adjustments</text>
-                            <text x="350" y="50" class="header">Dr</text><text x="410" y="50" class="header">Cr</text>
-                            <text x="500" y="32" class="header" font-family="sans-serif">Adjusted TB</text>
-                            <text x="470" y="50" class="header">Dr</text><text x="530" y="50" class="header">Cr</text>
-                            <text x="630" y="32" class="header" font-family="sans-serif">Income Statement</text>
-                            <text x="600" y="50" class="header">Dr</text><text x="660" y="50" class="header">Cr</text>
-                            <text x="770" y="32" class="header" font-family="sans-serif">Balance Sheet</text>
-                            <text x="740" y="50" class="header">Dr</text><text x="800" y="50" class="header">Cr</text>
+                    <div class="overflow-x-auto border border-gray-300 rounded-lg mb-6 shadow-sm bg-white">
+                        <table class="min-w-[900px] w-full text-xs text-right border-collapse">
+                            <thead class="bg-gray-100 text-gray-700 border-b-2 border-gray-300">
+                                <tr>
+                                    <th class="p-2 border text-left font-bold w-1/5 sticky left-0 bg-gray-100 z-10">Account Titles</th>
+                                    <th class="p-2 border text-center font-bold" colspan="2">Trial Balance</th>
+                                    <th class="p-2 border text-center font-bold text-yellow-800 bg-yellow-50" colspan="2">Adjustments</th>
+                                    <th class="p-2 border text-center font-bold text-blue-800 bg-blue-50" colspan="2">Adjusted TB</th>
+                                    <th class="p-2 border text-center font-bold text-red-800 bg-red-50" colspan="2">Income Statement</th>
+                                    <th class="p-2 border text-center font-bold text-indigo-800 bg-indigo-50" colspan="2">Balance Sheet</th>
+                                </tr>
+                                <tr class="text-[10px]">
+                                    <th class="p-1 border sticky left-0 bg-gray-100"></th>
+                                    <th class="p-1 border w-20">Dr</th><th class="p-1 border w-20">Cr</th>
+                                    <th class="p-1 border w-20 bg-yellow-50">Dr</th><th class="p-1 border w-20 bg-yellow-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-blue-50">Dr</th><th class="p-1 border w-20 bg-blue-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-red-50">Dr</th><th class="p-1 border w-20 bg-red-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-indigo-50">Dr</th><th class="p-1 border w-20 bg-indigo-50">Cr</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-mono text-gray-600">
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Cash</td><td class="p-2 border">67,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">67,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">67,500</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Receivable</td><td class="p-2 border">22,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">22,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">22,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr class="bg-red-50">
+                                    <td class="p-2 border text-left font-sans font-bold text-gray-900 sticky left-0 bg-red-50">Merch. Inventory</td>
+                                    <td class="p-2 border font-bold">285,000</td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td>
+                                    <td class="p-2 border bg-blue-50 font-bold">285,000</td><td class="p-2 border bg-blue-50"></td>
+                                    <td class="p-2 border bg-red-50 font-bold text-red-600">285,000</td><td class="p-2 border bg-red-50 font-bold text-green-600">350,000</td>
+                                    <td class="p-2 border bg-indigo-50 font-bold text-blue-600">350,000</td><td class="p-2 border bg-indigo-50"></td>
+                                </tr>
 
-                            <g transform="translate(0, 75)">
-                                <text x="10" y="0" class="acct">Cash</text><text x="250" y="0" class="num">180,000</text><text x="760" y="0" class="num">180,000</text>
-                                <text x="10" y="20" class="acct">Accounts Receivable</text><text x="250" y="0" transform="translate(0,20)" class="num">550,000</text><text x="760" y="0" transform="translate(0,20)" class="num">550,000</text>
-                                <rect x="0" y="30" width="900" height="20" class="highlight-inv" fill-opacity="0.5"/>
-                                <text x="10" y="45" class="acct" font-weight="bold">Merch. Inventory</text>
-                                <text x="250" y="45" class="num">285,000</text>
-                                <text x="620" y="45" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="680" y="45" class="num" fill="#166534" font-weight="bold">350,000</text> <text x="760" y="45" class="num" fill="#1e40af" font-weight="bold">350,000</text> <text x="10" y="65" class="acct">Store Equipment</text><text x="250" y="65" class="num">1,200,000</text><text x="760" y="65" class="num">1,200,000</text>
-                                <text x="10" y="85" class="acct">Accum. Dep - Store Eq.</text><text x="310" y="85" class="num">180,000</text><text x="430" y="85" class="num">60,000</text><text x="820" y="85" class="num">240,000</text>
-                                <text x="10" y="105" class="acct">Accounts Payable</text><text x="310" y="105" class="num">385,000</text><text x="820" y="105" class="num">385,000</text>
-                                <text x="10" y="125" class="acct">H.Ai, Capital</text><text x="310" y="125" class="num">1,500,000</text><text x="820" y="125" class="num">1,500,000</text>
-                                <text x="10" y="145" class="acct">H.Ai, Drawing</text><text x="250" y="145" class="num">100,000</text><text x="760" y="145" class="num">100,000</text>
-                                <text x="10" y="165" class="acct">Sales</text><text x="310" y="165" class="num">1,800,000</text><text x="680" y="165" class="num">1,800,000</text>
-                                <text x="10" y="185" class="acct">Sales Returns & Allow.</text><text x="250" y="185" class="num">35,000</text><text x="620" y="185" class="num">35,000</text>
-                                <text x="10" y="205" class="acct">Purchases</text><text x="250" y="205" class="num">900,000</text><text x="620" y="205" class="num">900,000</text>
-                                <text x="10" y="225" class="acct">Purchase Returns & Allow.</text><text x="310" y="225" class="num">28,000</text><text x="680" y="225" class="num">28,000</text>
-                                <text x="10" y="245" class="acct">Freight In</text><text x="250" y="245" class="num">20,000</text><text x="620" y="245" class="num">20,000</text>
-                                <text x="10" y="265" class="acct">Salaries Expense</text><text x="250" y="265" class="num">350,000</text><text x="620" y="265" class="num">350,000</text>
-                                <text x="10" y="285" class="acct">Rent Expense</text><text x="250" y="285" class="num">120,000</text><text x="620" y="285" class="num">120,000</text>
-                                <text x="10" y="305" class="acct">Store Supplies Expense</text><text x="250" y="305" class="num">50,000</text><text x="430" y="305" class="num">30,000</text><text x="620" y="305" class="num">20,000</text>
-                                <text x="10" y="325" class="acct">Misc. Expense</text><text x="250" y="325" class="num">15,000</text><text x="620" y="325" class="num">15,000</text>
-                            </g>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Office Supplies</td><td class="p-2 border">10,600</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-blue-50">4,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">4,200</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Prepaid Insurance</td><td class="p-2 border">7,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-blue-50">5,775</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">5,775</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Building</td><td class="p-2 border">113,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">113,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">113,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accum. Dep - Bldg</td><td class="p-2 border"></td><td class="p-2 border">22,500</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">22,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">22,500</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Payable</td><td class="p-2 border"></td><td class="p-2 border">25,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">25,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">25,000</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Capital</td><td class="p-2 border"></td><td class="p-2 border">472,580</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">472,580</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">472,580</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Drawings</td><td class="p-2 border">36,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">36,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">36,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales</td><td class="p-2 border"></td><td class="p-2 border">894,440</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">894,440</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">894,440</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Discounts</td><td class="p-2 border">10,200</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">10,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">10,200</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Returns & Allow</td><td class="p-2 border">44,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">44,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">44,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchases</td><td class="p-2 border">760,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">760,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">760,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchase Discounts</td><td class="p-2 border"></td><td class="p-2 border">6,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">6,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">6,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purch Returns & Allow</td><td class="p-2 border"></td><td class="p-2 border">7,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">7,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">7,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Freight In</td><td class="p-2 border">21,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">21,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">21,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Salaries Expense</td><td class="p-2 border">4,220</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">8,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">8,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Advertising Expense</td><td class="p-2 border">19,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">19,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">19,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Maintenance Expense</td><td class="p-2 border">32,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">32,700</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">32,700</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Expense</td><td class="p-2 border">2,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">2,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">2,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Income</td><td class="p-2 border"></td><td class="p-2 border">9,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">9,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">9,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Supplies Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">6,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">6,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Insurance Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">1,925</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">1,925</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accrued Expense Payable</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">4,180</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">4,180</td></tr>
 
-                            <g transform="translate(0, 410)" class="total-row">
-                                <rect x="0" y="-10" width="900" height="20" fill="#f9fafb"/>
-                                <text x="100" y="0" class="acct">Totals</text>
-                                <text x="250" y="0" class="num">3,810,000</text><text x="310" y="0" class="num">3,893,000</text>
-                            </g>
+                                <tr class="font-bold bg-gray-50 border-t-2 border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-50">TOTALS</td>
+                                    <td class="p-2 border">1,436,520</td><td class="p-2 border">1,436,520</td>
+                                    <td class="p-2 border bg-yellow-50">12,505</td><td class="p-2 border bg-yellow-50">12,505</td>
+                                    <td class="p-2 border bg-blue-50">1,440,700</td><td class="p-2 border bg-blue-50">1,440,700</td>
+                                    <td class="p-2 border bg-red-50 text-red-800">1,192,225</td><td class="p-2 border bg-red-50 text-red-800">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50 text-indigo-800">598,475</td><td class="p-2 border bg-indigo-50 text-indigo-800">524,260</td>
+                                </tr>
 
-                            <g transform="translate(0, 435)">
-                                <text x="10" y="0" class="acct" font-style="italic">Adjustments data:</text>
-                                <text x="10" y="20" class="acct">Store Supplies (Asset)</text><text x="370" y="20" class="num">30,000</text><text x="760" y="20" class="num">30,000</text>
-                                <text x="10" y="40" class="acct">Depreciation Expense</text><text x="370" y="40" class="num">60,000</text><text x="620" y="40" class="num">60,000</text>
-                            </g>
+                                <tr class="font-bold bg-green-50">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-green-50 text-green-800">NET INCOME</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-red-50 text-green-700">74,215</td><td class="p-2 border bg-red-50"></td>
+                                    <td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50 text-green-700">74,215</td>
+                                </tr>
 
-                            <g transform="translate(0, 490)" class="total-row">
-                                <rect x="0" y="-10" width="900" height="25" fill="#e5e7eb"/>
-                                <text x="100" y="5" class="acct">TOTALS</text>
-                                <text x="370" y="5" class="num">90,000</text><text x="430" y="5" class="num">90,000</text> <text x="620" y="5" class="num" fill="#991b1b">1,805,000</text><text x="680" y="5" class="num" fill="#166534">2,178,000</text> <text x="760" y="5" class="num" fill="#1e40af">2,410,000</text><text x="820" y="5" class="num" fill="#1e40af">2,125,000</text> </g>
-
-                            <g transform="translate(0, 525)" class="net-income">
-                                <rect x="0" y="-10" width="900" height="25" fill="#dcfce7"/>
-                                <text x="100" y="5" class="acct" fill="#166534">NET INCOME</text>
-                                <text x="620" y="5" class="num" fill="#166534">373,000</text> <text x="820" y="5" class="num" fill="#166534">373,000</text> </g>
-                            
-                             <g transform="translate(0, 555)" class="total-row" font-weight="bold">
-                                <line x1="0" y1="-12" x2="900" y2="-12" stroke="#000" stroke-width="2"/>
-                                <text x="620" y="0" class="num">2,178,000</text><text x="680" y="0" class="num">2,178,000</text>
-                                <text x="760" y="0" class="num">2,498,000</text><text x="820" y="0" class="num">2,498,000</text>
-                                <line x1="0" y1="5" x2="900" y2="5" stroke="#000" stroke-width="2"/>
-                            </g>
-                            
-                            <g stroke="#e5e7eb" stroke-width="1">
-                                <line x1="200" y1="60" x2="200" y2="560"/><line x1="260" y1="60" x2="260" y2="420"/><line x1="320" y1="60" x2="320" y2="560"/>
-                                <line x1="380" y1="60" x2="380" y2="500"/><line x1="440" y1="60" x2="440" y2="500"/><line x1="560" y1="60" x2="560" y2="560"/>
-                                <line x1="640" y1="60" x2="640" y2="560"/><line x1="700" y1="60" x2="700" y2="560"/><line x1="780" y1="60" x2="780" y2="560"/><line x1="840" y1="60" x2="840" y2="560"/>
-                            </g>
-                        </svg>
+                                <tr class="font-bold bg-gray-100 border-b-2 border-double border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-100">GRAND TOTALS</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-red-50">1,266,440</td><td class="p-2 border bg-red-50">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50">598,475</td><td class="p-2 border bg-indigo-50">598,475</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -216,162 +205,140 @@ export const unit2Week3Data = {
                         <svg viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
                             <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
                             <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
-                            
                             <rect x="200" y="0" width="100" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
                             <text x="250" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Bal</text>
                             <text x="225" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Dr</text>
-
                             <rect x="300" y="0" width="160" height="40" fill="#fef3c7" stroke="#d1d5db"/>
                             <text x="380" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#92400e">Adjustments</text>
                             <text x="340" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#92400e">Dr</text>
                             <text x="420" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#92400e">Cr</text>
-
                             <rect x="460" y="0" width="100" height="40" fill="#e0f2fe" stroke="#d1d5db"/>
                             <text x="510" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#0369a1">Adj. TB</text>
                             <text x="485" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#0369a1">Dr</text>
-
                             <rect x="560" y="0" width="240" height="40" fill="#f3f4f6" stroke="#d1d5db"/>
                             <text x="680" y="25" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">IS / BS</text>
-
                             <text x="10" y="70" font-family="monospace" font-size="11" fill="#1f2937">Merch. Inventory</text>
-                            
                             <text x="225" y="70" text-anchor="middle" font-family="monospace" font-size="10" fill="#000">285k</text>
-
                             <rect x="400" y="55" width="40" height="20" rx="2" fill="#fee2e2" stroke="#ef4444"/>
                             <text x="420" y="68" text-anchor="middle" font-family="monospace" font-size="10" fill="#991b1b">285k</text>
-
                             <rect x="320" y="55" width="40" height="20" rx="2" fill="#dcfce7" stroke="#16a34a"/>
                             <text x="340" y="68" text-anchor="middle" font-family="monospace" font-size="10" fill="#166534">350k</text>
-
                             <text x="485" y="70" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1e40af">350k</text>
-                            
                             <path d="M 510 65 L 580 65" stroke="#1e40af" stroke-width="1" stroke-dasharray="2" marker-end="url(#arrowheadBlue)"/>
                             <text x="620" y="70" text-anchor="middle" font-size="9" fill="#1e40af">To BS Debit</text>
-
                             <text x="10" y="120" font-family="monospace" font-size="11" fill="#1f2937">Income Summary</text>
-
                             <rect x="320" y="105" width="40" height="20" rx="2" fill="#fee2e2" stroke="#ef4444"/>
                             <text x="340" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#991b1b">285k</text>
-
                             <rect x="400" y="105" width="40" height="20" rx="2" fill="#dcfce7" stroke="#16a34a"/>
                             <text x="420" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#166534">350k</text>
-
                             <path d="M 235 75 Q 280 120 320 115" stroke="#ef4444" stroke-width="1" fill="none" marker-end="url(#arrowhead)"/>
                             <text x="250" y="100" font-size="8" fill="#ef4444">Transfer Cost</text>
-
                             <path d="M 360 65 Q 380 90 400 105" stroke="#16a34a" stroke-width="1" fill="none" marker-end="url(#arrowheadGreen)"/>
                             <text x="375" y="85" font-size="8" fill="#16a34a">Set Up Asset</text>
-
                             <defs>
-                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                  <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                                </marker>
-                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#1e40af" />
-                                </marker>
-                                <marker id="arrowheadGreen" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a" />
-                                </marker>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" /></marker>
+                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#1e40af" /></marker>
+                                <marker id="arrowheadGreen" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#16a34a" /></marker>
                             </defs>
                         </svg>
                     </div>
-                    <div class="mt-2 text-xs text-gray-500 italic mb-6">
-                        <strong>Result:</strong> Merchandise Inventory in the Adjusted Trial Balance is now ₱350,000 (Ready for Balance Sheet). Income Summary holds both figures to be sent to Income Statement columns.
-                    </div>
 
                     <h4 class="font-bold text-gray-800 mb-2">Completed Worksheet: Adjustment Method</h4>
-                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6 bg-white">
-                        <svg viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 10px;">
-                            <style>
-                                .header { fill: #374151; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
-                                .cell { fill: none; stroke: #e5e7eb; stroke-width: 1px; }
-                                .num { text-anchor: end; }
-                                .acct { text-anchor: start; font-family: sans-serif; }
-                                .total-row { font-weight: bold; fill: #f9fafb; }
-                                .net-income { font-weight: bold; fill: #ecfdf5; }
-                                .highlight-adj { fill: #fefce8; }
-                            </style>
-                            
-                            <rect x="0" y="0" width="900" height="60" fill="#f3f4f6" />
-                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="440" y="20" width="120" height="40" fill="#e0f2fe" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" font-family="sans-serif">Account Titles</text>
-                            <text x="260" y="32" class="header" font-family="sans-serif">Trial Balance</text>
-                            <text x="230" y="50" class="header">Dr</text><text x="290" y="50" class="header">Cr</text>
-                            <text x="380" y="32" class="header" font-family="sans-serif">Adjustments</text>
-                            <text x="350" y="50" class="header">Dr</text><text x="410" y="50" class="header">Cr</text>
-                            <text x="500" y="32" class="header" font-family="sans-serif">Adjusted TB</text>
-                            <text x="470" y="50" class="header">Dr</text><text x="530" y="50" class="header">Cr</text>
-                            <text x="630" y="32" class="header" font-family="sans-serif">Income Statement</text>
-                            <text x="600" y="50" class="header">Dr</text><text x="660" y="50" class="header">Cr</text>
-                            <text x="770" y="32" class="header" font-family="sans-serif">Balance Sheet</text>
-                            <text x="740" y="50" class="header">Dr</text><text x="800" y="50" class="header">Cr</text>
+                    <div class="overflow-x-auto border border-gray-300 rounded-lg mb-6 shadow-sm bg-white">
+                        <table class="min-w-[900px] w-full text-xs text-right border-collapse">
+                            <thead class="bg-gray-100 text-gray-700 border-b-2 border-gray-300">
+                                <tr>
+                                    <th class="p-2 border text-left font-bold w-1/5 sticky left-0 bg-gray-100 z-10">Account Titles</th>
+                                    <th class="p-2 border text-center font-bold" colspan="2">Trial Balance</th>
+                                    <th class="p-2 border text-center font-bold text-yellow-800 bg-yellow-50" colspan="2">Adjustments</th>
+                                    <th class="p-2 border text-center font-bold text-blue-800 bg-blue-50" colspan="2">Adjusted TB</th>
+                                    <th class="p-2 border text-center font-bold text-red-800 bg-red-50" colspan="2">Income Statement</th>
+                                    <th class="p-2 border text-center font-bold text-indigo-800 bg-indigo-50" colspan="2">Balance Sheet</th>
+                                </tr>
+                                <tr class="text-[10px]">
+                                    <th class="p-1 border sticky left-0 bg-gray-100"></th>
+                                    <th class="p-1 border w-20">Dr</th><th class="p-1 border w-20">Cr</th>
+                                    <th class="p-1 border w-20 bg-yellow-50">Dr</th><th class="p-1 border w-20 bg-yellow-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-blue-50">Dr</th><th class="p-1 border w-20 bg-blue-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-red-50">Dr</th><th class="p-1 border w-20 bg-red-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-indigo-50">Dr</th><th class="p-1 border w-20 bg-indigo-50">Cr</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-mono text-gray-600">
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Cash</td><td class="p-2 border">67,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">67,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">67,500</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Receivable</td><td class="p-2 border">22,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">22,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">22,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr class="bg-yellow-50">
+                                    <td class="p-2 border text-left font-sans font-bold text-gray-900 sticky left-0 bg-yellow-50">Merch. Inventory</td>
+                                    <td class="p-2 border font-bold">285,000</td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-green-600">350,000</td><td class="p-2 border bg-yellow-50 font-bold text-red-600">285,000</td>
+                                    <td class="p-2 border bg-blue-50 font-bold">350,000</td><td class="p-2 border bg-blue-50"></td>
+                                    <td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td>
+                                    <td class="p-2 border bg-indigo-50 font-bold text-blue-600">350,000</td><td class="p-2 border bg-indigo-50"></td>
+                                </tr>
 
-                            <g transform="translate(0, 75)">
-                                <text x="10" y="0" class="acct">Cash</text><text x="250" y="0" class="num">180,000</text><text x="490" y="0" class="num">180,000</text><text x="760" y="0" class="num">180,000</text>
-                                <text x="10" y="20" class="acct">Accounts Receivable</text><text x="250" y="20" class="num">550,000</text><text x="490" y="20" class="num">550,000</text><text x="760" y="20" class="num">550,000</text>
-                                <rect x="0" y="30" width="900" height="20" class="highlight-adj" fill-opacity="0.5"/>
-                                <text x="10" y="45" class="acct" font-weight="bold">Merch. Inventory</text>
-                                <text x="250" y="45" class="num">285,000</text>
-                                <text x="370" y="45" class="num" fill="#166534" font-weight="bold">350,000</text> <text x="430" y="45" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="490" y="45" class="num" fill="#0369a1" font-weight="bold">350,000</text> <text x="760" y="45" class="num" fill="#1e40af" font-weight="bold">350,000</text> <text x="10" y="65" class="acct">Store Equipment</text><text x="250" y="65" class="num">1,200,000</text><text x="490" y="65" class="num">1,200,000</text><text x="760" y="65" class="num">1,200,000</text>
-                                <text x="10" y="85" class="acct">Accum. Dep - Store Eq.</text><text x="310" y="85" class="num">180,000</text><text x="430" y="85" class="num">60,000</text><text x="550" y="85" class="num">240,000</text><text x="820" y="85" class="num">240,000</text>
-                                <text x="10" y="105" class="acct">Accounts Payable</text><text x="310" y="105" class="num">385,000</text><text x="550" y="105" class="num">385,000</text><text x="820" y="105" class="num">385,000</text>
-                                <text x="10" y="125" class="acct">H.Ai, Capital</text><text x="310" y="125" class="num">1,500,000</text><text x="550" y="125" class="num">1,500,000</text><text x="820" y="125" class="num">1,500,000</text>
-                                <text x="10" y="145" class="acct">H.Ai, Drawing</text><text x="250" y="145" class="num">100,000</text><text x="490" y="145" class="num">100,000</text><text x="760" y="145" class="num">100,000</text>
-                                <text x="10" y="165" class="acct">Sales</text><text x="310" y="165" class="num">1,800,000</text><text x="550" y="165" class="num">1,800,000</text><text x="680" y="165" class="num">1,800,000</text>
-                                <text x="10" y="185" class="acct">Sales Returns & Allow.</text><text x="250" y="185" class="num">35,000</text><text x="490" y="185" class="num">35,000</text><text x="620" y="185" class="num">35,000</text>
-                                <text x="10" y="205" class="acct">Purchases</text><text x="250" y="205" class="num">900,000</text><text x="490" y="205" class="num">900,000</text><text x="620" y="205" class="num">900,000</text>
-                                <text x="10" y="225" class="acct">Purchase Returns & Allow.</text><text x="310" y="225" class="num">28,000</text><text x="550" y="225" class="num">28,000</text><text x="680" y="225" class="num">28,000</text>
-                                <text x="10" y="245" class="acct">Freight In</text><text x="250" y="245" class="num">20,000</text><text x="490" y="245" class="num">20,000</text><text x="620" y="245" class="num">20,000</text>
-                                <text x="10" y="265" class="acct">Salaries Expense</text><text x="250" y="265" class="num">350,000</text><text x="490" y="265" class="num">350,000</text><text x="620" y="265" class="num">350,000</text>
-                                <text x="10" y="285" class="acct">Rent Expense</text><text x="250" y="285" class="num">120,000</text><text x="490" y="285" class="num">120,000</text><text x="620" y="285" class="num">120,000</text>
-                                <text x="10" y="305" class="acct">Store Supplies Expense</text><text x="250" y="305" class="num">50,000</text><text x="430" y="305" class="num">30,000</text><text x="490" y="305" class="num">20,000</text><text x="620" y="305" class="num">20,000</text>
-                                <text x="10" y="325" class="acct">Misc. Expense</text><text x="250" y="325" class="num">15,000</text><text x="490" y="325" class="num">15,000</text><text x="620" y="325" class="num">15,000</text>
-                            </g>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Office Supplies</td><td class="p-2 border">10,600</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-blue-50">4,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">4,200</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Prepaid Insurance</td><td class="p-2 border">7,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-blue-50">5,775</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">5,775</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Building</td><td class="p-2 border">113,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">113,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">113,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accum. Dep - Bldg</td><td class="p-2 border"></td><td class="p-2 border">22,500</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">22,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">22,500</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Payable</td><td class="p-2 border"></td><td class="p-2 border">25,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">25,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">25,000</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Capital</td><td class="p-2 border"></td><td class="p-2 border">472,580</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">472,580</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">472,580</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Drawings</td><td class="p-2 border">36,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">36,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">36,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr class="bg-yellow-50">
+                                    <td class="p-2 border text-left font-sans font-bold text-gray-900 sticky left-0 bg-yellow-50">Income Summary</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-red-600">285,000</td><td class="p-2 border bg-yellow-50 font-bold text-green-600">350,000</td>
+                                    <td class="p-2 border bg-blue-50 font-bold">285,000</td><td class="p-2 border bg-blue-50 font-bold">350,000</td>
+                                    <td class="p-2 border bg-red-50 font-bold text-red-600">285,000</td><td class="p-2 border bg-red-50 font-bold text-green-600">350,000</td>
+                                    <td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td>
+                                </tr>
 
-                            <g transform="translate(0, 410)" class="total-row">
-                                <rect x="0" y="-10" width="900" height="20" fill="#f9fafb"/>
-                                <text x="100" y="0" class="acct">Totals</text>
-                                <text x="250" y="0" class="num">3,810,000</text><text x="310" y="0" class="num">3,893,000</text>
-                            </g>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales</td><td class="p-2 border"></td><td class="p-2 border">894,440</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">894,440</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">894,440</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Discounts</td><td class="p-2 border">10,200</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">10,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">10,200</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Returns & Allow</td><td class="p-2 border">44,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">44,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">44,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchases</td><td class="p-2 border">760,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">760,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">760,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchase Discounts</td><td class="p-2 border"></td><td class="p-2 border">6,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">6,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">6,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purch Returns & Allow</td><td class="p-2 border"></td><td class="p-2 border">7,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">7,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">7,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Freight In</td><td class="p-2 border">21,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">21,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">21,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Salaries Expense</td><td class="p-2 border">4,220</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">8,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">8,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Advertising Expense</td><td class="p-2 border">19,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">19,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">19,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Maintenance Expense</td><td class="p-2 border">32,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">32,700</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">32,700</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Expense</td><td class="p-2 border">2,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">2,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">2,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Income</td><td class="p-2 border"></td><td class="p-2 border">9,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">9,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">9,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Supplies Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">6,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">6,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Insurance Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">1,925</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">1,925</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accrued Expense Payable</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">4,180</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">4,180</td></tr>
 
-                            <g transform="translate(0, 435)">
-                                <text x="10" y="0" class="acct" font-style="italic">Adjustments data:</text>
-                                <text x="10" y="20" class="acct">Store Supplies (Asset)</text><text x="370" y="20" class="num">30,000</text><text x="490" y="20" class="num">30,000</text><text x="760" y="20" class="num">30,000</text>
-                                <text x="10" y="40" class="acct">Depreciation Expense</text><text x="370" y="40" class="num">60,000</text><text x="490" y="40" class="num">60,000</text><text x="620" y="40" class="num">60,000</text>
-                                <rect x="0" y="50" width="900" height="20" class="highlight-adj" fill-opacity="0.5"/>
-                                <text x="10" y="65" class="acct" font-weight="bold">Income Summary</text>
-                                <text x="370" y="65" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="430" y="65" class="num" fill="#166534" font-weight="bold">350,000</text> <text x="490" y="65" class="num" fill="#0369a1" font-weight="bold">285,000</text> <text x="550" y="65" class="num" fill="#0369a1" font-weight="bold">350,000</text> <text x="620" y="65" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="680" y="65" class="num" fill="#166534" font-weight="bold">350,000</text> </g>
+                                <tr class="font-bold bg-gray-50 border-t-2 border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-50">TOTALS</td>
+                                    <td class="p-2 border">1,436,520</td><td class="p-2 border">1,436,520</td>
+                                    <td class="p-2 border bg-yellow-50">647,505</td><td class="p-2 border bg-yellow-50">647,505</td>
+                                    <td class="p-2 border bg-blue-50">1,790,700</td><td class="p-2 border bg-blue-50">1,790,700</td>
+                                    <td class="p-2 border bg-red-50 text-red-800">1,192,225</td><td class="p-2 border bg-red-50 text-red-800">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50 text-indigo-800">598,475</td><td class="p-2 border bg-indigo-50 text-indigo-800">524,260</td>
+                                </tr>
 
-                            <g transform="translate(0, 515)" class="total-row">
-                                <rect x="0" y="-10" width="900" height="25" fill="#e5e7eb"/>
-                                <text x="100" y="5" class="acct">TOTALS</text>
-                                <text x="370" y="5" class="num">725,000</text><text x="430" y="5" class="num">725,000</text> <text x="490" y="5" class="num">4,220,000</text><text x="550" y="5" class="num">4,220,000</text> <text x="620" y="5" class="num" fill="#991b1b">1,805,000</text><text x="680" y="5" class="num" fill="#166534">2,178,000</text> <text x="760" y="5" class="num" fill="#1e40af">2,410,000</text><text x="820" y="5" class="num" fill="#1e40af">2,125,000</text> </g>
+                                <tr class="font-bold bg-green-50">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-green-50 text-green-800">NET INCOME</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-red-50 text-green-700">74,215</td><td class="p-2 border bg-red-50"></td>
+                                    <td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50 text-green-700">74,215</td>
+                                </tr>
 
-                            <g transform="translate(0, 550)" class="net-income">
-                                <rect x="0" y="-10" width="900" height="25" fill="#dcfce7"/>
-                                <text x="100" y="5" class="acct" fill="#166534">NET INCOME</text>
-                                <text x="620" y="5" class="num" fill="#166534">373,000</text> <text x="820" y="5" class="num" fill="#166534">373,000</text> </g>
-                            
-                             <g transform="translate(0, 580)" class="total-row" font-weight="bold">
-                                <line x1="0" y1="-12" x2="900" y2="-12" stroke="#000" stroke-width="2"/>
-                                <text x="620" y="0" class="num">2,178,000</text><text x="680" y="0" class="num">2,178,000</text>
-                                <text x="760" y="0" class="num">2,498,000</text><text x="820" y="0" class="num">2,498,000</text>
-                                <line x1="0" y1="5" x2="900" y2="5" stroke="#000" stroke-width="2"/>
-                            </g>
-                            
-                            <g stroke="#e5e7eb" stroke-width="1">
-                                <line x1="200" y1="60" x2="200" y2="585"/>
-                                <line x1="260" y1="60" x2="260" y2="420"/>
-                                <line x1="320" y1="60" x2="320" y2="585"/>
-                                <line x1="380" y1="60" x2="380" y2="525"/>
-                                <line x1="440" y1="60" x2="440" y2="585"/>
-                                <line x1="500" y1="60" x2="500" y2="525"/>
-                                <line x1="560" y1="60" x2="560" y2="585"/>
-                                <line x1="640" y1="60" x2="640" y2="585"/>
-                                <line x1="700" y1="60" x2="700" y2="585"/>
-                                <line x1="780" y1="60" x2="780" y2="585"/>
-                                <line x1="840" y1="60" x2="840" y2="585"/>
-                            </g>
-                        </svg>
+                                <tr class="font-bold bg-gray-100 border-b-2 border-double border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-100">GRAND TOTALS</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-red-50">1,266,440</td><td class="p-2 border bg-red-50">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50">598,475</td><td class="p-2 border bg-indigo-50">598,475</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
