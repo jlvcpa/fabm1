@@ -78,7 +78,7 @@ export const courseData = {
     <ul class="list-disc pl-5 text-gray-600 space-y-2">
         <li><strong>Week 1:</strong> Introduction to Merchandising & Inventory Systems – Service vs. Merchandising models, Merchandise Inventory, Perpetual vs. Periodic Systems.</li>
         <li><strong>Week 2:</strong> Merchandising Transactions – Recording discounts, returns, freight - on purchases and sales transactions .</li>
-        <li><strong>Week 3:</strong> Financial Statement – Net Sales, Cost of Goods sold, Gross Profit, Operating Expenses, Net Income or Loss.</li>
+        <li><strong>Week 3:</strong> Financial Statement – Worksheet, Net Sales, Cost of Goods sold, Gross Profit, Operating Expenses, Net Income or Loss.</li>
         <li><strong>Week 4:</strong> Unit Performance Task – Merchandising Cycle Simulation (Transactions → Financial Statements).</li>
     </ul>
 
