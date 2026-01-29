@@ -105,7 +105,7 @@ export const unit2Week3Data = {
                     <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6 bg-white">
                         <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 10px;">
                             <style>
-                                .header { fill: #f3f4f6; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
+                                .header { fill: #374151; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
                                 .cell { fill: none; stroke: #e5e7eb; stroke-width: 1px; }
                                 .num { text-anchor: end; }
                                 .acct { text-anchor: start; font-family: sans-serif; }
@@ -115,17 +115,17 @@ export const unit2Week3Data = {
                             </style>
                             
                             <rect x="0" y="0" width="900" height="60" fill="#f3f4f6" />
-                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" fill="#111827" font-family="sans-serif">Account Titles</text>
-                            <text x="260" y="32" class="header" fill="#374151" font-family="sans-serif">Trial Balance</text>
+                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" font-family="sans-serif">Account Titles</text>
+                            <text x="260" y="32" class="header" font-family="sans-serif">Trial Balance</text>
                             <text x="230" y="50" class="header">Dr</text><text x="290" y="50" class="header">Cr</text>
-                            <text x="380" y="32" class="header" fill="#92400e" font-family="sans-serif">Adjustments</text>
-                            <text x="350" y="50" class="header" fill="#92400e">Dr</text><text x="410" y="50" class="header" fill="#92400e">Cr</text>
-                            <text x="500" y="32" class="header" fill="#374151" font-family="sans-serif">Adjusted TB</text>
+                            <text x="380" y="32" class="header" font-family="sans-serif">Adjustments</text>
+                            <text x="350" y="50" class="header">Dr</text><text x="410" y="50" class="header">Cr</text>
+                            <text x="500" y="32" class="header" font-family="sans-serif">Adjusted TB</text>
                             <text x="470" y="50" class="header">Dr</text><text x="530" y="50" class="header">Cr</text>
-                            <text x="630" y="32" class="header" fill="#991b1b" font-family="sans-serif">Income Statement</text>
-                            <text x="600" y="50" class="header" fill="#991b1b">Dr</text><text x="660" y="50" class="header" fill="#991b1b">Cr</text>
-                            <text x="770" y="32" class="header" fill="#1e40af" font-family="sans-serif">Balance Sheet</text>
-                            <text x="740" y="50" class="header" fill="#1e40af">Dr</text><text x="800" y="50" class="header" fill="#1e40af">Cr</text>
+                            <text x="630" y="32" class="header" font-family="sans-serif">Income Statement</text>
+                            <text x="600" y="50" class="header">Dr</text><text x="660" y="50" class="header">Cr</text>
+                            <text x="770" y="32" class="header" font-family="sans-serif">Balance Sheet</text>
+                            <text x="740" y="50" class="header">Dr</text><text x="800" y="50" class="header">Cr</text>
 
                             <g transform="translate(0, 75)">
                                 <text x="10" y="0" class="acct">Cash</text><text x="250" y="0" class="num">180,000</text><text x="760" y="0" class="num">180,000</text>
@@ -283,7 +283,7 @@ export const unit2Week3Data = {
                     <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6 bg-white">
                         <svg viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 10px;">
                             <style>
-                                .header { fill: #f3f4f6; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
+                                .header { fill: #374151; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
                                 .cell { fill: none; stroke: #e5e7eb; stroke-width: 1px; }
                                 .num { text-anchor: end; }
                                 .acct { text-anchor: start; font-family: sans-serif; }
@@ -293,17 +293,17 @@ export const unit2Week3Data = {
                             </style>
                             
                             <rect x="0" y="0" width="900" height="60" fill="#f3f4f6" />
-                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="440" y="20" width="120" height="40" fill="#e0f2fe" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" fill="#111827" font-family="sans-serif">Account Titles</text>
-                            <text x="260" y="32" class="header" fill="#374151" font-family="sans-serif">Trial Balance</text>
+                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="440" y="20" width="120" height="40" fill="#e0f2fe" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" font-family="sans-serif">Account Titles</text>
+                            <text x="260" y="32" class="header" font-family="sans-serif">Trial Balance</text>
                             <text x="230" y="50" class="header">Dr</text><text x="290" y="50" class="header">Cr</text>
-                            <text x="380" y="32" class="header" fill="#92400e" font-family="sans-serif">Adjustments</text>
-                            <text x="350" y="50" class="header" fill="#92400e">Dr</text><text x="410" y="50" class="header" fill="#92400e">Cr</text>
-                            <text x="500" y="32" class="header" fill="#0369a1" font-family="sans-serif">Adjusted TB</text>
-                            <text x="470" y="50" class="header" fill="#0369a1">Dr</text><text x="530" y="50" class="header" fill="#0369a1">Cr</text>
-                            <text x="630" y="32" class="header" fill="#991b1b" font-family="sans-serif">Income Statement</text>
-                            <text x="600" y="50" class="header" fill="#991b1b">Dr</text><text x="660" y="50" class="header" fill="#991b1b">Cr</text>
-                            <text x="770" y="32" class="header" fill="#1e40af" font-family="sans-serif">Balance Sheet</text>
-                            <text x="740" y="50" class="header" fill="#1e40af">Dr</text><text x="800" y="50" class="header" fill="#1e40af">Cr</text>
+                            <text x="380" y="32" class="header" font-family="sans-serif">Adjustments</text>
+                            <text x="350" y="50" class="header">Dr</text><text x="410" y="50" class="header">Cr</text>
+                            <text x="500" y="32" class="header" font-family="sans-serif">Adjusted TB</text>
+                            <text x="470" y="50" class="header">Dr</text><text x="530" y="50" class="header">Cr</text>
+                            <text x="630" y="32" class="header" font-family="sans-serif">Income Statement</text>
+                            <text x="600" y="50" class="header">Dr</text><text x="660" y="50" class="header">Cr</text>
+                            <text x="770" y="32" class="header" font-family="sans-serif">Balance Sheet</text>
+                            <text x="740" y="50" class="header">Dr</text><text x="800" y="50" class="header">Cr</text>
 
                             <g transform="translate(0, 75)">
                                 <text x="10" y="0" class="acct">Cash</text><text x="250" y="0" class="num">180,000</text><text x="490" y="0" class="num">180,000</text><text x="760" y="0" class="num">180,000</text>
