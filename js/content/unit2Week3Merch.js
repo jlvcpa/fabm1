@@ -101,46 +101,89 @@ export const unit2Week3Data = {
                         </svg>
                     </div>
 
-                    <h4 class="font-bold text-gray-800 mb-2">Partial Worksheet: Direct Extension Method</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs text-center border border-gray-300">
-                            <thead class="bg-gray-100 font-bold text-gray-700">
-                                <tr>
-                                    <th class="p-2 border text-left w-1/4">Account Titles</th>
-                                    <th class="p-2 border" colspan="2">Trial Balance</th>
-                                    <th class="p-2 border" colspan="2">Adjustments</th>
-                                    <th class="p-2 border bg-red-50" colspan="2">Income Statement</th>
-                                    <th class="p-2 border bg-blue-50" colspan="2">Balance Sheet</th>
-                                </tr>
-                                <tr>
-                                    <th class="p-2 border text-left"></th>
-                                    <th class="p-1 border w-16">Dr</th>
-                                    <th class="p-1 border w-16">Cr</th>
-                                    <th class="p-1 border w-16">Dr</th>
-                                    <th class="p-1 border w-16">Cr</th>
-                                    <th class="p-1 border w-16 bg-red-50 text-red-800">Dr</th>
-                                    <th class="p-1 border w-16 bg-red-50 text-red-800">Cr</th>
-                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Dr</th>
-                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Cr</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b">
-                                    <td class="p-2 text-left font-medium">Merch. Inventory</td>
-                                    <td class="p-2 border bg-gray-50">285,000</td>
-                                    <td class="p-2 border"></td>
-                                    <td class="p-2 border"></td>
-                                    <td class="p-2 border"></td>
-                                    <td class="p-2 border font-bold text-red-700 bg-red-50">285,000</td>
-                                    <td class="p-2 border font-bold text-green-700 bg-red-50">350,000</td>
-                                    <td class="p-2 border font-bold text-blue-700 bg-blue-50">350,000</td>
-                                    <td class="p-2 border bg-blue-50"></td>
-                                </tr>
-                                <tr class="bg-gray-50 text-gray-500 italic">
-                                    <td class="p-2 text-left" colspan="9">Note: Beginning Inventory (285k) flows to IS Debit. Ending Inventory (350k) is inserted into IS Credit and BS Debit.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <h4 class="font-bold text-gray-800 mb-2">Completed Worksheet: Direct Extension Method</h4>
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6 bg-white">
+                        <svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 10px;">
+                            <style>
+                                .header { fill: #f3f4f6; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
+                                .cell { fill: none; stroke: #e5e7eb; stroke-width: 1px; }
+                                .num { text-anchor: end; }
+                                .acct { text-anchor: start; font-family: sans-serif; }
+                                .total-row { font-weight: bold; fill: #f9fafb; }
+                                .net-income { font-weight: bold; fill: #ecfdf5; }
+                                .highlight-inv { fill: #fef2f2; }
+                            </style>
+                            
+                            <rect x="0" y="0" width="900" height="60" fill="#f3f4f6" />
+                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" fill="#111827" font-family="sans-serif">Account Titles</text>
+                            <text x="260" y="32" class="header" fill="#374151" font-family="sans-serif">Trial Balance</text>
+                            <text x="230" y="50" class="header">Dr</text><text x="290" y="50" class="header">Cr</text>
+                            <text x="380" y="32" class="header" fill="#92400e" font-family="sans-serif">Adjustments</text>
+                            <text x="350" y="50" class="header" fill="#92400e">Dr</text><text x="410" y="50" class="header" fill="#92400e">Cr</text>
+                            <text x="500" y="32" class="header" fill="#374151" font-family="sans-serif">Adjusted TB</text>
+                            <text x="470" y="50" class="header">Dr</text><text x="530" y="50" class="header">Cr</text>
+                            <text x="630" y="32" class="header" fill="#991b1b" font-family="sans-serif">Income Statement</text>
+                            <text x="600" y="50" class="header" fill="#991b1b">Dr</text><text x="660" y="50" class="header" fill="#991b1b">Cr</text>
+                            <text x="770" y="32" class="header" fill="#1e40af" font-family="sans-serif">Balance Sheet</text>
+                            <text x="740" y="50" class="header" fill="#1e40af">Dr</text><text x="800" y="50" class="header" fill="#1e40af">Cr</text>
+
+                            <g transform="translate(0, 75)">
+                                <text x="10" y="0" class="acct">Cash</text><text x="250" y="0" class="num">180,000</text><text x="760" y="0" class="num">180,000</text>
+                                <text x="10" y="20" class="acct">Accounts Receivable</text><text x="250" y="0" transform="translate(0,20)" class="num">550,000</text><text x="760" y="0" transform="translate(0,20)" class="num">550,000</text>
+                                <rect x="0" y="30" width="900" height="20" class="highlight-inv" fill-opacity="0.5"/>
+                                <text x="10" y="45" class="acct" font-weight="bold">Merch. Inventory</text>
+                                <text x="250" y="45" class="num">285,000</text>
+                                <text x="620" y="45" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="680" y="45" class="num" fill="#166534" font-weight="bold">350,000</text> <text x="760" y="45" class="num" fill="#1e40af" font-weight="bold">350,000</text> <text x="10" y="65" class="acct">Store Equipment</text><text x="250" y="65" class="num">1,200,000</text><text x="760" y="65" class="num">1,200,000</text>
+                                <text x="10" y="85" class="acct">Accum. Dep - Store Eq.</text><text x="310" y="85" class="num">180,000</text><text x="430" y="85" class="num">60,000</text><text x="820" y="85" class="num">240,000</text>
+                                <text x="10" y="105" class="acct">Accounts Payable</text><text x="310" y="105" class="num">385,000</text><text x="820" y="105" class="num">385,000</text>
+                                <text x="10" y="125" class="acct">H.Ai, Capital</text><text x="310" y="125" class="num">1,500,000</text><text x="820" y="125" class="num">1,500,000</text>
+                                <text x="10" y="145" class="acct">H.Ai, Drawing</text><text x="250" y="145" class="num">100,000</text><text x="760" y="145" class="num">100,000</text>
+                                <text x="10" y="165" class="acct">Sales</text><text x="310" y="165" class="num">1,800,000</text><text x="680" y="165" class="num">1,800,000</text>
+                                <text x="10" y="185" class="acct">Sales Returns & Allow.</text><text x="250" y="185" class="num">35,000</text><text x="620" y="185" class="num">35,000</text>
+                                <text x="10" y="205" class="acct">Purchases</text><text x="250" y="205" class="num">900,000</text><text x="620" y="205" class="num">900,000</text>
+                                <text x="10" y="225" class="acct">Purchase Returns & Allow.</text><text x="310" y="225" class="num">28,000</text><text x="680" y="225" class="num">28,000</text>
+                                <text x="10" y="245" class="acct">Freight In</text><text x="250" y="245" class="num">20,000</text><text x="620" y="245" class="num">20,000</text>
+                                <text x="10" y="265" class="acct">Salaries Expense</text><text x="250" y="265" class="num">350,000</text><text x="620" y="265" class="num">350,000</text>
+                                <text x="10" y="285" class="acct">Rent Expense</text><text x="250" y="285" class="num">120,000</text><text x="620" y="285" class="num">120,000</text>
+                                <text x="10" y="305" class="acct">Store Supplies Expense</text><text x="250" y="305" class="num">50,000</text><text x="430" y="305" class="num">30,000</text><text x="620" y="305" class="num">20,000</text>
+                                <text x="10" y="325" class="acct">Misc. Expense</text><text x="250" y="325" class="num">15,000</text><text x="620" y="325" class="num">15,000</text>
+                            </g>
+
+                            <g transform="translate(0, 410)" class="total-row">
+                                <rect x="0" y="-10" width="900" height="20" fill="#f9fafb"/>
+                                <text x="100" y="0" class="acct">Totals</text>
+                                <text x="250" y="0" class="num">3,810,000</text><text x="310" y="0" class="num">3,893,000</text>
+                            </g>
+
+                            <g transform="translate(0, 435)">
+                                <text x="10" y="0" class="acct" font-style="italic">Adjustments data:</text>
+                                <text x="10" y="20" class="acct">Store Supplies (Asset)</text><text x="370" y="20" class="num">30,000</text><text x="760" y="20" class="num">30,000</text>
+                                <text x="10" y="40" class="acct">Depreciation Expense</text><text x="370" y="40" class="num">60,000</text><text x="620" y="40" class="num">60,000</text>
+                            </g>
+
+                            <g transform="translate(0, 490)" class="total-row">
+                                <rect x="0" y="-10" width="900" height="25" fill="#e5e7eb"/>
+                                <text x="100" y="5" class="acct">TOTALS</text>
+                                <text x="370" y="5" class="num">90,000</text><text x="430" y="5" class="num">90,000</text> <text x="620" y="5" class="num" fill="#991b1b">1,805,000</text><text x="680" y="5" class="num" fill="#166534">2,178,000</text> <text x="760" y="5" class="num" fill="#1e40af">2,410,000</text><text x="820" y="5" class="num" fill="#1e40af">2,125,000</text> </g>
+
+                            <g transform="translate(0, 525)" class="net-income">
+                                <rect x="0" y="-10" width="900" height="25" fill="#dcfce7"/>
+                                <text x="100" y="5" class="acct" fill="#166534">NET INCOME</text>
+                                <text x="620" y="5" class="num" fill="#166534">373,000</text> <text x="820" y="5" class="num" fill="#166534">373,000</text> </g>
+                            
+                             <g transform="translate(0, 555)" class="total-row" font-weight="bold">
+                                <line x1="0" y1="-12" x2="900" y2="-12" stroke="#000" stroke-width="2"/>
+                                <text x="620" y="0" class="num">2,178,000</text><text x="680" y="0" class="num">2,178,000</text>
+                                <text x="760" y="0" class="num">2,498,000</text><text x="820" y="0" class="num">2,498,000</text>
+                                <line x1="0" y1="5" x2="900" y2="5" stroke="#000" stroke-width="2"/>
+                            </g>
+                            
+                            <g stroke="#e5e7eb" stroke-width="1">
+                                <line x1="200" y1="60" x2="200" y2="560"/><line x1="260" y1="60" x2="260" y2="420"/><line x1="320" y1="60" x2="320" y2="560"/>
+                                <line x1="380" y1="60" x2="380" y2="500"/><line x1="440" y1="60" x2="440" y2="500"/><line x1="560" y1="60" x2="560" y2="560"/>
+                                <line x1="640" y1="60" x2="640" y2="560"/><line x1="700" y1="60" x2="700" y2="560"/><line x1="780" y1="60" x2="780" y2="560"/><line x1="840" y1="60" x2="840" y2="560"/>
+                            </g>
+                        </svg>
                     </div>
                 </div>
 
@@ -232,58 +275,103 @@ export const unit2Week3Data = {
                             </defs>
                         </svg>
                     </div>
+                    <div class="mt-2 text-xs text-gray-500 italic mb-6">
+                        <strong>Result:</strong> Merchandise Inventory in the Adjusted Trial Balance is now ₱350,000 (Ready for Balance Sheet). Income Summary holds both figures to be sent to Income Statement columns.
+                    </div>
 
-                    <h4 class="font-bold text-gray-800 mb-2">Partial Worksheet: Adjustment Method</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs text-center border border-gray-300">
-                            <thead class="bg-gray-100 font-bold text-gray-700">
-                                <tr>
-                                    <th class="p-2 border text-left w-1/4">Account Titles</th>
-                                    <th class="p-2 border" colspan="2">Trial Balance</th>
-                                    <th class="p-2 border bg-yellow-50" colspan="2">Adjustments</th>
-                                    <th class="p-2 border bg-blue-50" colspan="2">Adjusted TB</th>
-                                    <th class="p-2 border" colspan="2">Income Statement</th>
-                                </tr>
-                                <tr>
-                                    <th class="p-2 border text-left"></th>
-                                    <th class="p-1 border w-16">Dr</th>
-                                    <th class="p-1 border w-16">Cr</th>
-                                    <th class="p-1 border w-16 bg-yellow-50">Dr</th>
-                                    <th class="p-1 border w-16 bg-yellow-50">Cr</th>
-                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Dr</th>
-                                    <th class="p-1 border w-16 bg-blue-50 text-blue-800">Cr</th>
-                                    <th class="p-1 border w-16">Dr</th>
-                                    <th class="p-1 border w-16">Cr</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b">
-                                    <td class="p-2 text-left font-medium">Merch. Inventory</td>
-                                    <td class="p-2 border bg-gray-50">285,000</td>
-                                    <td class="p-2 border"></td>
-                                    <td class="p-2 border bg-yellow-50 font-bold text-green-700">350,000</td>
-                                    <td class="p-2 border bg-yellow-50 font-bold text-red-700">285,000</td>
-                                    <td class="p-2 border bg-blue-50 font-bold text-blue-700">350,000</td>
-                                    <td class="p-2 border bg-blue-50"></td>
-                                    <td class="p-2 border text-gray-400">-> To BS</td>
-                                    <td class="p-2 border"></td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-2 text-left font-medium">Income Summary</td>
-                                    <td class="p-2 border"></td>
-                                    <td class="p-2 border"></td>
-                                    <td class="p-2 border bg-yellow-50 font-bold text-red-700">285,000</td>
-                                    <td class="p-2 border bg-yellow-50 font-bold text-green-700">350,000</td>
-                                    <td class="p-2 border bg-blue-50">285,000</td>
-                                    <td class="p-2 border bg-blue-50">350,000</td>
-                                    <td class="p-2 border font-bold">285,000</td>
-                                    <td class="p-2 border font-bold">350,000</td>
-                                </tr>
-                                <tr class="bg-gray-50 text-gray-500 italic">
-                                    <td class="p-2 text-left" colspan="9">Note: Inventory is updated in Adjusted TB. Income Summary carries cost (Dr) and deduction (Cr) to Income Statement.</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <h4 class="font-bold text-gray-800 mb-2">Completed Worksheet: Adjustment Method</h4>
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6 bg-white">
+                        <svg viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 10px;">
+                            <style>
+                                .header { fill: #f3f4f6; font-weight: bold; text-anchor: middle; alignment-baseline: middle; }
+                                .cell { fill: none; stroke: #e5e7eb; stroke-width: 1px; }
+                                .num { text-anchor: end; }
+                                .acct { text-anchor: start; font-family: sans-serif; }
+                                .total-row { font-weight: bold; fill: #f9fafb; }
+                                .net-income { font-weight: bold; fill: #ecfdf5; }
+                                .highlight-adj { fill: #fefce8; }
+                            </style>
+                            
+                            <rect x="0" y="0" width="900" height="60" fill="#f3f4f6" />
+                            <rect x="200" y="20" width="120" height="40" fill="#e5e7eb" /> <rect x="320" y="20" width="120" height="40" fill="#fef3c7" /> <rect x="440" y="20" width="120" height="40" fill="#e0f2fe" /> <rect x="560" y="20" width="140" height="40" fill="#fee2e2" /> <rect x="700" y="20" width="140" height="40" fill="#dbeafe" /> <text x="100" y="40" class="header" fill="#111827" font-family="sans-serif">Account Titles</text>
+                            <text x="260" y="32" class="header" fill="#374151" font-family="sans-serif">Trial Balance</text>
+                            <text x="230" y="50" class="header">Dr</text><text x="290" y="50" class="header">Cr</text>
+                            <text x="380" y="32" class="header" fill="#92400e" font-family="sans-serif">Adjustments</text>
+                            <text x="350" y="50" class="header" fill="#92400e">Dr</text><text x="410" y="50" class="header" fill="#92400e">Cr</text>
+                            <text x="500" y="32" class="header" fill="#0369a1" font-family="sans-serif">Adjusted TB</text>
+                            <text x="470" y="50" class="header" fill="#0369a1">Dr</text><text x="530" y="50" class="header" fill="#0369a1">Cr</text>
+                            <text x="630" y="32" class="header" fill="#991b1b" font-family="sans-serif">Income Statement</text>
+                            <text x="600" y="50" class="header" fill="#991b1b">Dr</text><text x="660" y="50" class="header" fill="#991b1b">Cr</text>
+                            <text x="770" y="32" class="header" fill="#1e40af" font-family="sans-serif">Balance Sheet</text>
+                            <text x="740" y="50" class="header" fill="#1e40af">Dr</text><text x="800" y="50" class="header" fill="#1e40af">Cr</text>
+
+                            <g transform="translate(0, 75)">
+                                <text x="10" y="0" class="acct">Cash</text><text x="250" y="0" class="num">180,000</text><text x="490" y="0" class="num">180,000</text><text x="760" y="0" class="num">180,000</text>
+                                <text x="10" y="20" class="acct">Accounts Receivable</text><text x="250" y="20" class="num">550,000</text><text x="490" y="20" class="num">550,000</text><text x="760" y="20" class="num">550,000</text>
+                                <rect x="0" y="30" width="900" height="20" class="highlight-adj" fill-opacity="0.5"/>
+                                <text x="10" y="45" class="acct" font-weight="bold">Merch. Inventory</text>
+                                <text x="250" y="45" class="num">285,000</text>
+                                <text x="370" y="45" class="num" fill="#166534" font-weight="bold">350,000</text> <text x="430" y="45" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="490" y="45" class="num" fill="#0369a1" font-weight="bold">350,000</text> <text x="760" y="45" class="num" fill="#1e40af" font-weight="bold">350,000</text> <text x="10" y="65" class="acct">Store Equipment</text><text x="250" y="65" class="num">1,200,000</text><text x="490" y="65" class="num">1,200,000</text><text x="760" y="65" class="num">1,200,000</text>
+                                <text x="10" y="85" class="acct">Accum. Dep - Store Eq.</text><text x="310" y="85" class="num">180,000</text><text x="430" y="85" class="num">60,000</text><text x="550" y="85" class="num">240,000</text><text x="820" y="85" class="num">240,000</text>
+                                <text x="10" y="105" class="acct">Accounts Payable</text><text x="310" y="105" class="num">385,000</text><text x="550" y="105" class="num">385,000</text><text x="820" y="105" class="num">385,000</text>
+                                <text x="10" y="125" class="acct">H.Ai, Capital</text><text x="310" y="125" class="num">1,500,000</text><text x="550" y="125" class="num">1,500,000</text><text x="820" y="125" class="num">1,500,000</text>
+                                <text x="10" y="145" class="acct">H.Ai, Drawing</text><text x="250" y="145" class="num">100,000</text><text x="490" y="145" class="num">100,000</text><text x="760" y="145" class="num">100,000</text>
+                                <text x="10" y="165" class="acct">Sales</text><text x="310" y="165" class="num">1,800,000</text><text x="550" y="165" class="num">1,800,000</text><text x="680" y="165" class="num">1,800,000</text>
+                                <text x="10" y="185" class="acct">Sales Returns & Allow.</text><text x="250" y="185" class="num">35,000</text><text x="490" y="185" class="num">35,000</text><text x="620" y="185" class="num">35,000</text>
+                                <text x="10" y="205" class="acct">Purchases</text><text x="250" y="205" class="num">900,000</text><text x="490" y="205" class="num">900,000</text><text x="620" y="205" class="num">900,000</text>
+                                <text x="10" y="225" class="acct">Purchase Returns & Allow.</text><text x="310" y="225" class="num">28,000</text><text x="550" y="225" class="num">28,000</text><text x="680" y="225" class="num">28,000</text>
+                                <text x="10" y="245" class="acct">Freight In</text><text x="250" y="245" class="num">20,000</text><text x="490" y="245" class="num">20,000</text><text x="620" y="245" class="num">20,000</text>
+                                <text x="10" y="265" class="acct">Salaries Expense</text><text x="250" y="265" class="num">350,000</text><text x="490" y="265" class="num">350,000</text><text x="620" y="265" class="num">350,000</text>
+                                <text x="10" y="285" class="acct">Rent Expense</text><text x="250" y="285" class="num">120,000</text><text x="490" y="285" class="num">120,000</text><text x="620" y="285" class="num">120,000</text>
+                                <text x="10" y="305" class="acct">Store Supplies Expense</text><text x="250" y="305" class="num">50,000</text><text x="430" y="305" class="num">30,000</text><text x="490" y="305" class="num">20,000</text><text x="620" y="305" class="num">20,000</text>
+                                <text x="10" y="325" class="acct">Misc. Expense</text><text x="250" y="325" class="num">15,000</text><text x="490" y="325" class="num">15,000</text><text x="620" y="325" class="num">15,000</text>
+                            </g>
+
+                            <g transform="translate(0, 410)" class="total-row">
+                                <rect x="0" y="-10" width="900" height="20" fill="#f9fafb"/>
+                                <text x="100" y="0" class="acct">Totals</text>
+                                <text x="250" y="0" class="num">3,810,000</text><text x="310" y="0" class="num">3,893,000</text>
+                            </g>
+
+                            <g transform="translate(0, 435)">
+                                <text x="10" y="0" class="acct" font-style="italic">Adjustments data:</text>
+                                <text x="10" y="20" class="acct">Store Supplies (Asset)</text><text x="370" y="20" class="num">30,000</text><text x="490" y="20" class="num">30,000</text><text x="760" y="20" class="num">30,000</text>
+                                <text x="10" y="40" class="acct">Depreciation Expense</text><text x="370" y="40" class="num">60,000</text><text x="490" y="40" class="num">60,000</text><text x="620" y="40" class="num">60,000</text>
+                                <rect x="0" y="50" width="900" height="20" class="highlight-adj" fill-opacity="0.5"/>
+                                <text x="10" y="65" class="acct" font-weight="bold">Income Summary</text>
+                                <text x="370" y="65" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="430" y="65" class="num" fill="#166534" font-weight="bold">350,000</text> <text x="490" y="65" class="num" fill="#0369a1" font-weight="bold">285,000</text> <text x="550" y="65" class="num" fill="#0369a1" font-weight="bold">350,000</text> <text x="620" y="65" class="num" fill="#991b1b" font-weight="bold">285,000</text> <text x="680" y="65" class="num" fill="#166534" font-weight="bold">350,000</text> </g>
+
+                            <g transform="translate(0, 515)" class="total-row">
+                                <rect x="0" y="-10" width="900" height="25" fill="#e5e7eb"/>
+                                <text x="100" y="5" class="acct">TOTALS</text>
+                                <text x="370" y="5" class="num">725,000</text><text x="430" y="5" class="num">725,000</text> <text x="490" y="5" class="num">4,220,000</text><text x="550" y="5" class="num">4,220,000</text> <text x="620" y="5" class="num" fill="#991b1b">1,805,000</text><text x="680" y="5" class="num" fill="#166534">2,178,000</text> <text x="760" y="5" class="num" fill="#1e40af">2,410,000</text><text x="820" y="5" class="num" fill="#1e40af">2,125,000</text> </g>
+
+                            <g transform="translate(0, 550)" class="net-income">
+                                <rect x="0" y="-10" width="900" height="25" fill="#dcfce7"/>
+                                <text x="100" y="5" class="acct" fill="#166534">NET INCOME</text>
+                                <text x="620" y="5" class="num" fill="#166534">373,000</text> <text x="820" y="5" class="num" fill="#166534">373,000</text> </g>
+                            
+                             <g transform="translate(0, 580)" class="total-row" font-weight="bold">
+                                <line x1="0" y1="-12" x2="900" y2="-12" stroke="#000" stroke-width="2"/>
+                                <text x="620" y="0" class="num">2,178,000</text><text x="680" y="0" class="num">2,178,000</text>
+                                <text x="760" y="0" class="num">2,498,000</text><text x="820" y="0" class="num">2,498,000</text>
+                                <line x1="0" y1="5" x2="900" y2="5" stroke="#000" stroke-width="2"/>
+                            </g>
+                            
+                            <g stroke="#e5e7eb" stroke-width="1">
+                                <line x1="200" y1="60" x2="200" y2="585"/>
+                                <line x1="260" y1="60" x2="260" y2="420"/>
+                                <line x1="320" y1="60" x2="320" y2="585"/>
+                                <line x1="380" y1="60" x2="380" y2="525"/>
+                                <line x1="440" y1="60" x2="440" y2="585"/>
+                                <line x1="500" y1="60" x2="500" y2="525"/>
+                                <line x1="560" y1="60" x2="560" y2="585"/>
+                                <line x1="640" y1="60" x2="640" y2="585"/>
+                                <line x1="700" y1="60" x2="700" y2="585"/>
+                                <line x1="780" y1="60" x2="780" y2="585"/>
+                                <line x1="840" y1="60" x2="840" y2="585"/>
+                            </g>
+                        </svg>
                     </div>
                 </div>
 
