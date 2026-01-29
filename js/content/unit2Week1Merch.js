@@ -1,7 +1,7 @@
 // Content for Unit 2: Merchandising Business
 // FIXED: We use 'export const' to create a named export.
 
-export const unit2Data = {
+export const unit2Week1Data = {
     week1: [
         {
             day: "Day 1",
