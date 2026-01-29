@@ -153,7 +153,7 @@ export const courseData = {
                         },
                         { 
                             id: "u2w3", title: "Week 3: Financial Statement", 
-                            days: createPlaceholderDays(["Net Sales, COGS, and Pross Profit", "Opertaing Expenses", "Single and Multi-Step Income Statement", "Balance Sheet"]) 
+                            days: createPlaceholderDays(["Worksheet and Ending Inventory", "Net Sales, COGS, Gross Profit, and Opertaing Expenses", "Single and Multi-Step Income Statement", "Balance Sheet"]) 
                         },
                         { 
                             id: "u2w4", title: "Week 4: Performance Task - Merchandising Cycle Simulation", 
