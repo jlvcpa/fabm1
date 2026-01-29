@@ -1,6 +1,11 @@
 import { getFirestore, collection, getDocs, doc, setDoc, query, orderBy, limit, where } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
 
+// --- NEW IMPORTS FROM QUESTION BANK ---
+import { qbMerchMultipleChoice } from "./questionBank/qbMerchMultipleChoice.js";
+import { qbMerchProblemSolving } from "./questionBank/qbMerchProblemSolving.js";
+import { qbMerchJournalizing } from "./questionBank/qbMerchJournalizing.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
     authDomain: "jlvcpa-quizzes.firebaseapp.com",
@@ -239,39 +244,31 @@ function addTestSectionUI(existingData = null) {
     }
 }
 
-// Helper to fetch topics from Firebase based on Question Type
+// Helper to fetch topics from Local QuestionBank files based on Question Type
 async function loadTopicsForType(type, selectElement) {
     selectElement.innerHTML = '<option value="">Loading...</option>';
-    let collectionName = "";
     
-    if (type === "Multiple Choice") collectionName = "qbMultipleChoice";
-    else if (type === "Problem Solving") collectionName = "qbProblemSolving";
-    else if (type === "Journalizing") collectionName = "qbJournalizing";
+    let sourceData = [];
+    
+    if (type === "Multiple Choice") sourceData = qbMerchMultipleChoice;
+    else if (type === "Problem Solving") sourceData = qbMerchProblemSolving;
+    else if (type === "Journalizing") sourceData = qbMerchJournalizing;
 
-    if (!collectionName) {
-        selectElement.innerHTML = '<option value="">Unknown Type</option>';
+    if (!sourceData || sourceData.length === 0) {
+        selectElement.innerHTML = '<option value="">No topics found</option>';
         return;
     }
 
     try {
-        const q = query(collection(db, collectionName));
-        const snapshot = await getDocs(q);
         const topics = new Set();
 
-        snapshot.forEach(doc => {
-            const data = doc.data();
-
-            // 1. Check if the document ITSELF has a 'topic' (Flat structure)
-            if (data.topic) {
-                topics.add(data.topic.trim());
-            } 
-            
-            // 2. Check if the document contains nested objects (Map/Nested structure)
-            // This iterates through every field in the document to find hidden topics
-            Object.values(data).forEach(item => {
-                if (item && typeof item === 'object' && item.topic) {
-                    topics.add(item.topic.trim());
-                }
+        // Iterate through the array of question objects from the local JS files
+        sourceData.forEach(item => {
+            // Each item is in format: { "QUESTION_ID": { ...data } }
+            Object.values(item).forEach(data => {
+                if (data.topic) {
+                    topics.add(data.topic.trim());
+                } 
             });
         });
 
