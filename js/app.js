@@ -495,6 +495,7 @@ function renderDayContent(unit, week, dayIndex) {
     const hasMcq = exercises.some(e => e.type === 'mcq');
     const hasProb = exercises.some(e => e.type === 'problem');
     const hasJourn = exercises.some(e => e.type === 'journalizing');
+    // Detect Worksheet Activity
     const worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
 
     const card = document.createElement('div');
@@ -511,55 +512,7 @@ function renderDayContent(unit, week, dayIndex) {
     `;
     card.appendChild(headerDiv);
 
-    // --- WORKSHEET MODE ---
-    if (worksheetActivity) {
-        const worksheetWrapper = document.createElement('div');
-        worksheetWrapper.className = "p-8 overflow-y-auto h-full";
-
-        // 1. Determine Ledger Balances from Solution Keys
-        const ledger = {};
-        worksheetActivity.transactions.forEach(tx => {
-            tx.solution.forEach(line => {
-                if (line.isExplanation || line.account === "No Entry") return;
-                if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                if (line.debit) ledger[line.account].debit += line.debit;
-                if (line.credit) ledger[line.account].credit += line.credit;
-            });
-        });
-
-        // 2. Format Instruction HTML
-        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
-        Object.keys(ledger).sort().forEach(acc => {
-            const bal = ledger[acc].debit - ledger[acc].credit;
-            if (bal === 0) return;
-            const side = bal < 0 ? " (CR)" : "";
-            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${side}</span></div>`;
-        });
-        ledgerHtml += `</div>`;
-
-        worksheetWrapper.innerHTML = `
-            <div class="prose prose-blue max-w-none mb-8">
-                <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>Worksheet Activity Instructions</h3>
-                <p>Complete the 10-column worksheet using the following unadjusted trial balance:</p>
-                ${ledgerHtml}
-                <p class="mt-6"><strong>Adjustment Information:</strong></p>
-                <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
-                    ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
-                </ul>
-            </div>
-            <div id="worksheet-mount" class="w-full"></div>
-        `;
-
-        card.appendChild(worksheetWrapper);
-        container.appendChild(card);
-        content.appendChild(container);
-
-        // Mount React Component if needed (Placeholder for Step05Worksheet logic)
-        executeExerciseMounts(day.exercises);
-        return; 
-    }
-
-    // --- STANDARD MODE (NAVIGATION TABS) ---
+    // --- NAVIGATION TABS ---
     const navBar = document.createElement('div');
     navBar.className = "flex flex-wrap items-center justify-between border-b border-gray-200 bg-white min-h-[50px]";
 
@@ -578,10 +531,13 @@ function renderDayContent(unit, week, dayIndex) {
         return btn;
     };
 
+    // Always create Concepts Tab
     const tabConcepts = createTabBtn('tab-btn-concepts', 'fa-book-reader', 'Topic & Concepts', true);
     tabsContainer.appendChild(tabConcepts);
 
-    let tabMcq, tabProb, tabJourn;
+    // Conditional Tabs
+    let tabMcq, tabProb, tabJourn, tabWorksheet;
+
     if (hasMcq) {
         tabMcq = createTabBtn('tab-btn-mcq', 'fa-list-ul', 'Practice - Multiple Choice', false);
         tabsContainer.appendChild(tabMcq);
@@ -594,9 +550,15 @@ function renderDayContent(unit, week, dayIndex) {
         tabJourn = createTabBtn('tab-btn-journ', 'fa-pen-fancy', 'Practice - Journalizing', false);
         tabsContainer.appendChild(tabJourn);
     }
+    // New Worksheet Tab
+    if (worksheetActivity) {
+        tabWorksheet = createTabBtn('tab-btn-worksheet', 'fa-table', 'Practice - 10 Columns Worksheet', false);
+        tabsContainer.appendChild(tabWorksheet);
+    }
 
     navBar.appendChild(tabsContainer);
 
+    // Prev/Next Buttons
     const navButtonsGroup = document.createElement('div');
     navButtonsGroup.className = "hidden md:flex items-center gap-2 py-2 px-4 ml-auto"; 
 
@@ -623,23 +585,29 @@ function renderDayContent(unit, week, dayIndex) {
     navBar.appendChild(navButtonsGroup);
     card.appendChild(navBar);
 
+    // --- CONTENT AREA ---
     const tabContentWrapper = document.createElement('div');
     tabContentWrapper.className = "flex-1 relative overflow-hidden bg-white flex flex-col";
 
+    // 1. Concepts Content (Standard View)
     const conceptsDiv = document.createElement('div');
     conceptsDiv.id = "tab-content-concepts";
     conceptsDiv.className = "p-8 overflow-y-auto h-full prose prose-blue max-w-none text-gray-600";
     conceptsDiv.innerHTML = day.content;
     tabContentWrapper.appendChild(conceptsDiv);
 
-    let mcqDiv, probDiv, journDiv;
+    // 2. MCQ Content
+    let mcqDiv;
     if (hasMcq) {
         mcqDiv = document.createElement('div');
         mcqDiv.id = "tab-content-mcq";
-        mcqDiv.className = "hidden h-full";
+        mcqDiv.className = "hidden h-full"; 
         mcqDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'mcq');
         tabContentWrapper.appendChild(mcqDiv);
     }
+
+    // 3. Problem Content
+    let probDiv;
     if (hasProb) {
         probDiv = document.createElement('div');
         probDiv.id = "tab-content-prob";
@@ -647,6 +615,9 @@ function renderDayContent(unit, week, dayIndex) {
         probDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'problem');
         tabContentWrapper.appendChild(probDiv);
     }
+
+    // 4. Journal Content
+    let journDiv;
     if (hasJourn) {
         journDiv = document.createElement('div');
         journDiv.id = "tab-content-journ";
@@ -655,20 +626,77 @@ function renderDayContent(unit, week, dayIndex) {
         tabContentWrapper.appendChild(journDiv);
     }
 
+    // 5. Worksheet Content
+    let worksheetDiv;
+    if (worksheetActivity) {
+        worksheetDiv = document.createElement('div');
+        worksheetDiv.id = "tab-content-worksheet";
+        worksheetDiv.className = "hidden h-full overflow-y-auto p-4 md:p-8";
+
+        // Logic to calculate Ledger Balances from Transactions
+        const ledger = {};
+        if(worksheetActivity.transactions) {
+            worksheetActivity.transactions.forEach(tx => {
+                tx.solution.forEach(line => {
+                    if (line.isExplanation || line.account === "No Entry") return;
+                    if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                    if (line.debit) ledger[line.account].debit += line.debit;
+                    if (line.credit) ledger[line.account].credit += line.credit;
+                });
+            });
+        }
+
+        // Logic to render Instructions and Ledger
+        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
+        Object.keys(ledger).sort().forEach(acc => {
+            const bal = ledger[acc].debit - ledger[acc].credit;
+            if (bal === 0) return;
+            const side = bal < 0 ? " (CR)" : "";
+            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${side}</span></div>`;
+        });
+        ledgerHtml += `</div>`;
+
+        worksheetDiv.innerHTML = `
+            <div class="prose prose-blue max-w-none mb-8">
+                <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
+                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
+                
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
+                    ${ledgerHtml}
+                </div>
+
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Adjustment Information:</p>
+                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
+                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+            <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
+        `;
+        tabContentWrapper.appendChild(worksheetDiv);
+    }
+
     card.appendChild(tabContentWrapper);
     container.appendChild(card);
     content.appendChild(container);
 
+    // --- TAB SWITCHING LOGIC ---
     const switchTab = (targetType) => {
+        // Hide all
         conceptsDiv.classList.add('hidden');
         if (mcqDiv) mcqDiv.classList.add('hidden');
         if (probDiv) probDiv.classList.add('hidden');
         if (journDiv) journDiv.classList.add('hidden');
+        if (worksheetDiv) worksheetDiv.classList.add('hidden');
 
-        [tabConcepts, tabMcq, tabProb, tabJourn].forEach(btn => {
+        // Deactivate all buttons
+        [tabConcepts, tabMcq, tabProb, tabJourn, tabWorksheet].forEach(btn => {
             if (btn) btn.className = btn.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
         });
 
+        // Show Target
         let activeBtn;
         if (targetType === 'concepts') {
             conceptsDiv.classList.remove('hidden');
@@ -682,16 +710,24 @@ function renderDayContent(unit, week, dayIndex) {
         } else if (targetType === 'journal' && journDiv) {
             journDiv.classList.remove('hidden');
             activeBtn = tabJourn;
+        } else if (targetType === 'worksheet' && worksheetDiv) {
+            worksheetDiv.classList.remove('hidden');
+            activeBtn = tabWorksheet;
         }
 
-        if (activeBtn) activeBtn.className = activeBtn.className.replace('border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'border-blue-600 text-blue-900 bg-blue-50');
+        // Activate Button
+        if (activeBtn) {
+            activeBtn.className = activeBtn.className.replace('border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'border-blue-600 text-blue-900 bg-blue-50');
+        }
     };
 
     tabConcepts.onclick = () => switchTab('concepts');
     if (tabMcq) tabMcq.onclick = () => switchTab('mcq');
     if (tabProb) tabProb.onclick = () => switchTab('problem');
     if (tabJourn) tabJourn.onclick = () => switchTab('journal');
+    if (tabWorksheet) tabWorksheet.onclick = () => switchTab('worksheet');
 
+    // Attach Listeners
     attachExerciseListeners();
     executeExerciseMounts(day.exercises);
 }
