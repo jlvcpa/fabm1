@@ -219,7 +219,7 @@ async function renderQuizRunner(data, user) {
     initializeQuizManager(data, generatedContent.data, user);
 }
 
-// --- UPDATED CONTENT GENERATOR ---
+// --- CONTENT GENERATOR ---
 async function generateQuizContent(activityData) {
     let tabsHtml = '';
     let sectionsHtml = '';
@@ -523,7 +523,6 @@ async function generateQuizContent(activityData) {
     return { html: tabsHtml + sectionsHtml, data: questionData };
 }
 
-// ... remaining logic (initializeQuizManager, submitQuiz, renderQuizResultPreview) remains exactly the same as provided in your original code ...
 // --- QUIZ MANAGER (INTERACTIVITY) ---
 
 function initializeQuizManager(activityData, questionData, user) {
@@ -892,7 +891,21 @@ async function submitQuiz(activityData, questionData, user) {
                              sectionMaxScore++; 
                              if (r === 0) {
                                  const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
-                                 if (sDate.match(expectedRegex) && sDate === solRow.date) sectionScore++;
+                                 
+                                 // FIXED: Date validation logic
+                                 let isDateCorrect = false;
+                                 if (tIdx === 0) {
+                                     // First transaction: Must match full date (e.g., "Dec 1")
+                                     isDateCorrect = (sDate === solRow.date);
+                                 } else {
+                                     // Subsequent transactions: Match only the day part of the solution
+                                     // Handle "Dec 2" -> "2" or "2" -> "2"
+                                     const parts = solRow.date.split(' ');
+                                     const solDay = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                                     isDateCorrect = (sDate === solDay);
+                                 }
+
+                                 if (sDate.match(expectedRegex) && isDateCorrect) sectionScore++;
                              } else {
                                  if (sDate === '') sectionScore++;
                              }
@@ -1200,7 +1213,18 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                              sectionMaxScore++; // Expecting answer
                              if (r === 0) {
                                  const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
-                                 if (sDate.match(expectedRegex) && sDate === solRow.date) {
+                                 
+                                 // FIXED: Date validation logic matching submitQuiz
+                                 let isDateCorrect = false;
+                                 if (tIdx === 0) {
+                                     isDateCorrect = (sDate === solRow.date);
+                                 } else {
+                                     const parts = solRow.date.split(' ');
+                                     const solDay = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                                     isDateCorrect = (sDate === solDay);
+                                 }
+
+                                 if (sDate.match(expectedRegex) && isDateCorrect) {
                                      dateValid = true;
                                      sectionScore++;
                                  }
@@ -1313,9 +1337,17 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                                 const drFmt = solRow.debit ? Number(solRow.debit).toFixed(2) : '';
                                 const crFmt = solRow.credit ? Number(solRow.credit).toFixed(2) : '';
 
+                                // FIXED: Display Date Format in Solution Table
+                                // If tIdx > 0 (second transaction onwards), show only the day (d/dd)
+                                let displayDate = solRow.date || '';
+                                if (tIdx > 0 && displayDate.includes(' ')) {
+                                    const parts = displayDate.split(' ');
+                                    displayDate = parts[parts.length - 1]; // Take only the last part (the day)
+                                }
+
                                 solutionRowsHtml += `
                                 <tr class="border-b border-gray-100 bg-white">
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${solRow.date || ''}</td>
+                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${displayDate}</td>
                                     <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left font-semibold text-gray-800">${indentHtml}${solRow.account || ''}</td>
                                     <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${drFmt}</td>
                                     <td class="p-1.5 font-mono text-xs text-right text-gray-800">${crFmt}</td>
@@ -1339,7 +1371,7 @@ async function renderQuizResultPreview(activityData, user, resultData) {
                                     <div class="bg-blue-50 py-1 px-3 text-[10px] font-bold text-blue-800 uppercase border-b border-blue-100">Your Answer</div>
                                     <table class="w-full border-collapse table-fixed">
                                         <thead>
-                                            <tr class="bg-gray-50 text-[10px] text-gray-500 uppercase border-b border-gray-200">
+                                            <tr class="bg-gray-5 text-[10px] text-gray-500 uppercase border-b border-gray-200">
                                                 <th class="py-1 px-1 w-24 text-right">Date</th>
                                                 <th class="py-1 px-2 text-left w-auto">Account</th>
                                                 <th class="py-1 px-1 w-28 text-right">Dr</th>
