@@ -1,3 +1,529 @@
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+import { getLetterGrade } from "../utils.js"; 
+import { AntiCheatSystem } from '../antiCheat.js';
+import { qbMerchMultipleChoice } from "./questionBank/qbMerchMultipleChoice.js";
+import { qbMerchProblemSolving } from "./questionBank/qbMerchProblemSolving.js";
+import { qbMerchJournalizing } from "./questionBank/qbMerchJournalizing.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
+    authDomain: "jlvcpa-quizzes.firebaseapp.com",
+    projectId: "jlvcpa-quizzes",
+    storageBucket: "jlvcpa-quizzes.appspot.com",
+    messagingSenderId: "629158256557",
+    appId: "1:629158256557:web:b3d1a424b32e28cd578b24"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let quizTimerInterval = null;
+let currentAntiCheat = null;
+
+export async function renderQuizzesAndActivities(containerElement, user) {
+    const contentArea = document.getElementById('content-area');
+    
+    contentArea.innerHTML = `
+        <div class="flex h-full relative overflow-hidden bg-gray-50">
+            <div id="qa-sidebar" class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 transition-transform absolute md:relative transform -translate-x-full md:translate-x-0">
+                <div class="p-4 border-b border-gray-200 bg-blue-900 text-white flex justify-between items-center">
+                    <h2 class="font-bold">Your Activities</h2>
+                    <button id="qa-close-sidebar" class="md:hidden text-white"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="qa-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
+                    <p class="text-center text-gray-400 mt-4 text-sm">Loading activities...</p>
+                </div>
+            </div>
+
+            <button id="qa-toggle-sidebar" class="md:hidden absolute top-4 left-4 z-20 bg-blue-900 text-white p-2 rounded shadow">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div id="qa-runner-container" class="flex-1 overflow-hidden relative bg-gray-100">
+                <div class="h-full flex flex-col items-center justify-center text-gray-400 p-4 md:p-8">
+                    <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
+                    <p>Select an activity from the list to begin.</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const sidebar = document.getElementById('qa-sidebar');
+    document.getElementById('qa-toggle-sidebar').addEventListener('click', () => {
+        sidebar.classList.remove('-translate-x-full');
+    });
+    document.getElementById('qa-close-sidebar').addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+    });
+
+    await loadStudentActivities(user);
+}
+
+async function loadStudentActivities(user) {
+    const listContainer = document.getElementById('qa-list-container');
+    
+    try {
+        const q = query(collection(db, "quiz_list"), orderBy("dateTimeCreated", "desc"));
+        const snapshot = await getDocs(q);
+
+        listContainer.innerHTML = '';
+        if(snapshot.empty) {
+            listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities found.</p>';
+            return;
+        }
+
+        const now = new Date();
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            data.id = docSnap.id; 
+            
+            if (user.role === 'student' && data.section !== user.Section) {
+                return; 
+            }
+            
+            const start = new Date(data.dateTimeStart);
+            const expire = new Date(data.dateTimeExpire);
+            const isExpired = now > expire;
+            const isFuture = now < start;
+
+            const card = document.createElement('div');
+            card.className = `p-3 rounded border cursor-pointer hover:shadow-md transition bg-white ${isExpired ? 'border-red-200 bg-red-50 opacity-75' : 'border-blue-200'}`;
+            
+            let statusBadge = '';
+            if(isExpired) statusBadge = '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">Expired</span>';
+            else if(isFuture) statusBadge = '<span class="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded font-bold">Upcoming</span>';
+            else statusBadge = '<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded font-bold">Active</span>';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-1">
+                    <h3 class="font-bold text-gray-800 text-sm">${data.activityname}</h3>
+                    ${statusBadge}
+                </div>
+                <div class="text-xs text-gray-500">
+                    <p><i class="far fa-clock mr-1"></i> Due: ${expire.toLocaleString()}</p>
+                    <p><i class="fas fa-hourglass-half mr-1"></i> Limit: ${data.timeLimit} mins</p>
+                </div>
+            `;
+
+            card.onclick = () => {
+                if (isFuture && user.role !== 'teacher') {
+                    alert(`This activity starts on ${start.toLocaleString()}`);
+                } else {
+                    if(quizTimerInterval) clearInterval(quizTimerInterval); 
+                    if(currentAntiCheat) currentAntiCheat.stopMonitoring();
+                    
+                    renderQuizRunner(data, user);
+                    document.getElementById('qa-sidebar').classList.add('-translate-x-full');
+                }
+            };
+
+            listContainer.appendChild(card);
+        });
+        
+        if (listContainer.innerHTML === '') {
+             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
+        }
+
+    } catch (e) {
+        console.error("Error loading activities:", e);
+        listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
+    }
+}
+
+async function renderQuizRunner(data, user) {
+    const container = document.getElementById('qa-runner-container');
+    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
+    
+    if (user.role !== 'teacher' && data.students && !data.students.includes(user.Idnumber)) {
+        container.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
+                <i class="fas fa-user-slash text-6xl mb-6"></i>
+                <h2 class="text-3xl font-bold">Access Denied</h2>
+                <p class="text-gray-500 mt-2 text-lg">You are not included in the list of students for this activity.</p>
+                <p class="text-gray-800 mt-4 font-bold">You are marked as ABSENT.</p>
+                <p class="text-gray-500 text-sm mt-2">Please contact your teacher if you believe this is an error.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const collectionName = `results_${data.activityname}_${data.section}`;
+    const docId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+    
+    try {
+        const resultDoc = await getDoc(doc(db, collectionName, docId));
+        if (resultDoc.exists()) {
+            await renderQuizResultPreview(data, user, resultDoc.data());
+            return;
+        }
+    } catch (e) {
+        console.error("Error checking submission:", e);
+    }
+
+    const now = new Date();
+    const expireTime = new Date(data.dateTimeExpire);
+
+    if (now > expireTime && user.role !== 'teacher') {
+        container.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-gray-500 bg-white p-8 text-center">
+                <i class="fas fa-calendar-times text-6xl mb-6 text-red-400"></i>
+                <h2 class="text-3xl font-bold text-gray-700">Activity Expired</h2>
+                <p class="mt-2 text-lg">The due date for this activity has passed.</p>
+                <p class="text-sm mt-4 text-gray-400 font-bold">No submission recorded.</p>
+                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-6 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+                    Back to List
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
+    
+    const generatedContent = await generateQuizContent(data);
+
+    const antiCheatHtml = `
+        <div id="black-curtain" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:black; z-index:9999;"></div>
+        <div id="cheat-lockout" class="hidden fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center text-white p-6 text-center">
+            <div class="max-w-md w-full">
+                <div class="text-6xl mb-4">⚠️</div>
+                <h1 class="text-3xl font-bold mb-4 text-red-500">Activity Paused</h1>
+                <p class="text-lg mb-6">Focus lost. Navigation away is monitored.</p>
+                <p class="text-sm text-red-300 italic mb-4">Warning: Resuming may penalize your progress.</p>
+                <button id="btn-unlock" onclick="window.handleUnlockClick()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xl shadow-lg transition-transform transform active:scale-95">
+                    Resume Activity (3)
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = `
+        ${antiCheatHtml}
+        <div class="flex flex-col h-full bg-gray-100">
+            <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
+                 <h1 class="text-xl md:text-2xl font-bold truncate pl-2">${data.activityname}</h1>
+                 <div class="flex items-center space-x-2 bg-blue-900 px-3 py-1 rounded border border-blue-700">
+                    <i class="fas fa-stopwatch text-yellow-400"></i>
+                    <span id="quiz-timer" class="font-mono text-lg font-bold">--:--:--</span>
+                 </div>
+            </div>
+            
+            <form id="quiz-form" class="flex-1 flex flex-col overflow-y-auto relative scrollbar-thin">
+                ${generatedContent.html}
+            </form>
+        </div>
+    `;
+
+    initializeQuizManager(data, generatedContent.data, user);
+}
+
+// --- UPDATED CONTENT GENERATOR ---
+async function generateQuizContent(activityData) {
+    let tabsHtml = '';
+    let sectionsHtml = '';
+    let questionData = []; 
+
+    if (!activityData.testQuestions || !Array.isArray(activityData.testQuestions)) {
+        return { html: '<div class="p-8 text-center text-gray-500">No test sections defined.</div>', data: [] };
+    }
+
+    tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap shrink-0 z-20 sticky top-0 shadow-sm">`;
+    
+    activityData.testQuestions.forEach((section, index) => {
+        const isActive = index === 0 ? 'border-blue-800 text-blue-800 bg-blue-50' : 'border-transparent text-gray-600 hover:text-blue-600';
+        tabsHtml += `
+            <button type="button" class="tab-btn px-4 py-3 mr-2 font-semibold text-sm border-b-2 transition-colors focus:outline-none ${isActive}" data-target="test-section-${index}">
+                Test ${index + 1}
+            </button>
+        `;
+    });
+
+    tabsHtml += `
+        <div class="ml-auto pl-4 py-2">
+            <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-4 py-1.5 rounded shadow transition whitespace-nowrap">
+                Submit
+            </button>
+        </div>
+    </div>`;
+
+    sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
+
+    for (const [index, section] of activityData.testQuestions.entries()) {
+        const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
+        const isHidden = index === 0 ? '' : 'hidden'; 
+
+        sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
+
+        let questions = [];
+        const count = parseInt(section.noOfQuestions) || 5;
+
+        // REVISED SELECTION LOGIC: Pull from local JS files instead of Firestore
+        let localSource = [];
+        if (section.type === "Multiple Choice") localSource = qbMerchMultipleChoice;
+        else if (section.type === "Problem Solving") localSource = qbMerchProblemSolving;
+        else if (section.type === "Journalizing") localSource = qbMerchJournalizing;
+
+        // Flatten the array of objects into a standard array of questions
+        const flattenedCandidates = localSource.map(obj => {
+            const id = Object.keys(obj)[0];
+            return { id, ...obj[id] };
+        });
+
+        // Filter by subject and topic
+        let candidates = flattenedCandidates.filter(q => 
+            q.subject === "FABM1" && sectionTopics.includes(q.topic)
+        );
+
+        // Randomize and slice
+        candidates.sort(() => 0.5 - Math.random());
+        questions = candidates.slice(0, count);
+        
+        let questionsHtml = '';
+        let trackerHtml = '';
+
+        questions.forEach((q, qIdx) => {
+            const uiId = `s${index}_q${qIdx}`;
+            
+            const getSafeCorrectAnswer = (q) => {
+                if (q.answer !== undefined && q.answer !== null && q.answer !== "") return q.answer;
+                if (q.solution !== undefined && q.solution !== null && q.solution !== "") return q.solution;
+                if (q.correctAnswer !== undefined && q.correctAnswer !== null) return q.correctAnswer;
+                return null;
+            };
+
+            questionData.push({ 
+                uiId: uiId, 
+                dbId: q.id, 
+                type: section.type,
+                questionText: q.question || (q.title || 'Journal Activity'),
+                correctAnswer: getSafeCorrectAnswer(q),
+                options: q.options || [],
+                explanation: q.explanation || '',
+                transactions: q.transactions || [],
+                instructions: q.instructions || null
+            });
+
+            const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
+            
+            const stickyHeader = `
+                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
+                        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
+                            <span class="font-bold text-blue-800">Type:</span> ${section.type}
+                        </h3>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
+                        </div>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
+                        </div>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (section.type !== "Journalizing") {
+                const hiddenClass = qIdx === 0 ? '' : 'hidden';
+                
+                trackerHtml += `
+                    <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
+                        ${qIdx + 1}
+                    </button>
+                `;
+
+                let innerContent = '';
+                if (section.type === "Multiple Choice") {
+                    const opts = q.options ? q.options.map((opt, optIdx) => `
+                        <label class="flex items-start p-3 border border-gray-200 rounded hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-2 shadow-sm">
+                            <input type="radio" name="${uiId}" value="${optIdx}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0">
+                            <span class="text-sm text-gray-700">${opt}</span>
+                        </label>
+                    `).join('') : '';
+                    
+                    innerContent = `<div class="flex flex-col mt-2">${opts}</div>`;
+                } else {
+                    innerContent = `
+                        <textarea name="${uiId}" class="input-checker w-full mt-2 p-3 border border-gray-300 rounded h-32 md:h-48 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-y" placeholder="Type your answer here..."></textarea>
+                    `;
+                }
+
+                questionsHtml += `
+                    <div id="${uiId}" class="question-block w-full ${hiddenClass}">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
+                            
+                            <div class="p-4 md:p-6">
+                                <div class="mb-2">
+                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
+                                    <p class="text-base md:text-lg font-bold text-gray-800 mt-1 leading-snug">${q.question}</p>
+                                </div>
+                                ${innerContent}
+                                
+                                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
+                                    <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100">
+                                        <i class="fas fa-arrow-left mr-1"></i> Previous
+                                    </button>
+                                    <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">
+                                        Next <i class="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } 
+            else {
+                const transactions = q.transactions || [];
+                const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
+                
+                let transTrackerList = '';
+                let transContent = '';
+
+                transactions.forEach((trans, tIdx) => {
+                    const transUiId = `${uiId}_t${tIdx}`;
+                    const tHidden = tIdx === 0 ? '' : 'hidden';
+                    const tActive = tIdx === 0 ? 'bg-blue-100 border-l-4 border-blue-600 text-blue-800' : 'bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
+
+                    transTrackerList += `
+                        <button type="button" class="trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none ${tActive}" data-target-trans="${transUiId}" data-t-index="${tIdx}">
+                            <div class="font-bold whitespace-nowrap">${trans.date}</div>
+                            <div class="whitespace-normal opacity-80 text-xs">${trans.description}</div>
+                        </button>
+                    `;
+
+                    const rowCount = trans.rows || 2;
+                    let rows = '';
+                    for(let r=0; r < rowCount; r++) {
+                        rows += `
+                        <tr class="border-b border-gray-200 bg-white">
+                            <td class="p-0 border-r border-gray-300 w-24"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-auto"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder=""></td>
+                            <td class="p-0 border-r border-gray-300 w-28"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
+                            <td class="p-0 w-28"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
+                        </tr>`;
+                    }
+
+                    transContent += `
+                        <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
+                            <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
+                                <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
+                                <p class="text-md font-bold text-gray-800">${trans.date} ${trans.description}</p>
+                            </div>
+
+                            <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
+                                <table class="w-full border-collapse table-fixed min-w-[600px]">
+                                    <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
+                                        <th class="py-2 border-r border-gray-300 w-24">Date</th>
+                                        <th class="py-2 border-r border-gray-300 text-left pl-4 w-auto">Account Titles</th>
+                                        <th class="py-2 border-r border-gray-300 w-28 text-right pr-2">Debit</th>
+                                        <th class="py-2 w-28 text-right pr-2">Credit</th>
+                                    </tr></thead>
+                                    <tbody>${rows}</tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex justify-between items-center mt-4 mb-2">
+                                <div>
+                                    ${tIdx > 0 ? `<button type="button" class="btn-prev-trans px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium border border-gray-300" data-target-idx="${tIdx - 1}"><i class="fas fa-chevron-left mr-1"></i> Previous Transaction</button>` : ''}
+                                </div>
+                                <div>
+                                    ${tIdx < transactions.length - 1 ? `<button type="button" class="btn-next-trans px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow-sm" data-target-idx="${tIdx + 1}">Next Transaction <i class="fas fa-chevron-right ml-1"></i></button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                questionsHtml += `
+                    <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
+                        <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
+                             <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
+                                 ${stickyHeader}
+                                 
+                                 <div class="p-4 md:p-2 flex-1">
+                                     ${transContent}
+                                     
+                                     ${questions.length > 1 ? `
+                                     <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
+                                          <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
+                                          <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
+                                     </div>` : ''}
+                                 </div>
+                             </div>
+                             
+                             <div class="w-full md:w-64 bg-gray-50 flex flex-col max-h-64 md:max-h-full overflow-y-auto">
+                                <div class="p-2 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200 sticky top-0">
+                                    Transactions
+                                </div>
+                                <div class="flex-1">
+                                    ${transTrackerList}
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        if (section.type !== "Journalizing") {
+            const sectionHeaderHtml = `
+                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
+                        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
+                            <span class="font-bold text-blue-800">Type:</span> ${section.type}
+                        </h3>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
+                        </div>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Instruction:</span> ${section.instructions || "Select the best answer."}
+                        </div>
+                        <div class="border-b pb-1">
+                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            sectionsHtml += `
+                ${sectionHeaderHtml}
+                <div class="flex flex-col md:flex-row md:items-start gap-4">
+                    <div class="flex-1 min-w-0">
+                        ${questionsHtml}
+                    </div>
+
+                    <div class="w-full md:w-64 shrink-0">
+                        <div class="bg-white rounded shadow-sm border border-gray-200 p-3 sticky top-20">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 pb-1 border-b border-gray-100">
+                                Question Tracker
+                            </div>
+                            <div class="flex flex-wrap content-start">
+                                ${trackerHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            sectionsHtml += `
+                <div class="w-full">
+                    ${questionsHtml}
+                </div>
+            `;
+        }
+
+        sectionsHtml += `</div>`; 
+    }
+
+    sectionsHtml += `</div>`; 
+
+    return { html: tabsHtml + sectionsHtml, data: questionData };
+}
+
+// ... remaining logic (initializeQuizManager, submitQuiz, renderQuizResultPreview) remains exactly the same as provided in your original code ...
 // --- QUIZ MANAGER (INTERACTIVITY) ---
 
 function initializeQuizManager(activityData, questionData, user) {
