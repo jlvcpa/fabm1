@@ -2,6 +2,7 @@ import { createPlaceholderDays } from '../utils.js';
 import { unit1Data } from './unit1-accounting-cycle.js';
 import { unit2Data } from './unit2Week1Merch.js'; 
 import { unit2Week2Data } from './unit2Week2Merch.js';
+import { unit2Week2Data } from './unit2Week3Merch.js';
 
 
 export const courseData = {
@@ -143,7 +144,7 @@ export const courseData = {
                         { 
                             id: "u2w1", 
                             title: "Week 1: Intro to Merchandising", 
-                            days: unit2Data.week1 
+                            days: unit2Week1Data.week1 
                         },
                         {
                             id: "u2w2",
@@ -153,7 +154,8 @@ export const courseData = {
                         },
                         { 
                             id: "u2w3", title: "Week 3: Financial Statement", 
-                            days: createPlaceholderDays(["Worksheet and Ending Inventory", "Net Sales, COGS, Gross Profit, and Opertaing Expenses", "Single and Multi-Step Income Statement", "Balance Sheet"]) 
+                            days: unit2Week3Data.week3
+                              // createPlaceholderDays(["Worksheet and Ending Inventory", "Net Sales, COGS, Gross Profit, and Opertaing Expenses", "Single and Multi-Step Income Statement", "Balance Sheet"]) 
                         },
                         { 
                             id: "u2w4", title: "Week 4: Performance Task - Merchandising Cycle Simulation", 
