@@ -1,6 +1,6 @@
 import { createPlaceholderDays } from '../utils.js';
 import { unit1Data } from './unit1-accounting-cycle.js';
-import { unit2Data } from './unit2-merchandising.js'; 
+import { unit2Data } from './unit2Week1Merch.js'; 
 import { unit2Week2Data } from './unit2Week2Merch.js';
 
 
