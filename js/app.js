@@ -4,7 +4,9 @@ import { formatRanges } from './utils.js';
 import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js'; // js/content/accountingCycle/steps/Step05Worksheet.js
+import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js'; 
+import React from 'https://esm.sh/react@18.2.0';
+import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
 // --- STATE MANAGEMENT ---
 let currentUser = null; 
@@ -338,22 +340,6 @@ function renderQuestionImporterPage() {
      } else {
          container.innerHTML = `<div class="p-8 text-center text-gray-500">Importer module not loaded. Uncomment import in app.js</div>`;
      }
-
-    /*
-     Placeholder content until file is linked
-    container.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-blue-500">
-                    <i class="fas fa-file-import text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Question Bank Importer</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>toolQuestionImporter.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
-    */
 }
 
 // --- QUIZZES & ACTIVITIES PAGE RENDERER ---
@@ -369,22 +355,6 @@ function renderQuizzesActivitiesPage() {
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
-    
-    // Placeholder content until file is linked
-    /*
-    content.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-yellow-500">
-                    <i class="fas fa-clipboard-list text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quizzes & Activities</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>quizzesAndActivities.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
-    */
 }
 
 // --- CREATOR PAGE RENDERER ---
@@ -395,22 +365,6 @@ function renderCreatorPage() {
 
     // If you have imported renderQuizActivityCreator, call it here:
     renderQuizActivityCreator(content);
-    
-    // Placeholder content until file is linked
-    /*
-    content.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-green-500">
-                    <i class="fas fa-magic text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
-    */
 }
 
 function renderLandingPage() {
@@ -463,6 +417,19 @@ function renderLandingPage() {
 }
 
 // --- DAY RENDERER (The Core Content Logic) ---
+
+function getAccountNormalSide(accountName) {
+    const acc = accountName.toLowerCase();
+    // Assets & Expenses & Drawings = Normal Debit
+    if (acc.includes('cash') || acc.includes('receivable') || acc.includes('inventory') || 
+        acc.includes('supplies') || acc.includes('prepaid') || acc.includes('equipment') || 
+        acc.includes('expense') || acc.includes('drawings') || acc.includes('purchases') || 
+        acc.includes('freight in') || acc.includes('sales returns') || acc.includes('sales discounts')) {
+        return 'dr';
+    }
+    // Everything else (Liabilities, Equity, Revenue, Contra-Assets) = Normal Credit
+    return 'cr';
+}
 
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
@@ -628,6 +595,8 @@ function renderDayContent(unit, week, dayIndex) {
 
     // 5. Worksheet Content
     let worksheetDiv;
+    let worksheetRoot = null; 
+
     if (worksheetActivity) {
         worksheetDiv = document.createElement('div');
         worksheetDiv.id = "tab-content-worksheet";
@@ -651,8 +620,14 @@ function renderDayContent(unit, week, dayIndex) {
         Object.keys(ledger).sort().forEach(acc => {
             const bal = ledger[acc].debit - ledger[acc].credit;
             if (bal === 0) return;
-            const side = bal < 0 ? " (CR)" : "";
-            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${side}</span></div>`;
+            
+            // Logic for Dr/Cr Indicator based on Normal Balance
+            const normalSide = getAccountNormalSide(acc);
+            let sideStr = "";
+            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
+            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
+
+            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
         });
         ledgerHtml += `</div>`;
 
@@ -713,6 +688,51 @@ function renderDayContent(unit, week, dayIndex) {
         } else if (targetType === 'worksheet' && worksheetDiv) {
             worksheetDiv.classList.remove('hidden');
             activeBtn = tabWorksheet;
+            
+            // Mount React Component ONLY when tab is visible and not already mounted
+            const mountEl = document.getElementById('worksheet-mount');
+            if (mountEl && !worksheetRoot) {
+                worksheetRoot = ReactDOM.createRoot(mountEl);
+                
+                // --- REACT COMPONENT STATE WRAPPER ---
+                // We need a simple wrapper to manage state within this Vanilla JS function context
+                let wsState = { rows: [], footers: {} };
+                let showFeedback = false;
+
+                const renderApp = () => {
+                    const hasFinalTotals = wsState.footers?.final && (Object.values(wsState.footers.final).some(v => v !== ""));
+                    
+                    const handleChange = (field, val) => {
+                        wsState = { ...wsState, [field]: val };
+                        renderApp();
+                    };
+
+                    const toggleFeedback = () => {
+                        showFeedback = !showFeedback;
+                        renderApp();
+                    };
+
+                    worksheetRoot.render(
+                        React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
+                            React.createElement(Step05Worksheet, {
+                                ledgerData: ledger, // ledger comes from closure scope above
+                                adjustments: worksheetActivity.adjustments,
+                                data: wsState,
+                                onChange: handleChange,
+                                showFeedback: showFeedback
+                            }),
+                            hasFinalTotals ? React.createElement('div', { className: "flex justify-center" }, 
+                                React.createElement('button', {
+                                    className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
+                                    onClick: toggleFeedback
+                                }, showFeedback ? React.createElement('span', null, "Hide Solution") : React.createElement('span', null, "Show Solution"))
+                            ) : null
+                        )
+                    );
+                };
+                
+                renderApp();
+            }
         }
 
         // Activate Button
