@@ -4,9 +4,7 @@ import { formatRanges } from './utils.js';
 import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js
-';
-js/content/accountingCycle/steps/Step05Worksheet.js
+import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js'; // js/content/accountingCycle/steps/Step05Worksheet.js
 
 // --- STATE MANAGEMENT ---
 let currentUser = null; 
