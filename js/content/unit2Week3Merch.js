@@ -7,161 +7,189 @@ export const unit2Week3Data = {
             content: `
                 <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
                     <p class="font-bold text-blue-900">Learning Goal</p>
-                    <p class="text-blue-800">Understand how to extend the Worksheet for a merchandising business, specifically focusing on the treatment of Merchandise Inventory under the Periodic System.</p>
+                    <p class="text-blue-800">Master the two main methods of handling Periodic Inventory in the worksheet: The Direct Extension (Closing Entry) Method and the Adjustment Method.</p>
                 </div>
 
                 <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
                 
-                <div class="space-y-8 mb-6">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">1. The Merchandising Worksheet</h3>
-                        <p class="text-gray-700 mb-4">
-                            The worksheet for a merchandiser is similar to a service business, but with key differences depending on the inventory system used.
-                        </p>
-                        
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                                <h4 class="font-bold text-green-800 mb-2">Perpetual System</h4>
-                                <p class="text-sm text-green-900 mb-2">Easier to handle in the worksheet.</p>
-                                <ul class="list-disc pl-5 text-sm text-green-900 space-y-1">
-                                    <li><strong>Inventory Account:</strong> The Trial Balance already shows the <em>Ending Inventory</em> figure (because it's updated real-time).</li>
-                                    <li><strong>COGS Account:</strong> Already exists in the Trial Balance.</li>
-                                    <li><strong>Action:</strong> Simply extend the Inventory balance to the <strong>Balance Sheet Debit</strong> column.</li>
-                                </ul>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Method 1: Direct Extension (The Closing Entry Method)</h3>
+                    <div class="bg-gray-100 p-3 rounded text-sm text-gray-700 mb-4 italic border-l-4 border-gray-400">
+                        <p><strong>Concept:</strong> No entries are made in the "Adjustments" columns. Inventory is updated later via Closing Entries. In the worksheet, we simply "extend" the figures to where they belong.</p>
+                    </div>
+
+                    <p class="text-gray-700 mb-4 text-sm">
+                        <strong>Problem Data (Hai Company):</strong><br>
+                        • Beginning Inventory (Jan 1): <strong>₱285,000</strong> (from Trial Balance)<br>
+                        • Ending Inventory (Dec 31): <strong>₱350,000</strong> (from Note #4)
+                    </p>
+
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-4">
+                        <svg viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
+                            <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
+                            <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
+                            
+                            <rect x="200" y="0" width="120" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
+                            <text x="260" y="25" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Balance</text>
+
+                            <rect x="320" y="0" width="240" height="40" fill="#fee2e2" stroke="#d1d5db"/>
+                            <text x="440" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#991b1b">Income Statement</text>
+                            <text x="380" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Dr</text>
+                            <text x="500" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Cr</text>
+
+                            <rect x="560" y="0" width="240" height="40" fill="#dbeafe" stroke="#d1d5db"/>
+                            <text x="680" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Balance Sheet</text>
+                            <text x="620" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Dr</text>
+                            <text x="740" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Cr</text>
+
+                            <text x="10" y="80" font-family="monospace" font-size="12" fill="#1f2937">Merch. Inventory</text>
+                            
+                            <rect x="205" y="60" width="50" height="30" rx="4" fill="#f3f4f6" stroke="#9ca3af"/>
+                            <text x="230" y="80" text-anchor="middle" font-family="monospace" font-size="11" fill="#000">285k</text>
+                            <path d="M 260 75 Q 320 50 350 70" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            
+                            <rect x="355" y="60" width="50" height="30" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+                            <text x="380" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#991b1b">285k</text>
+                            <text x="380" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#ef4444">(Beg)</text>
+
+                            <rect x="475" y="60" width="50" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                            <text x="500" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#166534">350k</text>
+                            <text x="500" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#16a34a">(End)</text>
+
+                            <path d="M 530 75 L 590 75" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowheadBlue)"/>
+
+                            <rect x="595" y="60" width="50" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                            <text x="620" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#1e40af">350k</text>
+                            <text x="620" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#2563eb">(End)</text>
+
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                  <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+                                </marker>
+                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                                </marker>
+                            </defs>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Method 2: The Adjustment Method</h3>
+                    <div class="bg-indigo-50 p-3 rounded text-sm text-indigo-900 mb-4 italic border-l-4 border-indigo-400">
+                        <p><strong>Concept:</strong> We use the <strong>Adjustments Columns</strong> to formally remove the old inventory and record the new one. We use the account <strong>Income Summary</strong> (or Cost of Goods Sold) to offset these entries.</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <h4 class="font-bold text-red-700 text-sm mb-2">Step A: Remove Beginning Inventory</h4>
+                            <p class="text-xs text-gray-600 mb-1">We need to zero out the old 285k.</p>
+                            <div class="bg-gray-100 p-2 rounded font-mono text-xs">
+                                Dr. Income Summary  285,000<br>
+                                &nbsp;&nbsp;Cr. Merch Inventory 285,000
                             </div>
-                            <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                                <h4 class="font-bold text-orange-800 mb-2">Periodic System</h4>
-                                <p class="text-sm text-orange-900 mb-2">Requires specific adjustment steps.</p>
-                                <ul class="list-disc pl-5 text-sm text-orange-900 space-y-1">
-                                    <li><strong>Trial Balance:</strong> Shows <em>Beginning Inventory</em>.</li>
-                                    <li><strong>Adjustment:</strong> There is no "COGS" account yet. We must calculate it using the Income Statement columns.</li>
-                                    <li><strong>Action:</strong> Use the "Direct Extension" method or "Adjustment" method to replace Beginning Inv with Ending Inv.</li>
-                                </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-green-700 text-sm mb-2">Step B: Record Ending Inventory</h4>
+                            <p class="text-xs text-gray-600 mb-1">We need to set up the new 350k.</p>
+                            <div class="bg-gray-100 p-2 rounded font-mono text-xs">
+                                Dr. Merch Inventory 350,000<br>
+                                &nbsp;&nbsp;Cr. Income Summary  350,000
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">2. Handling Inventory in Periodic Worksheet</h3>
-                        <p class="text-gray-700 mb-4">
-                            The most common method places both inventory figures in the <strong>Income Statement</strong> columns to simulate the COGS calculation.
-                        </p>
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg">
+                        <svg viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
+                            <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
+                            <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
+                            
+                            <rect x="200" y="0" width="100" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
+                            <text x="250" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Bal</text>
+                            <text x="225" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Dr</text>
 
-                        <table class="w-full text-sm text-left text-gray-600 border border-gray-300">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                                <tr>
-                                    <th class="px-4 py-3 border-r w-1/3">Item</th>
-                                    <th class="px-4 py-3 border-r">Income Statement Cols</th>
-                                    <th class="px-4 py-3">Balance Sheet Cols</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="bg-white border-b">
-                                    <td class="px-4 py-3 font-medium text-gray-900 border-r">Beginning Inventory</td>
-                                    <td class="px-4 py-3 border-r text-red-600">DEBIT <br><span class="text-xs text-gray-500">(Added to cost)</span></td>
-                                    <td class="px-4 py-3 text-gray-400">-</td>
-                                </tr>
-                                <tr class="bg-gray-50 border-b">
-                                    <td class="px-4 py-3 font-medium text-gray-900 border-r">Ending Inventory</td>
-                                    <td class="px-4 py-3 border-r text-green-600">CREDIT <br><span class="text-xs text-gray-500">(Deducted from cost)</span></td>
-                                    <td class="px-4 py-3 text-blue-600 font-bold">DEBIT <br><span class="text-xs text-gray-500">(Asset carried forward)</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div class="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200 text-sm text-yellow-800">
-                            <strong>Note:</strong> By Debiting Beg. Inv. and Crediting End. Inv. in the Income Statement columns, the difference combined with Purchases automatically results in the Cost of Goods Sold.
-                        </div>
+                            <rect x="300" y="0" width="160" height="40" fill="#fef3c7" stroke="#d1d5db"/>
+                            <text x="380" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#92400e">Adjustments</text>
+                            <text x="340" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#92400e">Dr</text>
+                            <text x="420" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#92400e">Cr</text>
+
+                            <rect x="460" y="0" width="100" height="40" fill="#e0f2fe" stroke="#d1d5db"/>
+                            <text x="510" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#0369a1">Adj. TB</text>
+                            <text x="485" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#0369a1">Dr</text>
+
+                            <rect x="560" y="0" width="240" height="40" fill="#f3f4f6" stroke="#d1d5db"/>
+                            <text x="680" y="25" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">IS / BS</text>
+
+                            <text x="10" y="70" font-family="monospace" font-size="11" fill="#1f2937">Merch. Inventory</text>
+                            
+                            <text x="225" y="70" text-anchor="middle" font-family="monospace" font-size="10" fill="#000">285k</text>
+
+                            <rect x="400" y="55" width="40" height="20" rx="2" fill="#fee2e2" stroke="#ef4444"/>
+                            <text x="420" y="68" text-anchor="middle" font-family="monospace" font-size="10" fill="#991b1b">285k</text>
+
+                            <rect x="320" y="55" width="40" height="20" rx="2" fill="#dcfce7" stroke="#16a34a"/>
+                            <text x="340" y="68" text-anchor="middle" font-family="monospace" font-size="10" fill="#166534">350k</text>
+
+                            <text x="485" y="70" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1e40af">350k</text>
+                            
+                            <path d="M 510 65 L 580 65" stroke="#1e40af" stroke-width="1" stroke-dasharray="2" marker-end="url(#arrowheadBlue)"/>
+                            <text x="620" y="70" text-anchor="middle" font-size="9" fill="#1e40af">To BS Debit</text>
+
+                            <text x="10" y="120" font-family="monospace" font-size="11" fill="#1f2937">Income Summary</text>
+
+                            <rect x="320" y="105" width="40" height="20" rx="2" fill="#fee2e2" stroke="#ef4444"/>
+                            <text x="340" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#991b1b">285k</text>
+
+                            <rect x="400" y="105" width="40" height="20" rx="2" fill="#dcfce7" stroke="#16a34a"/>
+                            <text x="420" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#166534">350k</text>
+
+                            <path d="M 235 75 Q 280 120 320 115" stroke="#ef4444" stroke-width="1" fill="none" marker-end="url(#arrowhead)"/>
+                            <text x="250" y="100" font-size="8" fill="#ef4444">Transfer Cost</text>
+
+                            <path d="M 360 65 Q 380 90 400 105" stroke="#16a34a" stroke-width="1" fill="none" marker-end="url(#arrowheadGreen)"/>
+                            <text x="375" y="85" font-size="8" fill="#16a34a">Set Up Asset</text>
+
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                  <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+                                </marker>
+                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#1e40af" />
+                                </marker>
+                                <marker id="arrowheadGreen" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                    <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a" />
+                                </marker>
+                            </defs>
+                        </svg>
                     </div>
+                    <div class="mt-2 text-xs text-gray-500 italic">
+                        <strong>Result:</strong> Merchandise Inventory in the Adjusted Trial Balance is now ₱350,000 (Ready for Balance Sheet). Income Summary holds both figures to be sent to Income Statement columns.
+                    </div>
+                </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-8">
-                        <h3 class="text-xl font-bold text-indigo-900 mb-4">3. Applied Example: Hai Company (Step-by-Step)</h3>
-                        
-                        <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 mb-6">
-                            <p class="font-bold text-indigo-900 text-sm">Problem Data (from image):</p>
-                            <ul class="list-disc pl-5 text-sm text-indigo-800 mt-1">
-                                <li><strong>Merchandise Inventory (Jan 1 / Beginning):</strong> ₱285,000 (Debit in Trial Balance)</li>
-                                <li><strong>Note #4 Ending Inventory (Dec 31):</strong> ₱350,000</li>
-                            </ul>
-                        </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Understanding the Closing Entries</h3>
+                    <p class="text-gray-700 mb-4 text-sm">
+                        Whether you use Method 1 or Method 2 in the worksheet, the final result in the ledger is accomplished via <strong>Closing Entries</strong> at year-end.
+                    </p>
 
-                        <p class="text-gray-700 mb-4 text-sm">
-                            Using the <strong>Direct Extension Method</strong>, we handle inventory in three specific steps across the worksheet columns:
-                        </p>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="border rounded p-3 bg-red-50">
-                                <span class="block text-xs font-bold uppercase text-red-500 mb-1">Step 1: The Cost</span>
-                                <p class="text-sm font-semibold">Extend Beginning Inventory</p>
-                                <p class="text-xs text-gray-600 mt-2">Move the <strong>₱285,000</strong> from Trial Balance Debit to <strong>Income Statement Debit</strong>.</p>
-                                <p class="text-xs text-red-500 italic mt-1">Reason: It is part of the cost of goods available for sale.</p>
-                            </div>
-                            <div class="border rounded p-3 bg-green-50">
-                                <span class="block text-xs font-bold uppercase text-green-600 mb-1">Step 2: The Deduction</span>
-                                <p class="text-sm font-semibold">Enter Ending Inventory (Credit)</p>
-                                <p class="text-xs text-gray-600 mt-2">Input the new <strong>₱350,000</strong> directly into <strong>Income Statement Credit</strong>.</p>
-                                <p class="text-xs text-green-600 italic mt-1">Reason: This unsold amount is subtracted from cost to find COGS.</p>
-                            </div>
-                            <div class="border rounded p-3 bg-blue-50">
-                                <span class="block text-xs font-bold uppercase text-blue-600 mb-1">Step 3: The Asset</span>
-                                <p class="text-sm font-semibold">Enter Ending Inventory (Debit)</p>
-                                <p class="text-xs text-gray-600 mt-2">Input the new <strong>₱350,000</strong> directly into <strong>Balance Sheet Debit</strong>.</p>
-                                <p class="text-xs text-blue-600 italic mt-1">Reason: It is the current asset we own at year-end.</p>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="border border-red-200 rounded p-4 bg-red-50">
+                            <h4 class="font-bold text-red-800 text-sm border-b border-red-200 pb-2 mb-2">1. Closing Beginning Inventory</h4>
+                            <p class="text-xs text-gray-700 mb-2">We treat the beginning inventory (₱285k) as an <strong>Expense</strong> (Cost of Goods Sold).</p>
+                            <div class="bg-white p-2 rounded border border-red-100 font-mono text-xs">
+                                Dr. Income Summary <span class="float-right">285,000</span><br>
+                                &nbsp;&nbsp;Cr. Merch Inventory <span class="float-right">285,000</span>
                             </div>
                         </div>
 
-                        <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-4">
-                            <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
-                                <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
-                                <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
-                                
-                                <rect x="200" y="0" width="120" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
-                                <text x="260" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Balance</text>
-                                <text x="230" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Dr</text>
-                                <text x="290" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Cr</text>
-
-                                <rect x="320" y="0" width="240" height="40" fill="#fee2e2" stroke="#d1d5db"/>
-                                <text x="440" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#991b1b">Income Statement</text>
-                                <text x="380" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Dr</text>
-                                <text x="500" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Cr</text>
-
-                                <rect x="560" y="0" width="240" height="40" fill="#dbeafe" stroke="#d1d5db"/>
-                                <text x="680" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Balance Sheet</text>
-                                <text x="620" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Dr</text>
-                                <text x="740" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Cr</text>
-
-                                <text x="10" y="80" font-family="monospace" font-size="12" fill="#1f2937">Merch. Inventory</text>
-                                
-                                <rect x="205" y="60" width="50" height="30" rx="4" fill="#f3f4f6" stroke="#9ca3af"/>
-                                <text x="230" y="80" text-anchor="middle" font-family="monospace" font-size="11" fill="#000">285k</text>
-
-                                <path d="M 260 75 Q 320 50 350 70" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
-
-                                <rect x="355" y="60" width="50" height="30" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
-                                <text x="380" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#991b1b">285k</text>
-                                <text x="380" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#ef4444">(Beg)</text>
-
-                                <rect x="475" y="60" width="50" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-                                <text x="500" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#166534">350k</text>
-                                <text x="500" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#16a34a">(End)</text>
-
-                                <path d="M 530 75 L 590 75" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowheadBlue)"/>
-
-                                <rect x="595" y="60" width="50" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-                                <text x="620" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#1e40af">350k</text>
-                                <text x="620" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#2563eb">(End)</text>
-
-                                <defs>
-                                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                      <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                                    </marker>
-                                    <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-                                    </marker>
-                                </defs>
-                            </svg>
-                        </div>
-                        <div class="p-3 bg-gray-50 rounded text-xs text-gray-500 italic">
-                            Illustration: Note how the 285k flows to Income Dr (Cost), and the new 350k is inserted into both Income Cr (Deduction) and Balance Sheet Dr (Asset).
+                        <div class="border border-green-200 rounded p-4 bg-green-50">
+                            <h4 class="font-bold text-green-800 text-sm border-b border-green-200 pb-2 mb-2">2. Setting Up Ending Inventory</h4>
+                            <p class="text-xs text-gray-700 mb-2">We treat the ending inventory (₱350k) as an <strong>Asset</strong> deduction from cost.</p>
+                            <div class="bg-white p-2 rounded border border-green-100 font-mono text-xs">
+                                Dr. Merch Inventory <span class="float-right">350,000</span><br>
+                                &nbsp;&nbsp;Cr. Income Summary <span class="float-right">350,000</span>
+                            </div>
                         </div>
                     </div>
                 </div>
