@@ -9,7 +9,14 @@ const html = htm.bind(React.createElement);
 
 export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     const rows = userAnswers.rows || [];
-    const footers = userAnswers.footers || { totals: {}, net: {}, final: {} };
+    
+    // FIX: Ensure footers structure is robust to prevent "Cannot read properties of undefined"
+    const rawFooters = userAnswers.footers || {};
+    const footers = { 
+        totals: rawFooters.totals || {}, 
+        net: rawFooters.net || {}, 
+        final: rawFooters.final || {} 
+    };
     
     // 1. Calculate Expected Data
     const mergedAccounts = new Set(Object.keys(ledgerData));
@@ -109,7 +116,7 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     const missingCount = sortedAccounts.length - rows.filter(r => r.account && expectedMap[r.account]).length;
     if (missingCount > 0) maxScore += (missingCount * 10);
 
-    // Score Footers
+    // Score Footers - safely accessing footers.totals/net/final
     ['tbDr', 'tbCr', 'adjDr', 'adjCr', 'atbDr', 'atbCr', 'isDr', 'isCr', 'bsDr', 'bsCr'].forEach(col => {
         validationResults.footers.totals[col] = checkVal(footers.totals[col], columnTotals[col]);
         validationResults.footers.final[col] = checkVal(footers.final[col], finalRow[col]);
