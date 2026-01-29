@@ -431,6 +431,37 @@ function getAccountNormalSide(accountName) {
     return 'cr';
 }
 
+// --- React Wrapper Component for Worksheet ---
+// This handles the state for the worksheet so "Show Solution" can work
+function WorksheetWrapper({ ledger, adjustments }) {
+    const [wsState, setWsState] = React.useState({ rows: [], footers: {} });
+    const [showFeedback, setShowFeedback] = React.useState(false);
+
+    const handleChange = (field, val) => {
+        setWsState(prev => ({ ...prev, [field]: val }));
+    };
+
+    // Check if Final Total row has data to enable the button
+    const hasFinalTotals = wsState.footers?.final && 
+        Object.values(wsState.footers.final).some(v => v !== "" && v !== undefined);
+
+    return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
+        React.createElement(Step05Worksheet, {
+            ledgerData: ledger, 
+            adjustments: adjustments,
+            data: wsState,
+            onChange: handleChange,
+            showFeedback: showFeedback
+        }),
+        hasFinalTotals ? React.createElement('div', { className: "flex justify-center" }, 
+            React.createElement('button', {
+                className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
+                onClick: () => setShowFeedback(!showFeedback)
+            }, showFeedback ? React.createElement('span', null, "Hide Solution") : React.createElement('span', null, "Show Solution"))
+        ) : null
+    );
+}
+
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
@@ -692,46 +723,27 @@ function renderDayContent(unit, week, dayIndex) {
             // Mount React Component ONLY when tab is visible and not already mounted
             const mountEl = document.getElementById('worksheet-mount');
             if (mountEl && !worksheetRoot) {
+                // Ensure ledger and adjustments are available from the closure
+                const ledger = {};
+                if(worksheetActivity.transactions) {
+                    worksheetActivity.transactions.forEach(tx => {
+                        tx.solution.forEach(line => {
+                            if (line.isExplanation || line.account === "No Entry") return;
+                            if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                            if (line.debit) ledger[line.account].debit += line.debit;
+                            if (line.credit) ledger[line.account].credit += line.credit;
+                        });
+                    });
+                }
+
                 worksheetRoot = ReactDOM.createRoot(mountEl);
-                
-                // --- REACT COMPONENT STATE WRAPPER ---
-                // We need a simple wrapper to manage state within this Vanilla JS function context
-                let wsState = { rows: [], footers: {} };
-                let showFeedback = false;
-
-                const renderApp = () => {
-                    const hasFinalTotals = wsState.footers?.final && (Object.values(wsState.footers.final).some(v => v !== ""));
-                    
-                    const handleChange = (field, val) => {
-                        wsState = { ...wsState, [field]: val };
-                        renderApp();
-                    };
-
-                    const toggleFeedback = () => {
-                        showFeedback = !showFeedback;
-                        renderApp();
-                    };
-
-                    worksheetRoot.render(
-                        React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
-                            React.createElement(Step05Worksheet, {
-                                ledgerData: ledger, // ledger comes from closure scope above
-                                adjustments: worksheetActivity.adjustments,
-                                data: wsState,
-                                onChange: handleChange,
-                                showFeedback: showFeedback
-                            }),
-                            hasFinalTotals ? React.createElement('div', { className: "flex justify-center" }, 
-                                React.createElement('button', {
-                                    className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
-                                    onClick: toggleFeedback
-                                }, showFeedback ? React.createElement('span', null, "Hide Solution") : React.createElement('span', null, "Show Solution"))
-                            ) : null
-                        )
-                    );
-                };
-                
-                renderApp();
+                // Use the Wrapper Component to manage state!
+                worksheetRoot.render(
+                    React.createElement(WorksheetWrapper, {
+                        ledger: ledger,
+                        adjustments: worksheetActivity.adjustments
+                    })
+                );
             }
         }
 
