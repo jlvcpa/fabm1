@@ -900,7 +900,10 @@ async function submitQuiz(activityData, questionData, user) {
                                  } else {
                                      // Subsequent transactions: Match only the day part of the solution
                                      // Handle "Dec 2" -> "2" or "2" -> "2"
-                                     const parts = solRow.date.split(' ');
+                                     
+                                     // FIX: Added guard against undefined .date
+                                     const solDateStr = solRow.date || '';
+                                     const parts = solDateStr.split(' ');
                                      const solDay = parts.length > 1 ? parts[parts.length - 1] : parts[0];
                                      isDateCorrect = (sDate === solDay);
                                  }
