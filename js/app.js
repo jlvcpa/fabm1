@@ -1,1466 +1,1336 @@
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
-import { getLetterGrade } from "../utils.js"; 
-import { AntiCheatSystem } from '../antiCheat.js';
-import { qbMerchMultipleChoice } from "./questionBank/qbMerchMultipleChoice.js";
-import { qbMerchProblemSolving } from "./questionBank/qbMerchProblemSolving.js";
-import { qbMerchJournalizing } from "./questionBank/qbMerchJournalizing.js";
+import { loginUser } from './auth.js';
+import { courseData } from './content/syllabus.js';
+import { formatRanges } from './utils.js';
+import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js'; 
+import React from 'https://esm.sh/react@18.2.0';
+import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAgOsKAZWwExUzupxSNytsfOo9BOppF0ng",
-    authDomain: "jlvcpa-quizzes.firebaseapp.com",
-    projectId: "jlvcpa-quizzes",
-    storageBucket: "jlvcpa-quizzes.appspot.com",
-    messagingSenderId: "629158256557",
-    appId: "1:629158256557:web:b3d1a424b32e28cd578b24"
+// --- STATE MANAGEMENT ---
+let currentUser = null; 
+let calendarAssignments = JSON.parse(localStorage.getItem('fabm2_calendar')) || {};
+let flatTopics = []; 
+let currentCalendarYear, currentCalendarMonth;
+
+// --- DOM ELEMENTS ---
+const elements = {
+    loginId: () => document.getElementById('login-id'),
+    loginPass: () => document.getElementById('login-pass'),
+    loginError: () => document.getElementById('login-error'),
+    btnLogin: () => document.getElementById('btn-login'),
+    loginSpinner: () => document.getElementById('login-spinner'),
+    loginScreen: () => document.getElementById('login-screen'),
+    appContent: () => document.getElementById('app-content'),
+    userDisplayName: () => document.getElementById('user-display-name'),
+    navContainer: () => document.getElementById('nav-container'),
+    contentArea: () => document.getElementById('content-area'),
+    pageTitle: () => document.getElementById('page-title'),
+    sidebar: () => document.getElementById('sidebar'),
+    sidebarOverlay: () => document.getElementById('sidebar-overlay'),
+    mobileMenuBtn: () => document.getElementById('mobile-menu-btn'),
+    desktopSidebarToggle: () => document.getElementById('desktop-sidebar-toggle'),
+    btnLogout: () => document.getElementById('btn-logout')
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// --- INITIALIZATION ---
 
-let quizTimerInterval = null;
-let currentAntiCheat = null;
-
-export async function renderQuizzesAndActivities(containerElement, user) {
-    const contentArea = document.getElementById('content-area');
+function init() {
+    setupEventListeners();
+    setPhilippineTimeDefaults();
+    generateFlatTopics();
     
-    contentArea.innerHTML = `
-        <div class="flex h-full relative overflow-hidden bg-gray-50">
-            <div id="qa-sidebar" class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 transition-transform absolute md:relative transform -translate-x-full md:translate-x-0">
-                <div class="p-4 border-b border-gray-200 bg-blue-900 text-white flex justify-between items-center">
-                    <h2 class="font-bold">Your Activities</h2>
-                    <button id="qa-close-sidebar" class="md:hidden text-white"><i class="fas fa-times"></i></button>
-                </div>
-                <div id="qa-list-container" class="flex-1 overflow-y-auto p-2 space-y-2">
-                    <p class="text-center text-gray-400 mt-4 text-sm">Loading activities...</p>
-                </div>
-            </div>
-
-            <button id="qa-toggle-sidebar" class="md:hidden absolute top-4 left-4 z-20 bg-blue-900 text-white p-2 rounded shadow">
-                <i class="fas fa-bars"></i>
-            </button>
-
-            <div id="qa-runner-container" class="flex-1 overflow-hidden relative bg-gray-100">
-                <div class="h-full flex flex-col items-center justify-center text-gray-400 p-4 md:p-8">
-                    <i class="fas fa-arrow-left text-4xl mb-4 hidden md:block"></i>
-                    <p>Select an activity from the list to begin.</p>
-                </div>
-            </div>
-        </div>
-    `;
-
-    const sidebar = document.getElementById('qa-sidebar');
-    document.getElementById('qa-toggle-sidebar').addEventListener('click', () => {
-        sidebar.classList.remove('-translate-x-full');
-    });
-    document.getElementById('qa-close-sidebar').addEventListener('click', () => {
-        sidebar.classList.add('-translate-x-full');
-    });
-
-    await loadStudentActivities(user);
+    // Expose updateSchedule to window for HTML onchange attributes
+    window.updateSchedule = updateSchedule;
 }
 
-async function loadStudentActivities(user) {
-    const listContainer = document.getElementById('qa-list-container');
+function setupEventListeners() {
+    // Auth
+    elements.btnLogin().addEventListener('click', handleLogin);
+    elements.btnLogout().addEventListener('click', handleLogout);
     
-    try {
-        const q = query(collection(db, "quiz_list"), orderBy("dateTimeCreated", "desc"));
-        const snapshot = await getDocs(q);
+    // Sidebar
+    elements.desktopSidebarToggle().addEventListener('click', () => {
+        elements.sidebar().classList.toggle('collapsed');
+    });
+    
+    elements.mobileMenuBtn().addEventListener('click', () => {
+        elements.sidebar().classList.remove('-translate-x-full');
+        elements.sidebarOverlay().classList.remove('hidden');
+    });
 
-        listContainer.innerHTML = '';
-        if(snapshot.empty) {
-            listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities found.</p>';
-            return;
-        }
-
-        const now = new Date();
-
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
-            data.id = docSnap.id; 
-            
-            if (user.role === 'student' && data.section !== user.Section) {
-                return; 
-            }
-            
-            const start = new Date(data.dateTimeStart);
-            const expire = new Date(data.dateTimeExpire);
-            const isExpired = now > expire;
-            const isFuture = now < start;
-
-            const card = document.createElement('div');
-            card.className = `p-3 rounded border cursor-pointer hover:shadow-md transition bg-white ${isExpired ? 'border-red-200 bg-red-50 opacity-75' : 'border-blue-200'}`;
-            
-            let statusBadge = '';
-            if(isExpired) statusBadge = '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">Expired</span>';
-            else if(isFuture) statusBadge = '<span class="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded font-bold">Upcoming</span>';
-            else statusBadge = '<span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded font-bold">Active</span>';
-
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-1">
-                    <h3 class="font-bold text-gray-800 text-sm">${data.activityname}</h3>
-                    ${statusBadge}
-                </div>
-                <div class="text-xs text-gray-500">
-                    <p><i class="far fa-clock mr-1"></i> Due: ${expire.toLocaleString()}</p>
-                    <p><i class="fas fa-hourglass-half mr-1"></i> Limit: ${data.timeLimit} mins</p>
-                </div>
-            `;
-
-            card.onclick = () => {
-                if (isFuture && user.role !== 'teacher') {
-                    alert(`This activity starts on ${start.toLocaleString()}`);
-                } else {
-                    if(quizTimerInterval) clearInterval(quizTimerInterval); 
-                    if(currentAntiCheat) currentAntiCheat.stopMonitoring();
-                    
-                    renderQuizRunner(data, user);
-                    document.getElementById('qa-sidebar').classList.add('-translate-x-full');
-                }
-            };
-
-            listContainer.appendChild(card);
-        });
-        
-        if (listContainer.innerHTML === '') {
-             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
-        }
-
-    } catch (e) {
-        console.error("Error loading activities:", e);
-        listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
-    }
+    elements.sidebarOverlay().addEventListener('click', closeMobileSidebar);
 }
 
-async function renderQuizRunner(data, user) {
-    const container = document.getElementById('qa-runner-container');
-    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
-    
-    if (user.role !== 'teacher' && data.students && !data.students.includes(user.Idnumber)) {
-        container.innerHTML = `
-            <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
-                <i class="fas fa-user-slash text-6xl mb-6"></i>
-                <h2 class="text-3xl font-bold">Access Denied</h2>
-                <p class="text-gray-500 mt-2 text-lg">You are not included in the list of students for this activity.</p>
-                <p class="text-gray-800 mt-4 font-bold">You are marked as ABSENT.</p>
-                <p class="text-gray-500 text-sm mt-2">Please contact your teacher if you believe this is an error.</p>
-            </div>
-        `;
+// --- AUTH LOGIC ---
+
+async function handleLogin() {
+    const id = elements.loginId().value.trim();
+    const pass = elements.loginPass().value.trim();
+    const errorDiv = elements.loginError();
+    const btn = elements.btnLogin();
+    const spinner = elements.loginSpinner();
+
+    if (!id || !pass) {
+        errorDiv.querySelector('span').textContent = "Please enter ID and Password";
+        errorDiv.classList.remove('hidden');
         return;
     }
 
-    const collectionName = `results_${data.activityname}_${data.section}`;
-    const docId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
-    
+    btn.disabled = true;
+    btn.classList.add('opacity-75');
+    spinner.classList.remove('hidden');
+    errorDiv.classList.add('hidden');
+
     try {
-        const resultDoc = await getDoc(doc(db, collectionName, docId));
-        if (resultDoc.exists()) {
-            await renderQuizResultPreview(data, user, resultDoc.data());
-            return;
-        }
-    } catch (e) {
-        console.error("Error checking submission:", e);
-    }
-
-    const now = new Date();
-    const expireTime = new Date(data.dateTimeExpire);
-
-    if (now > expireTime && user.role !== 'teacher') {
-        container.innerHTML = `
-            <div class="h-full flex flex-col items-center justify-center text-gray-500 bg-white p-8 text-center">
-                <i class="fas fa-calendar-times text-6xl mb-6 text-red-400"></i>
-                <h2 class="text-3xl font-bold text-gray-700">Activity Expired</h2>
-                <p class="mt-2 text-lg">The due date for this activity has passed.</p>
-                <p class="text-sm mt-4 text-gray-400 font-bold">No submission recorded.</p>
-                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-6 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
-                    Back to List
-                </button>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
-    
-    const generatedContent = await generateQuizContent(data);
-
-    const antiCheatHtml = `
-        <div id="black-curtain" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:black; z-index:9999;"></div>
-        <div id="cheat-lockout" class="hidden fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center text-white p-6 text-center">
-            <div class="max-w-md w-full">
-                <div class="text-6xl mb-4">⚠️</div>
-                <h1 class="text-3xl font-bold mb-4 text-red-500">Activity Paused</h1>
-                <p class="text-lg mb-6">Focus lost. Navigation away is monitored.</p>
-                <p class="text-sm text-red-300 italic mb-4">Warning: Resuming may penalize your progress.</p>
-                <button id="btn-unlock" onclick="window.handleUnlockClick()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xl shadow-lg transition-transform transform active:scale-95">
-                    Resume Activity (3)
-                </button>
-            </div>
-        </div>
-    `;
-
-    container.innerHTML = `
-        ${antiCheatHtml}
-        <div class="flex flex-col h-full bg-gray-100">
-            <div class="bg-blue-800 text-white p-2 flex justify-between items-center shadow-md z-30 sticky top-0">
-                 <h1 class="text-xl md:text-2xl font-bold truncate pl-2">${data.activityname}</h1>
-                 <div class="flex items-center space-x-2 bg-blue-900 px-3 py-1 rounded border border-blue-700">
-                    <i class="fas fa-stopwatch text-yellow-400"></i>
-                    <span id="quiz-timer" class="font-mono text-lg font-bold">--:--:--</span>
-                 </div>
-            </div>
-            
-            <form id="quiz-form" class="flex-1 flex flex-col overflow-y-auto relative scrollbar-thin">
-                ${generatedContent.html}
-            </form>
-        </div>
-    `;
-
-    initializeQuizManager(data, generatedContent.data, user);
-}
-
-// --- CONTENT GENERATOR ---
-async function generateQuizContent(activityData) {
-    let tabsHtml = '';
-    let sectionsHtml = '';
-    let questionData = []; 
-
-    if (!activityData.testQuestions || !Array.isArray(activityData.testQuestions)) {
-        return { html: '<div class="p-8 text-center text-gray-500">No test sections defined.</div>', data: [] };
-    }
-
-    tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap shrink-0 z-20 sticky top-0 shadow-sm">`;
-    
-    activityData.testQuestions.forEach((section, index) => {
-        const isActive = index === 0 ? 'border-blue-800 text-blue-800 bg-blue-50' : 'border-transparent text-gray-600 hover:text-blue-600';
-        tabsHtml += `
-            <button type="button" class="tab-btn px-4 py-3 mr-2 font-semibold text-sm border-b-2 transition-colors focus:outline-none ${isActive}" data-target="test-section-${index}">
-                Test ${index + 1}
-            </button>
-        `;
-    });
-
-    tabsHtml += `
-        <div class="ml-auto pl-4 py-2">
-            <button type="button" id="btn-submit-quiz" disabled class="bg-gray-400 cursor-not-allowed text-white text-sm font-bold px-4 py-1.5 rounded shadow transition whitespace-nowrap">
-                Submit
-            </button>
-        </div>
-    </div>`;
-
-    sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
-
-    for (const [index, section] of activityData.testQuestions.entries()) {
-        const sectionTopics = section.topics ? section.topics.split(',').map(t => t.trim()) : [];
-        const isHidden = index === 0 ? '' : 'hidden'; 
-
-        sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
-
-        let questions = [];
-        const count = parseInt(section.noOfQuestions) || 5;
-
-        // REVISED SELECTION LOGIC: Pull from local JS files instead of Firestore
-        let localSource = [];
-        if (section.type === "Multiple Choice") localSource = qbMerchMultipleChoice;
-        else if (section.type === "Problem Solving") localSource = qbMerchProblemSolving;
-        else if (section.type === "Journalizing") localSource = qbMerchJournalizing;
-
-        // Flatten the array of objects into a standard array of questions
-        const flattenedCandidates = localSource.map(obj => {
-            const id = Object.keys(obj)[0];
-            return { id, ...obj[id] };
-        });
-
-        // Filter by subject and topic
-        let candidates = flattenedCandidates.filter(q => 
-            q.subject === "FABM1" && sectionTopics.includes(q.topic)
-        );
-
-        // Randomize and slice
-        candidates.sort(() => 0.5 - Math.random());
-        questions = candidates.slice(0, count);
+        const user = await loginUser(id, pass);
         
-        let questionsHtml = '';
-        let trackerHtml = '';
-
-        questions.forEach((q, qIdx) => {
-            const uiId = `s${index}_q${qIdx}`;
+        if (user) {
+            currentUser = user;
             
-            const getSafeCorrectAnswer = (q) => {
-                if (q.answer !== undefined && q.answer !== null && q.answer !== "") return q.answer;
-                if (q.solution !== undefined && q.solution !== null && q.solution !== "") return q.solution;
-                if (q.correctAnswer !== undefined && q.correctAnswer !== null) return q.correctAnswer;
-                return null;
-            };
-
-            questionData.push({ 
-                uiId: uiId, 
-                dbId: q.id, 
-                type: section.type,
-                questionText: q.question || (q.title || 'Journal Activity'),
-                correctAnswer: getSafeCorrectAnswer(q),
-                options: q.options || [],
-                explanation: q.explanation || '',
-                transactions: q.transactions || [],
-                instructions: q.instructions || null
-            });
-
-            const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
+            elements.loginScreen().classList.add('hidden');
+            elements.appContent().classList.remove('hidden');
             
-            const stickyHeader = `
-                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
-                        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
-                            <span class="font-bold text-blue-800">Type:</span> ${section.type}
-                        </h3>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            if (section.type !== "Journalizing") {
-                const hiddenClass = qIdx === 0 ? '' : 'hidden';
-                
-                trackerHtml += `
-                    <button type="button" class="tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none ${qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'}" data-target-question="${uiId}">
-                        ${qIdx + 1}
-                    </button>
-                `;
-
-                let innerContent = '';
-                if (section.type === "Multiple Choice") {
-                    const opts = q.options ? q.options.map((opt, optIdx) => `
-                        <label class="flex items-start p-3 border border-gray-200 rounded hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-2 shadow-sm">
-                            <input type="radio" name="${uiId}" value="${optIdx}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0">
-                            <span class="text-sm text-gray-700">${opt}</span>
-                        </label>
-                    `).join('') : '';
-                    
-                    innerContent = `<div class="flex flex-col mt-2">${opts}</div>`;
-                } else {
-                    innerContent = `
-                        <textarea name="${uiId}" class="input-checker w-full mt-2 p-3 border border-gray-300 rounded h-32 md:h-48 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-y" placeholder="Type your answer here..."></textarea>
-                    `;
-                }
-
-                questionsHtml += `
-                    <div id="${uiId}" class="question-block w-full ${hiddenClass}">
-                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-4">
-                            
-                            <div class="p-4 md:p-6">
-                                <div class="mb-2">
-                                    <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Question ${qIdx+1}</span>
-                                    <p class="text-base md:text-lg font-bold text-gray-800 mt-1 leading-snug">${q.question}</p>
-                                </div>
-                                ${innerContent}
-                                
-                                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between">
-                                    <button type="button" class="nav-prev-btn text-gray-600 hover:text-blue-800 text-sm font-medium px-3 py-1 rounded hover:bg-gray-100">
-                                        <i class="fas fa-arrow-left mr-1"></i> Previous
-                                    </button>
-                                    <button type="button" class="nav-next-btn bg-blue-800 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-blue-900 shadow">
-                                        Next <i class="fas fa-arrow-right ml-1"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } 
-            else {
-                const transactions = q.transactions || [];
-                const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
-                
-                let transTrackerList = '';
-                let transContent = '';
-
-                transactions.forEach((trans, tIdx) => {
-                    const transUiId = `${uiId}_t${tIdx}`;
-                    const tHidden = tIdx === 0 ? '' : 'hidden';
-                    const tActive = tIdx === 0 ? 'bg-blue-100 border-l-4 border-blue-600 text-blue-800' : 'bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-
-                    transTrackerList += `
-                        <button type="button" class="trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none ${tActive}" data-target-trans="${transUiId}" data-t-index="${tIdx}">
-                            <div class="font-bold whitespace-nowrap">${trans.date}</div>
-                            <div class="whitespace-normal opacity-80 text-xs">${trans.description}</div>
-                        </button>
-                    `;
-
-                    const rowCount = trans.rows || 2;
-                    let rows = '';
-                    for(let r=0; r < rowCount; r++) {
-                        rows += `
-                        <tr class="border-b border-gray-200 bg-white">
-                            <td class="p-0 border-r border-gray-300 w-24"><input type="text" name="${transUiId}_r${r}_date" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" placeholder=""></td>
-                            <td class="p-0 border-r border-gray-300 w-auto"><input type="text" name="${transUiId}_r${r}_acct" class="input-checker w-full p-2 text-left outline-none bg-transparent font-mono text-sm" placeholder=""></td>
-                            <td class="p-0 border-r border-gray-300 w-28"><input type="number" name="${transUiId}_r${r}_dr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
-                            <td class="p-0 w-28"><input type="number" name="${transUiId}_r${r}_cr" class="input-checker w-full p-2 text-right outline-none bg-transparent font-mono text-sm" style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: none;" placeholder=""></td>
-                        </tr>`;
-                    }
-
-                    transContent += `
-                        <div id="${transUiId}" class="journal-trans-block w-full ${tHidden}">
-                            <div class="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
-                                <span class="text-xs text-blue-500 font-bold uppercase">Transaction Details</span>
-                                <p class="text-md font-bold text-gray-800">${trans.date} ${trans.description}</p>
-                            </div>
-
-                            <div class="w-full overflow-x-auto border border-gray-300 rounded shadow-sm bg-white mb-2">
-                                <table class="w-full border-collapse table-fixed min-w-[600px]">
-                                    <thead><tr class="bg-gray-100 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
-                                        <th class="py-2 border-r border-gray-300 w-24">Date</th>
-                                        <th class="py-2 border-r border-gray-300 text-left pl-4 w-auto">Account Titles</th>
-                                        <th class="py-2 border-r border-gray-300 w-28 text-right pr-2">Debit</th>
-                                        <th class="py-2 w-28 text-right pr-2">Credit</th>
-                                    </tr></thead>
-                                    <tbody>${rows}</tbody>
-                                </table>
-                            </div>
-
-                            <div class="flex justify-between items-center mt-4 mb-2">
-                                <div>
-                                    ${tIdx > 0 ? `<button type="button" class="btn-prev-trans px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm font-medium border border-gray-300" data-target-idx="${tIdx - 1}"><i class="fas fa-chevron-left mr-1"></i> Previous Transaction</button>` : ''}
-                                </div>
-                                <div>
-                                    ${tIdx < transactions.length - 1 ? `<button type="button" class="btn-next-trans px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium shadow-sm" data-target-idx="${tIdx + 1}">Next Transaction <i class="fas fa-chevron-right ml-1"></i></button>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                questionsHtml += `
-                    <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
-                        <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
-                             <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
-                                 ${stickyHeader}
-                                 
-                                 <div class="p-4 md:p-2 flex-1">
-                                     ${transContent}
-                                     
-                                     ${questions.length > 1 ? `
-                                     <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
-                                          <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
-                                          <button type="button" class="nav-next-btn px-3 py-1 bg-blue-800 text-white rounded text-sm hover:bg-blue-900">Next Question</button>
-                                     </div>` : ''}
-                                 </div>
-                             </div>
-                             
-                             <div class="w-full md:w-64 bg-gray-50 flex flex-col max-h-64 md:max-h-full overflow-y-auto">
-                                <div class="p-2 bg-gray-100 font-bold text-xs text-gray-500 uppercase tracking-wider border-b border-gray-200 sticky top-0">
-                                    Transactions
-                                </div>
-                                <div class="flex-1">
-                                    ${transTrackerList}
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-
-        if (section.type !== "Journalizing") {
-            const sectionHeaderHtml = `
-                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
-                        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
-                            <span class="font-bold text-blue-800">Type:</span> ${section.type}
-                        </h3>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Instruction:</span> ${section.instructions || "Select the best answer."}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            sectionsHtml += `
-                ${sectionHeaderHtml}
-                <div class="flex flex-col md:flex-row md:items-start gap-4">
-                    <div class="flex-1 min-w-0">
-                        ${questionsHtml}
-                    </div>
-
-                    <div class="w-full md:w-64 shrink-0">
-                        <div class="bg-white rounded shadow-sm border border-gray-200 p-3 sticky top-20">
-                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 pb-1 border-b border-gray-100">
-                                Question Tracker
-                            </div>
-                            <div class="flex flex-wrap content-start">
-                                ${trackerHtml}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const name = currentUser.role === 'teacher' 
+                ? `Teacher ${currentUser.firstName} ${currentUser.lastName}`
+                : `${currentUser.FirstName} ${currentUser.LastName}`;
+            
+            elements.userDisplayName().textContent = name;
+            
+            initAppInterface(currentUser.role);
         } else {
-            sectionsHtml += `
-                <div class="w-full">
-                    ${questionsHtml}
-                </div>
-            `;
+            throw new Error("Invalid credentials");
         }
-
-        sectionsHtml += `</div>`; 
+    } catch (error) {
+        console.error("Login failed:", error);
+        errorDiv.querySelector('span').textContent = "Invalid ID or Password";
+        errorDiv.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-75');
+        spinner.classList.add('hidden');
     }
-
-    sectionsHtml += `</div>`; 
-
-    return { html: tabsHtml + sectionsHtml, data: questionData };
 }
 
-// --- QUIZ MANAGER (INTERACTIVITY) ---
-
-function initializeQuizManager(activityData, questionData, user) {
-    const expireTime = new Date(activityData.dateTimeExpire).getTime();
-    const timerDisplay = document.getElementById('quiz-timer');
-    const submitBtn = document.getElementById('btn-submit-quiz');
-    const form = document.getElementById('quiz-form');
-
-    // --- ANTICHEAT LOGIC ---
-    const highStakesKeywords = ['Summative', 'Prelim', 'Midterm', 'Semi-final', 'Final', 'Performance'];
-    const isHighStakes = highStakesKeywords.some(keyword => activityData.activityname.includes(keyword));
-    
-    // Stop any existing anti-cheat before starting new one
-    if (currentAntiCheat) {
-        currentAntiCheat.stopMonitoring();
-        currentAntiCheat = null;
-    }
-
-    if (isHighStakes) {
-        currentAntiCheat = new AntiCheatSystem({
-            onCheatDetected: () => {
-                // Penalty Logic: In this context, we reload the runner to force a restart/refresh
-                if(quizTimerInterval) clearInterval(quizTimerInterval);
-                alert("Anti-Cheat Violation Detected! The activity will now reload.");
-                // Simply calling renderQuizRunner again acts as a refresh
-                renderQuizRunner(activityData, user);
-            }
-        });
-        
-        // Expose unlock function for the HTML button
-        window.handleUnlockClick = () => currentAntiCheat.handleUnlockClick();
-        
-        currentAntiCheat.startMonitoring();
-    }
-    // -----------------------
-
-    function updateTimer() {
-        const now = new Date().getTime();
-        const dist = expireTime - now;
-
-        if (dist < 0) {
-            clearInterval(quizTimerInterval);
-            timerDisplay.innerHTML = "EXPIRED";
-            timerDisplay.parentElement.classList.add('bg-red-600');
-            alert("Time is up! Submitting answers now.");
-            submitQuiz(activityData, questionData, user); // Auto submit
-            return;
-        }
-
-        const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
-        const s = Math.floor((dist % (1000 * 60)) / 1000);
-
-        timerDisplay.innerHTML = `${h > 0 ? h + ':' : ''}${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
-    }
-    updateTimer(); 
-    quizTimerInterval = setInterval(updateTimer, 1000);
-
-    const tabs = document.querySelectorAll('.tab-btn');
-    const sections = document.querySelectorAll('.test-section-panel');
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => {
-                t.classList.remove('border-blue-800', 'text-blue-800', 'bg-blue-50');
-                t.classList.add('border-transparent', 'text-gray-600');
-            });
-            tab.classList.remove('border-transparent', 'text-gray-600');
-            tab.classList.add('border-blue-800', 'text-blue-800', 'bg-blue-50');
-
-            const targetId = tab.dataset.target;
-            sections.forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(targetId).classList.remove('hidden');
-        });
-    });
-
-    sections.forEach(section => {
-        const type = section.dataset.sectionType;
-        
-        if (type !== 'Journalizing') {
-            const questions = section.querySelectorAll('.question-block');
-            const trackers = section.querySelectorAll('.tracker-btn');
-            const prevBtns = section.querySelectorAll('.nav-prev-btn');
-            const nextBtns = section.querySelectorAll('.nav-next-btn');
-            
-            let currentIndex = 0;
-
-            function showQuestion(index) {
-                questions.forEach((q, i) => {
-                    if (i === index) q.classList.remove('hidden');
-                    else q.classList.add('hidden');
-                });
-                trackers.forEach((t, i) => {
-                    if (i === index) {
-                        t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
-                    } else {
-                        if (t.dataset.isAnswered === "true") {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
-                        } else {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
-                        }
-                    }
-                });
-                currentIndex = index;
-            }
-
-            trackers.forEach((t, idx) => {
-                t.addEventListener('click', () => showQuestion(idx));
-            });
-
-            prevBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (currentIndex > 0) showQuestion(currentIndex - 1);
-                });
-            });
-            
-            nextBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (currentIndex < questions.length - 1) showQuestion(currentIndex + 1);
-                });
-            });
-        } 
-        
-        else if (type === 'Journalizing') {
-            const questions = section.querySelectorAll('.question-block');
-            const prevQuestionBtns = section.querySelectorAll('.nav-prev-btn');
-            const nextQuestionBtns = section.querySelectorAll('.nav-next-btn');
-            let currentJournalIndex = 0;
-
-            function showJournalQuestion(index) {
-                questions.forEach((q, i) => {
-                    if (i === index) q.classList.remove('hidden');
-                    else q.classList.add('hidden');
-                });
-                currentJournalIndex = index;
-            }
-
-            // Bind Previous Question Buttons
-            prevQuestionBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (currentJournalIndex > 0) showJournalQuestion(currentJournalIndex - 1);
-                });
-            });
-
-            // Bind Next Question Buttons
-            nextQuestionBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (currentJournalIndex < questions.length - 1) showJournalQuestion(currentJournalIndex + 1);
-                });
-            });
-            
-            // Internal Transaction Navigation
-            questions.forEach(qBlock => {
-                const transBtns = qBlock.querySelectorAll('.trans-tracker-btn');
-                const transBlocks = qBlock.querySelectorAll('.journal-trans-block');
-                const internalPrevBtns = qBlock.querySelectorAll('.btn-prev-trans');
-                const internalNextBtns = qBlock.querySelectorAll('.btn-next-trans');
-
-                const switchTransaction = (idx) => {
-                      transBlocks.forEach(b => b.classList.add('hidden'));
-                      if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
-
-                      transBtns.forEach((b, bIdx) => {
-                          if (bIdx === idx) {
-                              b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
-                          } else {
-                              if (b.dataset.isAnswered === "true") {
-                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
-                              } else {
-                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-                              }
-                          }
-                      });
-                };
-                
-                transBtns.forEach((btn, idx) => {
-                    btn.addEventListener('click', () => switchTransaction(idx));
-                });
-
-                internalPrevBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const targetIdx = parseInt(btn.dataset.targetIdx);
-                        switchTransaction(targetIdx);
-                    });
-                });
-
-                internalNextBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const targetIdx = parseInt(btn.dataset.targetIdx);
-                        switchTransaction(targetIdx);
-                    });
-                });
-            });
-        }
-    });
-
-    form.addEventListener('input', checkCompletion);
-    
-    function checkCompletion() {
-        let allAnswered = true;
-        
-        for (const q of questionData) {
-            let isQuestionAnswered = false;
-
-            if (q.type === 'Multiple Choice') {
-                const checked = form.querySelector(`input[name="${q.uiId}"]:checked`);
-                if (checked) isQuestionAnswered = true;
-                else allAnswered = false;
-                
-                const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
-                if (trackerBtn) {
-                    trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
-                    if (!trackerBtn.classList.contains('bg-blue-600')) {
-                        if (isQuestionAnswered) {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
-                        } else {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
-                        }
-                    }
-                }
-
-            } else if (q.type === 'Problem Solving') {
-                const val = form.querySelector(`textarea[name="${q.uiId}"]`).value;
-                if (val && val.trim() !== '') isQuestionAnswered = true;
-                else allAnswered = false;
-
-                const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
-                if (trackerBtn) {
-                    trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
-                    if (!trackerBtn.classList.contains('bg-blue-600')) {
-                        if (isQuestionAnswered) {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-500 text-white font-bold flex items-center justify-center";
-                        } else {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
-                        }
-                    }
-                }
-
-            } else if (q.type === 'Journalizing') {
-                const transBtns = document.querySelectorAll(`button[data-target-trans^="${q.uiId}_t"]`);
-                let questionHasData = false;
-                
-                transBtns.forEach(btn => {
-                    const transUiId = btn.dataset.targetTrans;
-                    const inputs = form.querySelectorAll(`input[name^="${transUiId}"]`);
-                    let transHasData = false;
-                    inputs.forEach(i => { if(i.value) transHasData = true; });
-
-                    btn.dataset.isAnswered = transHasData ? "true" : "false";
-                    if(transHasData) questionHasData = true;
-
-                    if (!btn.classList.contains('bg-blue-100')) {
-                        if (transHasData) {
-                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
-                        } else {
-                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-                        }
-                    }
-                });
-
-                if(!questionHasData) allAnswered = false; 
-            }
-        }
-
-        if (allAnswered) {
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-            submitBtn.classList.add('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
-            submitBtn.innerHTML = "Submit Activity";
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-            submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
-            submitBtn.innerHTML = "Finish All Questions";
-        }
-    }
-
-    submitBtn.addEventListener('click', () => submitQuiz(activityData, questionData, user));
+function handleLogout() {
+    currentUser = null;
+    elements.appContent().classList.add('hidden');
+    elements.loginScreen().classList.remove('hidden');
+    elements.loginId().value = '';
+    elements.loginPass().value = '';
+    elements.navContainer().innerHTML = '';
 }
 
-async function submitQuiz(activityData, questionData, user) {
-    if(!confirm("Are you sure you want to submit your answers?")) return;
-    
-    // Stop AntiCheat
-    if(currentAntiCheat) {
-        currentAntiCheat.stopMonitoring();
-        currentAntiCheat = null;
-    }
+// --- APP INTERFACE LOGIC ---
 
-    if(quizTimerInterval) clearInterval(quizTimerInterval);
+function initAppInterface(role) {
+    renderSidebar(role);
+    renderLandingPage(); 
+}
 
-    const form = document.getElementById('quiz-form');
-    const formData = new FormData(form);
-    const answers = {};
-    
-    const questionsTaken = {};
+function renderSidebar(role) {
+    const container = elements.navContainer();
+    container.innerHTML = ''; 
 
-    questionData.forEach(q => {
-        questionsTaken[q.uiId] = {
-            questionText: q.questionText,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
-            type: q.type,
-            options: q.options || null,
-            transactions: q.transactions || null,
-            instructions: q.instructions || null 
-        };
-
-        if(q.type === 'Multiple Choice') { 
-            answers[q.uiId] = formData.get(q.uiId);
-        } else if (q.type === 'Problem Solving') {
-            answers[q.uiId] = formData.get(q.uiId);
-        } else if (q.type === 'Journalizing') {
-            const inputs = document.querySelectorAll(`input[name^="${q.uiId}"]`);
-            let currentRow = {};
-            inputs.forEach(input => {
-                 const name = input.name;
-                 const parts = name.split('_'); 
-                 const tIdx = parts[2];
-                 const rIdx = parts[3];
-                 const field = parts[4];
-                 const key = `${tIdx}_${rIdx}`;
-
-                 if(!currentRow[key]) currentRow[key] = {};
-                 currentRow[key][field] = input.value;
-            });
-            answers[q.uiId] = currentRow;
-        }
-    });
-
-    const sectionScores = {};
-
-    activityData.testQuestions.forEach((section, index) => {
-        let sectionScore = 0;
-        let sectionMaxScore = 0;
-
-        const sectionQs = questionData.filter(q => q.uiId.startsWith(`s${index}_`));
-
-        sectionQs.forEach(q => {
-            const studentAnswer = answers[q.uiId];
-
-            if (section.type === "Multiple Choice") {
-                sectionMaxScore++;
-                // FIXED: Treat matching strings OR student "0" matching null answer key as correct
-                const isZeroMatch = (String(studentAnswer) === "0" && (q.correctAnswer === null || q.correctAnswer === undefined));
-                if (String(studentAnswer) === String(q.correctAnswer) || isZeroMatch) sectionScore++;
-            } 
-            else if (section.type === "Problem Solving") {
-                sectionMaxScore++;
-                if (studentAnswer && q.correctAnswer && studentAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase()) sectionScore++;
-            } 
-            else if (section.type === "Journalizing") {
-                const transactions = q.transactions || [];
-                transactions.forEach((trans, tIdx) => {
-                    const solRows = trans.solution || [];
-                    const rowCount = trans.rows || 2;
-
-                    for(let r=0; r < rowCount; r++) {
-                        // FIXED: Adjusted key format to match saved data (t0_r0 instead of 0_0)
-                        const cellKey = `t${tIdx}_r${r}`;
-                        const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
-                        const solRow = solRows[r] || null;
-
-                        const sDate = cellData.date.trim();
-                        if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
-                             sectionMaxScore++; 
-                             if (r === 0) {
-                                 const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
-                                 
-                                 // FIXED: Date validation logic
-                                 let isDateCorrect = false;
-                                 if (tIdx === 0) {
-                                     // First transaction: Must match full date (e.g., "Dec 1")
-                                     isDateCorrect = (sDate === solRow.date);
-                                 } else {
-                                     // Subsequent transactions: Match only the day part of the solution
-                                     // Handle "Dec 2" -> "2" or "2" -> "2"
-                                     
-                                     // FIX: Added guard against undefined .date
-                                     const solDateStr = solRow.date || '';
-                                     const parts = solDateStr.split(' ');
-                                     const solDay = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-                                     isDateCorrect = (sDate === solDay);
-                                 }
-
-                                 if (sDate.match(expectedRegex) && isDateCorrect) sectionScore++;
-                             } else {
-                                 if (sDate === '') sectionScore++;
-                             }
-                        } else {
-                            if (sDate !== '') sectionScore--; 
-                        }
-
-                        const sAcct = cellData.acct;
-                        if (solRow) {
-                             sectionMaxScore++; 
-                             if (solRow.isExplanation) {
-                                 if (sAcct.match(/^\s{5,8}\S/)) sectionScore++;
-                             } else {
-                                 const cleanInput = sAcct.trim();
-                                 const cleanSol = solRow.account.trim();
-                                 if (cleanInput.toLowerCase() === cleanSol.toLowerCase()) {
-                                     if (solRow.credit) {
-                                         if (sAcct.match(/^\s{3,5}\S/)) sectionScore++;
-                                     } else {
-                                         if (sAcct.match(/^\S/)) sectionScore++;
-                                     }
-                                 }
-                             }
-                        }
-
-                        const sDr = cellData.dr.trim();
-                        const cleanSolDr = (solRow && solRow.debit) ? Number(solRow.debit).toFixed(2) : "";
-                        if (solRow && !solRow.isExplanation && cleanSolDr !== "") {
-                            sectionMaxScore++; 
-                            if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) sectionScore++;
-                        } else {
-                            if (sDr !== "") sectionScore--; 
-                        }
-
-                        const sCr = cellData.cr.trim();
-                        const cleanSolCr = (solRow && solRow.credit) ? Number(solRow.credit).toFixed(2) : "";
-                        if (solRow && !solRow.isExplanation && cleanSolCr !== "") {
-                            sectionMaxScore++; 
-                            if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) sectionScore++;
-                        } else {
-                            if (sCr !== "") sectionScore--; 
-                        }
-                    }
-                });
-            }
-        });
-
-        sectionScores[index] = {
-            score: sectionScore,
-            maxScore: sectionMaxScore,
-            percentage: sectionMaxScore > 0 ? (sectionScore / sectionMaxScore) * 100 : 0,
-            letterGrade: getLetterGrade(sectionScore, sectionMaxScore),
-            type: section.type
-        };
-    });
-
-    const collectionName = `results_${activityData.activityname}_${activityData.section}`;
-    const docName = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
-    
-    const submissionPayload = {
-        activityId: activityData.id,
-        activityName: activityData.activityname,
-        studentName: `${user.LastName}, ${user.FirstName}`,
-        studentId: user.Idnumber,
-        CN: user.CN,
-        section: activityData.section,
-        timestamp: new Date().toISOString(),
-        answers: JSON.parse(JSON.stringify(answers, (k, v) => v === undefined ? null : v)),
-        questionsTaken: JSON.parse(JSON.stringify(questionsTaken, (k, v) => v === undefined ? null : v)),
-        sectionScores: sectionScores
+    // Course Outline Button
+    const outlineBtn = document.createElement('button');
+    outlineBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-blue-500 focus:outline-none whitespace-nowrap overflow-hidden";
+    outlineBtn.innerHTML = '<i class="fas fa-home w-6"></i> <span class="sidebar-text-detail">Course Outline</span>';
+    outlineBtn.onclick = () => {
+        renderLandingPage();
+        closeMobileSidebar();
     };
+    container.appendChild(outlineBtn);
 
-    try {
-        await setDoc(doc(db, collectionName, docName), submissionPayload);
-        
-        await setDoc(doc(db, "results_list", collectionName), { 
-            created: new Date().toISOString(),
-            activityName: activityData.activityname,
-            section: activityData.section
-        });
+    // Dynamic Terms/Units
+    courseData.terms.forEach(term => {
+        const termHeader = document.createElement('div');
+        termHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
+        termHeader.textContent = term.title;
+        container.appendChild(termHeader);
 
-        document.getElementById('qa-runner-container').innerHTML = `
-            <div class="h-full flex flex-col items-center justify-center text-green-600 bg-white">
-                <i class="fas fa-check-circle text-6xl mb-6"></i>
-                <h2 class="text-3xl font-bold">Submitted Successfully</h2>
-                <p class="text-gray-500 mt-2 text-lg">Your response has been saved.</p>
-                <div class="mt-8 flex gap-4">
-                    <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="px-6 py-3 bg-gray-600 text-white rounded shadow hover:bg-gray-700">Back to List</button>
-                    <button onclick="window.location.reload()" class="px-6 py-3 bg-blue-600 text-white rounded shadow hover:bg-blue-700">View Results</button>
+        term.units.forEach(unit => {
+            const unitParts = unit.title.split(':');
+            const unitPrefix = unitParts[0];
+            const unitSuffix = unitParts.slice(1).join(':');
+
+            // --- UNIT BUTTON ---
+            const unitBtn = document.createElement('button');
+            unitBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors flex justify-between items-center group whitespace-nowrap overflow-hidden";
+            unitBtn.innerHTML = `
+                <div class="truncate pr-2">
+                    <span class="font-bold text-sm">${unitPrefix}</span>
+                    <span class="font-medium text-sm sidebar-text-detail">:${unitSuffix}</span>
                 </div>
-            </div>
-        `;
-    } catch (e) {
-        console.error("Submission Error:", e);
-        alert("Error saving to server: " + e.message);
-    }
-}
-async function renderQuizResultPreview(activityData, user, resultData) {
-    const container = document.getElementById('qa-runner-container');
-    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Loading Results...</span></div>';
-
-    let contentHtml = '';
-    
-    // Legacy Polyfill
-    let savedQuestions = resultData.questionsTaken;
-    if (!savedQuestions || Object.keys(savedQuestions).length === 0) {
-        savedQuestions = {};
-        const answers = resultData.answers || {};
-        
-        const ensureQ = (key, type) => {
-            if (!savedQuestions[key]) {
-                savedQuestions[key] = {
-                    uiId: key,
-                    type: type,
-                    questionText: "Legacy Submission",
-                    correctAnswer: "N/A",
-                    explanation: "Details not available",
-                    options: [], 
-                    transactions: [],
-                    instructions: null
-                };
-            }
-            return savedQuestions[key];
-        };
-
-        Object.keys(answers).forEach(k => {
-            const parts = k.split('_'); 
-            if (parts.length < 2) return;
-            const sectionIdx = parseInt(parts[0].replace('s',''));
-            const qKey = `${parts[0]}_${parts[1]}`;
-            const sectionType = activityData.testQuestions[sectionIdx] ? activityData.testQuestions[sectionIdx].type : 'Unknown';
-            const qObj = ensureQ(qKey, sectionType);
-
-            if (sectionType === 'Journalizing' && parts.length >= 4) {
-                const tIdx = parseInt(parts[2].replace('t',''));
-                const rIdx = parseInt(parts[3].replace('r',''));
-                if (!qObj.transactions[tIdx]) qObj.transactions[tIdx] = { date: `Trans ${tIdx+1}`, description: "Legacy", rows: 0 };
-                if (rIdx >= qObj.transactions[tIdx].rows) qObj.transactions[tIdx].rows = rIdx + 1;
-            } 
-        });
-    }
-
-    const questionsBySection = {};
-    Object.keys(savedQuestions).forEach(key => {
-        const sectionIdx = key.split('_')[0].replace('s',''); 
-        if(!questionsBySection[sectionIdx]) questionsBySection[sectionIdx] = [];
-        questionsBySection[sectionIdx].push({ uiId: key, ...savedQuestions[key] });
-    });
-
-    // --- RENDER SECTIONS ---
-    activityData.testQuestions.forEach((section, index) => {
-        const sectionQuestions = questionsBySection[index] || [];
-        
-        sectionQuestions.sort((a, b) => {
-            const aIdx = parseInt(a.uiId.split('_')[1].replace('q',''));
-            const bIdx = parseInt(b.uiId.split('_')[1].replace('q',''));
-            return aIdx - bIdx;
-        });
-
-        // Initialize Score Counters
-        let sectionScore = 0;
-        let sectionMaxScore = 0;
-        let sectionBodyHtml = '';
-
-        if (sectionQuestions.length === 0) {
-            sectionBodyHtml += `<p class="text-gray-400 italic">No data available for this section.</p>`;
-        }
-
-        // FIXED: Add Sticky Header ONCE at the top for Multiple Choice / Problem Solving in Preview too
-        if (section.type !== "Journalizing") {
-            sectionBodyHtml += `
-                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics || 'N/A'}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Instruction:</span> ${section.instructions || "Refer to specific question details."}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        sectionQuestions.forEach((q, qIdx) => {
-            const studentAnswer = resultData.answers ? resultData.answers[q.uiId] : null;
-
-            const instructionText = (section.type === 'Journalizing' && q.instructions) 
-                ? q.instructions 
-                : (section.instructions || "Refer to specific question details.");
-
-            const stickyHeaderHtml = `
-                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics || 'N/A'}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                        </div>
-                    </div>
-                </div>
+                <i class="fas fa-chevron-down text-xs transform transition-transform duration-300 group-hover:text-blue-400"></i>
             `;
             
-            // --- 1. MULTIPLE CHOICE ---
-            if (section.type === "Multiple Choice") {
-                sectionMaxScore++;
-                // FIXED: Check match OR check if student 0 matches null key
-                const isCorrect = String(studentAnswer) === String(q.correctAnswer) || 
-                                  (String(studentAnswer) === "0" && (q.correctAnswer === null || q.correctAnswer === undefined));
+            const unitSubmenu = document.createElement('div');
+            unitSubmenu.className = "unit-submenu bg-slate-950 hidden"; // Hidden by default
+            
+            unitBtn.onclick = () => {
+                const icon = unitBtn.querySelector('.fa-chevron-down');
+                if (unitSubmenu.classList.contains('hidden')) {
+                    unitSubmenu.classList.remove('hidden');
+                    icon.classList.add('rotate-180');
+                } else {
+                    unitSubmenu.classList.add('hidden');
+                    icon.classList.remove('rotate-180');
+                }
+            };
+
+            // --- WEEK RENDERER ---
+            unit.weeks.forEach(week => {
+                const weekParts = week.title.split(':');
+                const weekPrefix = weekParts[0];
+                const weekSuffix = weekParts.slice(1).join(':');
+
+                const weekBtn = document.createElement('button');
+                weekBtn.className = "w-full text-left pl-10 pr-6 py-2 text-sm text-slate-400 hover:text-blue-300 hover:bg-slate-900 transition-colors border-l-2 border-transparent hover:border-blue-500 relative whitespace-nowrap overflow-hidden flex justify-between items-center group";
                 
-                if(isCorrect) sectionScore++;
+                weekBtn.innerHTML = `
+                    <div class="truncate">
+                        <span>${weekPrefix}</span><span class="sidebar-text-detail">:${weekSuffix}</span>
+                    </div>
+                    ${(week.days && week.days.length > 0) ? '<i class="fas fa-chevron-down text-[10px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>' : ''}
+                `;
+                
+                const daySubmenu = document.createElement('div');
+                daySubmenu.className = "day-submenu hidden bg-slate-950 border-l border-slate-800 ml-10"; 
 
-                const optionsHtml = (q.options || []).map((opt, optIdx) => {
-                    const isSelected = String(studentAnswer) === String(optIdx);
-                    // FIXED: Correct option is the defined one OR 0 if defined is null
-                    const isOptCorrect = String(q.correctAnswer) === String(optIdx) ||
-                                         (String(optIdx) === "0" && (q.correctAnswer === null || q.correctAnswer === undefined));
-                    
-                    let bgClass = "bg-white border-gray-200";
-                    let icon = "";
-                    
-                    if (isSelected && isOptCorrect) { bgClass = "bg-green-100 border-green-400 font-bold text-green-800"; icon = '<i class="fas fa-check text-green-600 ml-auto"></i>'; }
-                    else if (isSelected && !isOptCorrect) { bgClass = "bg-red-100 border-red-400 text-red-800"; icon = '<i class="fas fa-times text-red-600 ml-auto"></i>'; }
-                    else if (!isSelected && isOptCorrect) { bgClass = "bg-green-50 border-green-300 text-green-800 border-dashed"; icon = '<i class="fas fa-check text-green-600 ml-auto opacity-50"></i>'; }
-
-                    return `<div class="p-2 border rounded mb-1 text-sm flex items-center ${bgClass}">${opt} ${icon}</div>`;
-                }).join('');
-
-                // FIXED: Removed stickyHeaderHtml from individual card
-                sectionBodyHtml += `
-                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
-                        <div class="p-4">
-                            <p class="font-bold text-gray-800 mb-2">${qIdx+1}. ${q.questionText}</p>
-                            <div class="mb-3">${optionsHtml}</div>
-                            <div class="bg-gray-50 p-2 rounded text-xs text-gray-600">
-                                <strong>Explanation:</strong> ${q.explanation || 'No explanation provided.'}
-                            </div>
-                        </div>
-                    </div>`;
-            
-            // --- 2. PROBLEM SOLVING ---
-            } else if (section.type === "Problem Solving") {
-                sectionMaxScore++;
-                const isCorrect = studentAnswer && q.correctAnswer && studentAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
-                if(isCorrect) sectionScore++;
-
-                // FIXED: Removed stickyHeaderHtml from individual card
-                sectionBodyHtml += `
-                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
-                        <div class="p-4 space-y-4">
-                            <p class="font-bold text-gray-800">${qIdx+1}. ${q.questionText}</p>
-                            <div class="space-y-1">
-                                <p class="text-xs font-bold text-blue-600">Your Answer:</p>
-                                <div class="p-2 bg-blue-50 border border-blue-100 rounded text-sm font-mono whitespace-pre-wrap">${studentAnswer || "No Answer"}</div>
-                            </div>
-                            <div class="space-y-1">
-                                <p class="text-xs font-bold text-green-600">Answer Key:</p>
-                                <div class="p-2 bg-green-50 border border-green-100 rounded text-sm font-mono whitespace-pre-wrap">${q.correctAnswer || "N/A"}</div>
-                            </div>
-                            <div class="space-y-1">
-                                <p class="text-xs font-bold text-gray-600">Explanation:</p>
-                                <div class="bg-gray-50 p-2 rounded text-xs text-gray-700 whitespace-pre-wrap">${q.explanation || "No explanation provided."}</div>
-                            </div>
-                        </div>
-                    </div>`;
-
-            // --- 3. JOURNALIZING (FIXED LAYOUT & SCORING) ---
-            } else if (section.type === "Journalizing") {
-                let transactionsHtml = '';
-                const transactions = q.transactions || [];
-
-                transactions.forEach((trans, tIdx) => {
-                    const rowCount = trans.rows || 2;
-                    let studentRowsHtml = '';
-                    let solutionRowsHtml = ''; 
-
-                    const solRows = trans.solution || [];
-
-                    // --- Build Student Answer Table WITH SCORING ---
-                    for(let r=0; r < rowCount; r++) {
-                        // FIXED: Adjusted key format to match saved data (t0_r0 instead of 0_0)
-                        const cellKey = `t${tIdx}_r${r}`; 
-                        const cellData = (studentAnswer && studentAnswer[cellKey]) ? studentAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
+                if (week.days && week.days.length > 0) {
+                    week.days.forEach((day, index) => {
+                        const dayBtn = document.createElement('button');
+                        dayBtn.className = "w-full text-left pl-6 pr-4 py-2 text-xs text-slate-500 hover:text-blue-400 hover:bg-slate-900 transition-colors flex items-center gap-2";
+                        dayBtn.innerHTML = `<i class="fas fa-circle text-[6px]"></i> <span>${day.day}: ${day.topic}</span>`;
                         
-                        const solRow = solRows[r] || null;
+                        dayBtn.onclick = () => {
+                            renderDayContent(unit, week, index);
+                            closeMobileSidebar();
+                            highlightActiveDay(dayBtn);
+                        };
+                        daySubmenu.appendChild(dayBtn);
+                    });
 
-                        let dateValid = false;
-                        let acctValid = false;
-                        let drValid = false;
-                        let crValid = false;
-                        
-                        const checkMark = '<i class="fas fa-check text-green-600 text-[10px]"></i>';
+                    weekBtn.onclick = () => {
+                        const icon = weekBtn.querySelector('.fa-chevron-down');
+                        const isClosed = daySubmenu.classList.contains('hidden');
 
-                        // === DATE VALIDATION ===
-                        const sDate = cellData.date.trim();
-                        // 1. Is an answer expected here?
-                        if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
-                             sectionMaxScore++; // Expecting answer
-                             if (r === 0) {
-                                 const expectedRegex = (tIdx === 0) ? /^[A-Z][a-z]{2}\s\d{1,2}$/ : /^\d{1,2}$/;
-                                 
-                                 // FIXED: Date validation logic matching submitQuiz
-                                 let isDateCorrect = false;
-                                 if (tIdx === 0) {
-                                     isDateCorrect = (sDate === solRow.date);
-                                 } else {
-                                     const parts = solRow.date.split(' ');
-                                     const solDay = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-                                     isDateCorrect = (sDate === solDay);
-                                 }
-
-                                 if (sDate.match(expectedRegex) && isDateCorrect) {
-                                     dateValid = true;
-                                     sectionScore++;
-                                 }
-                             } else {
-                                 // Non-first rows should be empty if row exists in solution
-                                 if (sDate === '') { dateValid = true; sectionScore++; }
-                             }
-                        } else {
-                            // NOT Expecting Answer
-                            if (sDate !== '') {
-                                sectionScore--; // DEDUCTION
-                            }
-                        }
-
-                        // === ACCOUNT / EXPLANATION VALIDATION ===
-                        const sAcct = cellData.acct;
-                        if (solRow) {
-                             sectionMaxScore++; // Expecting answer
-                             if (solRow.isExplanation) {
-                                 if (sAcct.match(/^\s{5,8}\S/)) { acctValid = true; sectionScore++; }
-                             } else {
-                                 const cleanInput = sAcct.trim();
-                                 const cleanSol = solRow.account.trim();
-                                 if (cleanInput.toLowerCase() === cleanSol.toLowerCase()) {
-                                     if (solRow.credit) {
-                                         if (sAcct.match(/^\s{3,5}\S/)) { acctValid = true; sectionScore++; }
-                                     } else {
-                                         if (sAcct.match(/^\S/)) { acctValid = true; sectionScore++; }
-                                     }
-                                 }
-                             }
-                        }
-
-                        // === DEBIT AMOUNT VALIDATION ===
-                        const sDr = cellData.dr.trim();
-                        const cleanSolDr = (solRow && solRow.debit) ? Number(solRow.debit).toFixed(2) : "";
-                        
-                        if (solRow && !solRow.isExplanation && cleanSolDr !== "") {
-                            sectionMaxScore++; // Expecting Answer
-                            if (sDr === cleanSolDr && sDr.match(/^\d+\.\d{2}$/)) {
-                                drValid = true;
-                                sectionScore++;
-                            }
-                        } else {
-                            // Not Expecting Answer
-                            if (sDr !== "") sectionScore--; // Deduction
-                        }
-
-                        // === CREDIT AMOUNT VALIDATION ===
-                        const sCr = cellData.cr.trim();
-                        const cleanSolCr = (solRow && solRow.credit) ? Number(solRow.credit).toFixed(2) : "";
-                        
-                        if (solRow && !solRow.isExplanation && cleanSolCr !== "") {
-                            sectionMaxScore++; // Expecting Answer
-                            if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) {
-                                crValid = true;
-                                sectionScore++;
-                            }
-                        } else {
-                            // Not Expecting Answer
-                            if (sCr !== "") sectionScore--; // Deduction
-                        }
-
-                        // --- MODIFIED LAYOUT: CONCATENATED CHECKMARKS ---
-                        // DATE: Checkmark LEFT
-                        const dateContent = `
-                            <div class="flex justify-end items-center gap-1 w-full">
-                                ${dateValid ? checkMark : ''} <span>${cellData.date}</span>
-                            </div>`;
-                        
-                        // ACCOUNT: Checkmark RIGHT
-                        const acctContent = `
-                            <div class="flex justify-between items-center w-full">
-                                <span class="whitespace-pre-wrap">${cellData.acct}</span> ${acctValid ? checkMark : ''}
-                            </div>`;
-
-                        // DR/CR: Checkmark LEFT
-                        const drContent = `
-                            <div class="flex justify-end items-center gap-1 w-full">
-                                ${drValid ? checkMark : ''} <span>${cellData.dr}</span>
-                            </div>`;
-                        const crContent = `
-                            <div class="flex justify-end items-center gap-1 w-full">
-                                ${crValid ? checkMark : ''} <span>${cellData.cr}</span>
-                            </div>`;
-
-                        studentRowsHtml += `
-                        <tr class="border-b border-gray-100 bg-white">
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs align-middle w-24">${dateContent}</td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs align-middle w-auto">${acctContent}</td>
-                            <td class="p-1.5 border-r border-gray-200 font-mono text-xs align-middle w-28">${drContent}</td>
-                            <td class="p-1.5 font-mono text-xs align-middle w-28">${crContent}</td>
-                        </tr>`;
-                    }
-
-                    // --- B. Build Correct Solution Table ---
-                    if (trans.solution && Array.isArray(trans.solution)) {
-                        trans.solution.forEach(solRow => {
-                            if (solRow.isExplanation) {
-                                const indentHtml = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
-                                solutionRowsHtml += `
-                                <tr class="border-b border-gray-100 bg-green-50/30">
-                                    <td class="p-1.5 border-r border-green-100"></td>
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left italic text-gray-500">${indentHtml}(${solRow.account})</td>
-                                    <td class="p-1.5 border-r border-green-100"></td>
-                                    <td class="p-1.5"></td>
-                                </tr>`;
-                            } else {
-                                const indentHtml = solRow.credit ? '&nbsp;&nbsp;&nbsp;' : '';
-                                const drFmt = solRow.debit ? Number(solRow.debit).toFixed(2) : '';
-                                const crFmt = solRow.credit ? Number(solRow.credit).toFixed(2) : '';
-
-                                // FIXED: Display Date Format in Solution Table
-                                // If tIdx > 0 (second transaction onwards), show only the day (d/dd)
-                                let displayDate = solRow.date || '';
-                                if (tIdx > 0 && displayDate.includes(' ')) {
-                                    const parts = displayDate.split(' ');
-                                    displayDate = parts[parts.length - 1]; // Take only the last part (the day)
+                        document.querySelectorAll('.day-submenu').forEach(el => el.classList.add('hidden'));
+                        document.querySelectorAll('.day-submenu').forEach(el => {
+                            const prevBtn = el.previousElementSibling; 
+                            if(prevBtn) {
+                                const prevIcon = prevBtn.querySelector('.fa-chevron-down');
+                                if(prevIcon) {
+                                    prevIcon.classList.remove('rotate-180', 'opacity-100', 'text-blue-400');
+                                    prevIcon.classList.add('opacity-0');
                                 }
-
-                                solutionRowsHtml += `
-                                <tr class="border-b border-gray-100 bg-white">
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${displayDate}</td>
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-left font-semibold text-gray-800">${indentHtml}${solRow.account || ''}</td>
-                                    <td class="p-1.5 border-r border-green-100 font-mono text-xs text-right text-gray-800">${drFmt}</td>
-                                    <td class="p-1.5 font-mono text-xs text-right text-gray-800">${crFmt}</td>
-                                </tr>`;
                             }
                         });
-                    } else {
-                        solutionRowsHtml = '<tr><td colspan="4" class="p-2 text-center text-xs italic text-gray-400">No solution key available.</td></tr>';
-                    }
 
-                    // --- VERTICAL LAYOUT FOR PREVIEW ---
-                    transactionsHtml += `
-                        <div class="mb-6 border border-gray-300 rounded overflow-hidden">
-                            <div class="bg-gray-100 px-3 py-2 border-b border-gray-300">
-                                <span class="font-bold text-gray-700 text-sm">Transaction ${tIdx + 1}:</span>
-                                <span class="text-xs text-gray-600 ml-2 italic">${trans.date} - ${trans.description}</span>
+                        if (isClosed) {
+                            daySubmenu.classList.remove('hidden');
+                            if(icon) {
+                                icon.classList.add('rotate-180', 'opacity-100', 'text-blue-400');
+                                icon.classList.remove('opacity-0');
+                            }
+                            if (elements.sidebar().classList.contains('collapsed')) {
+                                elements.sidebar().classList.remove('collapsed');
+                            }
+                        }
+                    };
+                } else {
+                    weekBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                unitSubmenu.appendChild(weekBtn);
+                unitSubmenu.appendChild(daySubmenu);
+            });
+
+            container.appendChild(unitBtn);
+            container.appendChild(unitSubmenu);
+        });
+    });
+
+    // --- QUIZZES AND ACTIVITIES (Visible to All) ---
+    const qaHeader = document.createElement('div');
+    qaHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
+    qaHeader.textContent = "Assessments";
+    container.appendChild(qaHeader);
+
+    const qaBtn = document.createElement('button');
+    qaBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-yellow-500 focus:outline-none whitespace-nowrap overflow-hidden";
+    qaBtn.innerHTML = '<i class="fas fa-clipboard-list w-6"></i> <span class="sidebar-text-detail">Quizzes & Activities</span>';
+    qaBtn.onclick = () => {
+        renderQuizzesActivitiesPage(); 
+        closeMobileSidebar();
+    };
+    container.appendChild(qaBtn);
+
+    // --- TEACHER TOOLS (Teachers Only) ---
+    if (role === 'teacher') {
+        const creatorHeader = document.createElement('button');
+        creatorHeader.className = "w-full text-left px-6 py-3 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden flex justify-between items-center group hover:text-slate-300 focus:outline-none";
+        creatorHeader.innerHTML = '<span>Teacher Tools</span> <i class="fas fa-chevron-down text-xs transition-transform duration-300"></i>';
+        
+        const toolsSubmenu = document.createElement('div');
+        toolsSubmenu.className = "hidden bg-slate-950 border-l border-slate-800 ml-4 mb-4"; // Indented submenu
+
+        creatorHeader.onclick = () => {
+            toolsSubmenu.classList.toggle('hidden');
+            const icon = creatorHeader.querySelector('.fa-chevron-down');
+            if (toolsSubmenu.classList.contains('hidden')) {
+                icon.classList.remove('rotate-180');
+            } else {
+                icon.classList.add('rotate-180');
+            }
+        };
+
+        container.appendChild(creatorHeader);
+        
+        // 1. Quiz & Activity Creator
+        const creatorBtn = document.createElement('button');
+        creatorBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-green-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-green-500";
+        creatorBtn.innerHTML = '<i class="fas fa-magic text-xs"></i> <span class="text-sm">Creator</span>';
+        creatorBtn.onclick = () => {
+            renderCreatorPage(); 
+            closeMobileSidebar();
+        };
+        toolsSubmenu.appendChild(creatorBtn);
+
+        // 2. Course Schedule
+        const calendarBtn = document.createElement('button');
+        calendarBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-purple-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-purple-500";
+        calendarBtn.innerHTML = '<i class="fas fa-calendar-alt text-xs"></i> <span class="text-sm">Schedule</span>';
+        calendarBtn.onclick = () => {
+            renderCalendarPage();
+            closeMobileSidebar();
+        };
+        toolsSubmenu.appendChild(calendarBtn);
+
+        // 3. Question Bank Importer (NEW)
+        const importerBtn = document.createElement('button');
+        importerBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-blue-500";
+        importerBtn.innerHTML = '<i class="fas fa-file-import text-xs"></i> <span class="text-sm">Importer</span>';
+        importerBtn.onclick = () => {
+            renderQuestionImporterPage();
+            closeMobileSidebar();
+        };
+        toolsSubmenu.appendChild(importerBtn);
+
+        container.appendChild(toolsSubmenu);
+    }
+}
+
+// --- QUESTION IMPORTER PAGE RENDERER ---
+function renderQuestionImporterPage() {
+    elements.pageTitle().innerText = "Question Bank Importer";
+    const content = elements.contentArea();
+    content.innerHTML = ''; // Clear container
+
+    const container = document.createElement('div');
+    container.id = "importer-container";
+    container.className = "w-full h-full p-4";
+    content.appendChild(container);
+
+    // Call imported function
+     if(typeof renderQuestionImporter === 'function') {
+         renderQuestionImporter('importer-container');
+     } else {
+         container.innerHTML = `<div class="p-8 text-center text-gray-500">Importer module not loaded. Uncomment import in app.js</div>`;
+     }
+}
+
+// --- QUIZZES & ACTIVITIES PAGE RENDERER ---
+function renderQuizzesActivitiesPage() {
+    elements.pageTitle().innerText = "Quizzes & Activities";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    // UNCOMMENT AND USE THIS BLOCK WHEN quizzesAndActivities.js IS READY
+   
+    if (typeof renderQuizzesAndActivities === 'function') {
+        renderQuizzesAndActivities(content, currentUser);
+    } else {
+        content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
+    }
+}
+
+// --- CREATOR PAGE RENDERER ---
+function renderCreatorPage() {
+    elements.pageTitle().innerText = "Quiz & Activity Creator";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    // If you have imported renderQuizActivityCreator, call it here:
+    renderQuizActivityCreator(content);
+}
+
+function renderLandingPage() {
+    elements.pageTitle().innerText = "Course Outline";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    const container = document.createElement('div');
+    container.className = "max-w-4xl mx-auto pb-12";
+
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = "flex border-b border-gray-200 mb-6 bg-white rounded-t-lg shadow-sm";
+    tabsContainer.innerHTML = `
+        <button id="tab-landing-summary" class="flex-1 py-4 text-center text-sm font-semibold transition-colors tab-active rounded-tl-lg">
+            <i class="fas fa-list-alt mr-2"></i>Summary
+        </button>
+        <button id="tab-landing-full" class="flex-1 py-4 text-center text-sm font-semibold transition-colors tab-inactive rounded-tr-lg">
+            <i class="fas fa-file-alt mr-2"></i>Full Course Outline
+        </button>
+    `;
+    container.appendChild(tabsContainer);
+
+    const summaryDiv = document.createElement('div');
+    summaryDiv.id = "content-landing-summary";
+    summaryDiv.innerHTML = courseData.outline.summary;
+    container.appendChild(summaryDiv);
+
+    const fullDiv = document.createElement('div');
+    fullDiv.id = "content-landing-full";
+    fullDiv.className = "hidden";
+    fullDiv.innerHTML = courseData.outline.full;
+    container.appendChild(fullDiv);
+
+    content.appendChild(container);
+
+    container.querySelector('#tab-landing-summary').onclick = () => {
+        summaryDiv.classList.remove('hidden', 'fade-in');
+        summaryDiv.classList.add('fade-in');
+        fullDiv.classList.add('hidden');
+        document.getElementById('tab-landing-summary').className = document.getElementById('tab-landing-summary').className.replace('tab-inactive', 'tab-active');
+        document.getElementById('tab-landing-full').className = document.getElementById('tab-landing-full').className.replace('tab-active', 'tab-inactive');
+    };
+    container.querySelector('#tab-landing-full').onclick = () => {
+        fullDiv.classList.remove('hidden', 'fade-in');
+        fullDiv.classList.add('fade-in');
+        summaryDiv.classList.add('hidden');
+        document.getElementById('tab-landing-full').className = document.getElementById('tab-landing-full').className.replace('tab-inactive', 'tab-active');
+        document.getElementById('tab-landing-summary').className = document.getElementById('tab-landing-summary').className.replace('tab-active', 'tab-inactive');
+    };
+}
+
+// --- DAY RENDERER (The Core Content Logic) ---
+
+function getAccountNormalSide(accountName) {
+    const acc = accountName.toLowerCase();
+    // Assets & Expenses & Drawings = Normal Debit
+    if (acc.includes('cash') || acc.includes('receivable') || acc.includes('inventory') || 
+        acc.includes('supplies') || acc.includes('prepaid') || acc.includes('equipment') || 
+        acc.includes('expense') || acc.includes('drawings') || acc.includes('purchases') || 
+        acc.includes('freight in') || acc.includes('sales returns') || acc.includes('sales discounts')) {
+        return 'dr';
+    }
+    // Everything else (Liabilities, Equity, Revenue, Contra-Assets) = Normal Credit
+    return 'cr';
+}
+
+// --- React Wrapper Component for Worksheet ---
+// This handles the state for the worksheet so "Show Solution" can work
+function WorksheetWrapper({ ledger, adjustments }) {
+    const [wsState, setWsState] = React.useState({ rows: [], footers: {} });
+    const [showFeedback, setShowFeedback] = React.useState(false);
+
+    const handleChange = (field, val) => {
+        setWsState(prev => ({ ...prev, [field]: val }));
+    };
+
+    // Check if Final Total row has data to enable the button
+    const hasFinalTotals = wsState.footers?.final && 
+        Object.values(wsState.footers.final).some(v => v !== "" && v !== undefined);
+
+    return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
+        React.createElement(Step05Worksheet, {
+            ledgerData: ledger, 
+            adjustments: adjustments,
+            data: wsState,
+            onChange: handleChange,
+            showFeedback: showFeedback
+        }),
+        hasFinalTotals ? React.createElement('div', { className: "flex justify-center" }, 
+            React.createElement('button', {
+                className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
+                onClick: () => setShowFeedback(!showFeedback)
+            }, showFeedback ? React.createElement('span', null, "Hide Solution") : React.createElement('span', null, "Show Solution"))
+        ) : null
+    );
+}
+
+function renderDayContent(unit, week, dayIndex) {
+    elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
+    
+    const content = elements.contentArea();
+    content.innerHTML = ''; 
+
+    const container = document.createElement('div');
+    container.className = "w-full max-w-[1600px] mx-auto h-full flex flex-col";
+
+    const scheduledDateStr = getDateForTopic(unit.id, week.id, dayIndex);
+    const dateBadgeHtml = scheduledDateStr 
+        ? `<div class="shrink-0 bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded border border-purple-200 shadow-sm whitespace-nowrap">
+             <i class="far fa-calendar-check mr-1"></i>Scheduled: ${scheduledDateStr}
+           </div>`
+        : `<div class="shrink-0 text-gray-400 text-xs italic whitespace-nowrap">
+             <i class="far fa-calendar mr-1"></i>Not scheduled
+           </div>`;
+
+    if (!week.days || week.days.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-gray-400 bg-white rounded-lg border border-dashed border-gray-300">Content for this week is being updated.</div>`;
+        content.appendChild(container);
+        return;
+    }
+
+    const day = week.days[dayIndex];
+    const exercises = day.exercises || [];
+
+    // Analyze Exercise Types to determine tabs
+    const hasMcq = exercises.some(e => e.type === 'mcq');
+    const hasProb = exercises.some(e => e.type === 'problem');
+    const hasJourn = exercises.some(e => e.type === 'journalizing');
+    // Detect Worksheet Activity
+    const worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
+
+    const card = document.createElement('div');
+    card.className = "bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden fade-in";
+
+    const headerDiv = document.createElement('div');
+    headerDiv.className = "bg-gray-50 px-6 py-3 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4";
+    headerDiv.innerHTML = `
+        <div class="flex items-center gap-3 overflow-hidden">
+            <span class="shrink-0 bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded uppercase">${day.day}</span>
+            <h1 class="text-lg md:text-xl font-bold text-slate-800 leading-tight truncate-multiline">${day.topic}</h1>
+        </div>
+        ${dateBadgeHtml}
+    `;
+    card.appendChild(headerDiv);
+
+    // --- NAVIGATION TABS ---
+    const navBar = document.createElement('div');
+    navBar.className = "flex flex-wrap items-center justify-between border-b border-gray-200 bg-white min-h-[50px]";
+
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = "flex overflow-x-auto whitespace-nowrap no-scrollbar";
+    
+    const createTabBtn = (id, icon, label, isActive) => {
+        const btn = document.createElement('button');
+        btn.id = id;
+        btn.className = `flex-shrink-0 px-6 py-3 text-sm font-semibold transition-colors border-b-2 flex items-center ${
+            isActive 
+            ? 'border-blue-600 text-blue-900 bg-blue-50' 
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+        }`;
+        btn.innerHTML = `<i class="fas ${icon} mr-2"></i>${label}`;
+        return btn;
+    };
+
+    // Always create Concepts Tab
+    const tabConcepts = createTabBtn('tab-btn-concepts', 'fa-book-reader', 'Topic & Concepts', true);
+    tabsContainer.appendChild(tabConcepts);
+
+    // Conditional Tabs
+    let tabMcq, tabProb, tabJourn, tabWorksheet;
+
+    if (hasMcq) {
+        tabMcq = createTabBtn('tab-btn-mcq', 'fa-list-ul', 'Practice - Multiple Choice', false);
+        tabsContainer.appendChild(tabMcq);
+    }
+    if (hasProb) {
+        tabProb = createTabBtn('tab-btn-prob', 'fa-calculator', 'Practice - Problem Solving', false);
+        tabsContainer.appendChild(tabProb);
+    }
+    if (hasJourn) {
+        tabJourn = createTabBtn('tab-btn-journ', 'fa-pen-fancy', 'Practice - Journalizing', false);
+        tabsContainer.appendChild(tabJourn);
+    }
+    // New Worksheet Tab
+    if (worksheetActivity) {
+        tabWorksheet = createTabBtn('tab-btn-worksheet', 'fa-table', 'Practice - 10 Columns Worksheet', false);
+        tabsContainer.appendChild(tabWorksheet);
+    }
+
+    navBar.appendChild(tabsContainer);
+
+    // Prev/Next Buttons
+    const navButtonsGroup = document.createElement('div');
+    navButtonsGroup.className = "hidden md:flex items-center gap-2 py-2 px-4 ml-auto"; 
+
+    if (dayIndex > 0) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = "px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-gray-300 rounded shadow-sm hover:bg-gray-50 hover:text-blue-600 transition-colors flex items-center";
+        prevBtn.innerHTML = `<i class="fas fa-chevron-left mr-1"></i> Prev`;
+        prevBtn.onclick = () => {
+            renderDayContent(unit, week, dayIndex - 1);
+            const activeWeekBtn = document.querySelector('.day-submenu:not(.hidden)')?.previousElementSibling;
+            if (activeWeekBtn) activeWeekBtn.click();
+        };
+        navButtonsGroup.appendChild(prevBtn);
+    }
+
+    if (dayIndex < week.days.length - 1) {
+        const nextBtn = document.createElement('button');
+        nextBtn.className = "px-3 py-1.5 text-xs font-medium text-white bg-blue-600 border border-transparent rounded shadow-sm hover:bg-blue-700 transition-colors flex items-center";
+        nextBtn.innerHTML = `Next <i class="fas fa-chevron-right ml-1"></i>`;
+        nextBtn.onclick = () => renderDayContent(unit, week, dayIndex + 1);
+        navButtonsGroup.appendChild(nextBtn);
+    }
+
+    navBar.appendChild(navButtonsGroup);
+    card.appendChild(navBar);
+
+    // --- CONTENT AREA ---
+    const tabContentWrapper = document.createElement('div');
+    tabContentWrapper.className = "flex-1 relative overflow-hidden bg-white flex flex-col";
+
+    // 1. Concepts Content (Standard View)
+    const conceptsDiv = document.createElement('div');
+    conceptsDiv.id = "tab-content-concepts";
+    conceptsDiv.className = "p-8 overflow-y-auto h-full prose prose-blue max-w-none text-gray-600";
+    conceptsDiv.innerHTML = day.content;
+    tabContentWrapper.appendChild(conceptsDiv);
+
+    // 2. MCQ Content
+    let mcqDiv;
+    if (hasMcq) {
+        mcqDiv = document.createElement('div');
+        mcqDiv.id = "tab-content-mcq";
+        mcqDiv.className = "hidden h-full"; 
+        mcqDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'mcq');
+        tabContentWrapper.appendChild(mcqDiv);
+    }
+
+    // 3. Problem Content
+    let probDiv;
+    if (hasProb) {
+        probDiv = document.createElement('div');
+        probDiv.id = "tab-content-prob";
+        probDiv.className = "hidden h-full";
+        probDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'problem');
+        tabContentWrapper.appendChild(probDiv);
+    }
+
+    // 4. Journal Content
+    let journDiv;
+    if (hasJourn) {
+        journDiv = document.createElement('div');
+        journDiv.id = "tab-content-journ";
+        journDiv.className = "hidden h-full";
+        journDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'journalizing');
+        tabContentWrapper.appendChild(journDiv);
+    }
+
+    // 5. Worksheet Content
+    let worksheetDiv;
+    let worksheetRoot = null; 
+
+    if (worksheetActivity) {
+        worksheetDiv = document.createElement('div');
+        worksheetDiv.id = "tab-content-worksheet";
+        worksheetDiv.className = "hidden h-full overflow-y-auto p-4 md:p-8";
+
+        // Logic to calculate Ledger Balances from Transactions
+        const ledger = {};
+        if(worksheetActivity.transactions) {
+            worksheetActivity.transactions.forEach(tx => {
+                tx.solution.forEach(line => {
+                    if (line.isExplanation || line.account === "No Entry") return;
+                    if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                    if (line.debit) ledger[line.account].debit += line.debit;
+                    if (line.credit) ledger[line.account].credit += line.credit;
+                });
+            });
+        }
+
+        // Logic to render Instructions and Ledger
+        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
+        Object.keys(ledger).sort().forEach(acc => {
+            const bal = ledger[acc].debit - ledger[acc].credit;
+            if (bal === 0) return;
+            
+            // Logic for Dr/Cr Indicator based on Normal Balance
+            const normalSide = getAccountNormalSide(acc);
+            let sideStr = "";
+            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
+            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
+
+            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
+        });
+        ledgerHtml += `</div>`;
+
+        worksheetDiv.innerHTML = `
+            <div class="prose prose-blue max-w-none mb-8">
+                <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
+                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
+                
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
+                    ${ledgerHtml}
+                </div>
+
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Adjustment Information:</p>
+                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
+                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+            <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
+        `;
+        tabContentWrapper.appendChild(worksheetDiv);
+    }
+
+    card.appendChild(tabContentWrapper);
+    container.appendChild(card);
+    content.appendChild(container);
+
+    // --- TAB SWITCHING LOGIC ---
+    const switchTab = (targetType) => {
+        // Hide all
+        conceptsDiv.classList.add('hidden');
+        if (mcqDiv) mcqDiv.classList.add('hidden');
+        if (probDiv) probDiv.classList.add('hidden');
+        if (journDiv) journDiv.classList.add('hidden');
+        if (worksheetDiv) worksheetDiv.classList.add('hidden');
+
+        // Deactivate all buttons
+        [tabConcepts, tabMcq, tabProb, tabJourn, tabWorksheet].forEach(btn => {
+            if (btn) btn.className = btn.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
+        });
+
+        // Show Target
+        let activeBtn;
+        if (targetType === 'concepts') {
+            conceptsDiv.classList.remove('hidden');
+            activeBtn = tabConcepts;
+        } else if (targetType === 'mcq' && mcqDiv) {
+            mcqDiv.classList.remove('hidden');
+            activeBtn = tabMcq;
+        } else if (targetType === 'problem' && probDiv) {
+            probDiv.classList.remove('hidden');
+            activeBtn = tabProb;
+        } else if (targetType === 'journal' && journDiv) {
+            journDiv.classList.remove('hidden');
+            activeBtn = tabJourn;
+        } else if (targetType === 'worksheet' && worksheetDiv) {
+            worksheetDiv.classList.remove('hidden');
+            activeBtn = tabWorksheet;
+            
+            // Mount React Component ONLY when tab is visible and not already mounted
+            const mountEl = document.getElementById('worksheet-mount');
+            if (mountEl && !worksheetRoot) {
+                // Ensure ledger and adjustments are available from the closure
+                const ledger = {};
+                if(worksheetActivity.transactions) {
+                    worksheetActivity.transactions.forEach(tx => {
+                        tx.solution.forEach(line => {
+                            if (line.isExplanation || line.account === "No Entry") return;
+                            if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                            if (line.debit) ledger[line.account].debit += line.debit;
+                            if (line.credit) ledger[line.account].credit += line.credit;
+                        });
+                    });
+                }
+
+                worksheetRoot = ReactDOM.createRoot(mountEl);
+                // Use the Wrapper Component to manage state!
+                worksheetRoot.render(
+                    React.createElement(WorksheetWrapper, {
+                        ledger: ledger,
+                        adjustments: worksheetActivity.adjustments
+                    })
+                );
+            }
+        }
+
+        // Activate Button
+        if (activeBtn) {
+            activeBtn.className = activeBtn.className.replace('border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50', 'border-blue-600 text-blue-900 bg-blue-50');
+        }
+    };
+
+    tabConcepts.onclick = () => switchTab('concepts');
+    if (tabMcq) tabMcq.onclick = () => switchTab('mcq');
+    if (tabProb) tabProb.onclick = () => switchTab('problem');
+    if (tabJourn) tabJourn.onclick = () => switchTab('journal');
+    if (tabWorksheet) tabWorksheet.onclick = () => switchTab('worksheet');
+
+    // Attach Listeners
+    attachExerciseListeners();
+    executeExerciseMounts(day.exercises);
+}
+
+function executeExerciseMounts(exercises) {
+    if (!exercises) return;
+    exercises.forEach(ex => {
+        if (ex.type === 'custom-mount' && typeof ex.mountLogic === 'function') {
+            setTimeout(() => {
+                ex.mountLogic();
+            }, 0);
+        }
+    });
+}
+
+// --- NEW CATEGORY CONTENT RENDERER ---
+function renderCategoryContent(exercises, dayIndex, type) {
+    const filtered = exercises.filter(ex => ex.type === type);
+    if (filtered.length === 0) return '';
+
+    let contentHtml = '';
+    let navLinksHtml = '';
+
+    // Helper to chunk array
+    const chunkArray = (arr, size) => {
+        const chunks = [];
+        for (let i = 0; i < arr.length; i += size) {
+            chunks.push(arr.slice(i, i + size));
+        }
+        return chunks;
+    };
+
+    // --- Build Navigation Links ---
+    const buildNav = (sets, isJournal = false) => {
+        let html = '';
+        sets.forEach((item, index) => {
+            const label = isJournal ? `Journal #${index + 1}` : `${type === 'mcq' ? 'MCQ' : 'Problem'} Set ${index + 1}`;
+            const targetId = isJournal ? `journ-set-${dayIndex}-${index}` : `${type === 'mcq' ? 'mcq' : 'prob'}-set-${dayIndex}-${index}`;
+            // Added scroll to internal container logic
+            html += `
+                <button onclick="document.getElementById('${targetId}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
+                class="w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-100 flex items-center group">
+                    <i class="fas fa-chevron-right text-xs text-gray-400 mr-2 group-hover:text-blue-500"></i>
+                    ${label}
+                </button>
+            `;
+        });
+        return html;
+    };
+
+    // --- Build Content & Nav Logic ---
+    if (type === 'mcq' || type === 'problem') {
+        const sets = chunkArray(filtered, 20);
+        navLinksHtml = buildNav(sets);
+
+        sets.forEach((set, setIndex) => {
+            const setId = `${type === 'mcq' ? 'mcq' : 'prob'}-set-${dayIndex}-${setIndex}`;
+            
+            let questionsHtml = set.map((ex, i) => {
+                const exId = `ex-${type === 'mcq' ? 'mcq' : 'prob'}-${dayIndex}-${setIndex}-${i}`;
+                const globalIndex = (setIndex * 20) + i + 1;
+
+                if (type === 'mcq') {
+                    const optionsHtml = ex.options.map((opt, optIndex) => `
+                        <label class="flex items-start p-3 rounded border border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors bg-white">
+                            <input type="radio" name="${exId}" value="${optIndex}" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500" data-qid="${exId}">
+                            <span class="text-sm text-gray-700">${opt}</span>
+                        </label>
+                    `).join('');
+
+                    return `
+                        <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8 exercise-item" data-id="${exId}">
+                            <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Question ${globalIndex}</span>${ex.question}</p>
+                            <div class="space-y-3 mb-4">${optionsHtml}</div>
+                            <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800">
+                                <p class="font-bold mb-1"><i class="fas fa-check-circle mr-1"></i> Correct Answer: ${ex.options[ex.correctIndex]}</p>
+                                <p>${ex.explanation}</p>
                             </div>
-                            
-                            <div class="flex flex-col gap-0 divide-y divide-gray-300">
-                                <div>
-                                    <div class="bg-blue-50 py-1 px-3 text-[10px] font-bold text-blue-800 uppercase border-b border-blue-100">Your Answer</div>
-                                    <table class="w-full border-collapse table-fixed">
-                                        <thead>
-                                            <tr class="bg-gray-5 text-[10px] text-gray-500 uppercase border-b border-gray-200">
-                                                <th class="py-1 px-1 w-24 text-right">Date</th>
-                                                <th class="py-1 px-2 text-left w-auto">Account</th>
-                                                <th class="py-1 px-1 w-28 text-right">Dr</th>
-                                                <th class="py-1 px-1 w-28 text-right">Cr</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>${studentRowsHtml}</tbody>
-                                    </table>
-                                </div>
-                                <div>
-                                    <div class="bg-green-50 py-1 px-3 text-[10px] font-bold text-green-800 uppercase border-b border-green-100">Standard Solution</div>
-                                    <table class="w-full border-collapse table-fixed">
-                                        <thead>
-                                            <tr class="bg-green-50/50 text-[10px] text-green-700 uppercase border-b border-green-100">
-                                                <th class="py-1 px-1 w-24 text-right">Date</th>
-                                                <th class="py-1 px-2 text-left w-auto">Account</th>
-                                                <th class="py-1 px-1 w-28 text-right">Dr</th>
-                                                <th class="py-1 px-1 w-28 text-right">Cr</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>${solutionRowsHtml}</tbody>
-                                    </table>
-                                </div>
+                            <div id="msg-${exId}" class="hidden mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 italic">
+                                 <i class="fas fa-exclamation-circle mr-1"></i> Please answer this question to see the answer key.
                             </div>
                         </div>
                     `;
-                });
+                } else {
+                    return `
+                        <div class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-8 exercise-item" data-id="${exId}">
+                            <p class="font-semibold text-gray-800 mb-4 text-base"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs mr-2">Problem ${globalIndex}</span>${ex.question}</p>
+                            <textarea id="input-${exId}" class="w-full p-3 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white" rows="4" placeholder="Type your solution here..." data-qid="${exId}"></textarea>
+                            <div id="ans-${exId}" class="hidden mt-4 p-4 bg-green-50 border border-green-200 rounded text-sm text-green-800 font-mono whitespace-pre-wrap">
+<strong><i class="fas fa-key mr-1"></i> Answer Key:</strong>
+${ex.answer}
 
-                sectionBodyHtml += `
-                    <div class="bg-white rounded shadow-sm border border-gray-200 mb-4 overflow-hidden">
-                         ${stickyHeaderHtml}
-                        <div class="p-4">
-                            ${transactionsHtml}
+<strong><i class="fas fa-info-circle mr-1"></i> Explanation:</strong>
+${ex.explanation}
+                            </div>
+                            <div id="msg-${exId}" class="hidden mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 italic">
+                                 <i class="fas fa-exclamation-circle mr-1"></i> Please answer this question to see the answer key.
+                            </div>
                         </div>
-                    </div>`;
-            }
+                    `;
+                }
+            }).join('');
+
+            contentHtml += `
+                <div id="${setId}" class="mb-12 border-t-4 border-blue-500 pt-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">${type === 'mcq' ? 'MC Questions' : 'Problem Questions'} Set ${setIndex + 1}</h3>
+                    ${questionsHtml}
+                    <div class="mt-6 flex justify-start">
+                        <button class="btn-reveal-set px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 shadow-md transition-colors"
+                            data-set-id="${setId}" data-type="${type}">
+                            <i class="fas fa-eye mr-2"></i> ${type === 'mcq' ? 'Reveal Answer Key' : 'Reveal Solution'}
+                        </button>
+                    </div>
+                </div>
+            `;
         });
+    } 
+    else if (type === 'journalizing') {
+        navLinksHtml = buildNav(filtered, true);
 
-        // Score Calculation
-        const percent = sectionMaxScore > 0 ? (sectionScore / sectionMaxScore) * 100 : 0;
-        const letter = getLetterGrade(sectionScore, sectionMaxScore);
+        filtered.forEach((ex, jIndex) => {
+            const setId = `journ-set-${dayIndex}-${jIndex}`;
+            
+            const generateRows = (txId, rowCount, isReadOnly = false, solutionData = []) => {
+                let rowsHtml = '';
+                for (let r = 0; r < rowCount; r++) {
+                    const rowData = isReadOnly && solutionData[r] ? solutionData[r] : { date: '', account: '', debit: '', credit: '' };
+                    let indentStyle = "padding-left: 0.5rem;"; 
+                    let acctClass = "";
+                    if (isReadOnly) {
+                        if (rowData.isExplanation) {
+                            indentStyle = "padding-left: 2rem;"; 
+                            acctClass = "italic text-gray-500";
+                        } else if (rowData.credit) {
+                            indentStyle = "padding-left: 1.25rem;";
+                        }
+                    }
 
-        contentHtml += `
-            <div class="mb-8 border-b border-gray-300 pb-4">
-                <div class="flex justify-between items-center mb-2">
-                     <h3 class="font-bold text-lg text-blue-900 uppercase">Test ${index + 1}: ${section.type}</h3>
-                     <span class="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded">
-                        Score: ${sectionScore} / ${sectionMaxScore} | ${percent.toFixed(2)}% | ${letter}
-                     </span>
+                    rowsHtml += `
+                    <tr class="border-b border-gray-200 hover:bg-gray-50 bg-white">
+                        <td class="border-r border-gray-300 p-0 w-16 align-top">
+                            <input type="text" class="w-full h-full p-2 bg-transparent outline-none text-xs text-right font-mono text-gray-600" value="${rowData.date || ''}" ${isReadOnly ? 'readonly disabled' : ''}>
+                        </td>
+                        <td class="border-r border-gray-300 p-0 relative align-top">
+                            <input type="text" id="acct-${txId}-${r}" class="w-full h-full p-2 bg-transparent outline-none text-sm font-mono transition-all duration-200 ${acctClass}" style="${indentStyle}" value="${rowData.account || ''}" ${isReadOnly ? 'readonly disabled' : ''}>
+                        </td>
+                        <td class="border-r border-gray-300 p-0 w-28 align-top">
+                            <input type="number" id="dr-${txId}-${r}" class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono" step="0.01" value="${rowData.debit !== '' && rowData.debit !== undefined ? Number(rowData.debit).toFixed(2) : ''}" ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
+                        </td>
+                        <td class="p-0 w-28 align-top">
+                            <input type="number" id="cr-${txId}-${r}" class="w-full h-full p-2 bg-transparent outline-none text-sm text-right font-mono" step="0.01" value="${rowData.credit !== '' && rowData.credit !== undefined ? Number(rowData.credit).toFixed(2) : ''}" ${isReadOnly ? 'readonly disabled' : 'oninput="handleJournalIndent(\'' + txId + '\', ' + r + ')"'}>
+                        </td>
+                    </tr>`;
+                }
+                return rowsHtml;
+            };
+
+            const transactionsHtml = ex.transactions.map((tx, txIndex) => {
+                const txId = `ex-journ-${dayIndex}-${jIndex}-tx-${txIndex}`;
+                return `
+                    <div class="mb-6 border border-gray-300 shadow-sm rounded-lg overflow-hidden exercise-item" data-id="${txId}">
+                        <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex justify-between items-center">
+                            <span class="font-bold text-gray-700 text-sm">${tx.date} - ${tx.description}</span>
+                        </div>
+                        <table class="w-full border-collapse" id="table-${txId}">
+                            <thead>
+                                <tr class="bg-gray-200 text-xs text-gray-600 font-bold uppercase border-b border-gray-300">
+                                    <th class="py-2 border-r border-gray-300">Date</th>
+                                    <th class="py-2 border-r border-gray-300 text-left pl-2">Account Titles</th>
+                                    <th class="py-2 border-r border-gray-300">Debit</th>
+                                    <th class="py-2">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>${generateRows(txId, tx.rows)}</tbody>
+                        </table>
+                        <div id="ans-${txId}" class="hidden mt-0 border-t-2 border-green-400">
+                             <div class="bg-green-100 px-4 py-2 border-b border-green-300 text-green-800 font-bold text-sm flex items-center"><i class="fas fa-check-circle mr-2"></i> Correct Entry</div>
+                            <table class="w-full border-collapse bg-green-50"><tbody>${generateRows(txId, tx.rows, true, tx.solution)}</tbody></table>
+                        </div>
+                        <div id="msg-${txId}" class="hidden p-3 bg-yellow-50 border-t border-yellow-200 text-sm text-yellow-800 italic"><i class="fas fa-exclamation-circle mr-1"></i> Please answer this question to see the answer key.</div>
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml += `
+                <div id="${setId}" class="bg-slate-50 p-6 rounded-lg border border-slate-100 mb-10">
+                    <h3 class="font-bold text-xl text-gray-900 mb-2 border-b pb-2">${ex.title}</h3>
+                    <p class="text-gray-600 mb-6 text-sm">${ex.instructions}</p>
+                    ${transactionsHtml}
+                    <div class="mt-6 flex justify-start">
+                        <button class="btn-reveal-set px-6 py-2 bg-green-600 text-white text-sm font-bold rounded hover:bg-green-700 shadow-md transition-colors"
+                            data-set-id="${setId}" data-type="journal">
+                            <i class="fas fa-eye mr-2"></i> Reveal Journal Entries
+                        </button>
+                    </div>
                 </div>
-                ${sectionBodyHtml}
+            `;
+        });
+    }
+
+    // --- Construct Layout with Collapsible Sidebar ---
+    const sidebarId = `sidebar-${type}`;
+    const contentId = `content-${type}`;
+
+    return `
+    <div class="flex h-full relative">
+        <div id="${contentId}" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth h-full">
+            ${contentHtml}
+        </div>
+
+        <div id="${sidebarId}" class="w-0 md:w-64 transition-all duration-300 border-l border-gray-200 bg-gray-50 flex flex-col h-full absolute md:relative right-0 z-20 shadow-xl md:shadow-none overflow-hidden group">
+            
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-white min-w-[250px]">
+                <span class="font-bold text-gray-700 text-sm"><i class="fas fa-location-arrow mr-2"></i> Quick Nav</span>
+                <button onclick="toggleRightSidebar('${sidebarId}')" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-        `;
-    });
 
-    const dateTaken = resultData.timestamp ? new Date(resultData.timestamp).toLocaleString() : "N/A";
-    
-    container.innerHTML = `
-        <div class="h-full bg-gray-100 overflow-y-auto p-4 md:p-8">
-            <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-                <div class="bg-blue-900 text-white p-6 text-center">
-                    <h1 class="text-2xl font-bold uppercase tracking-wider">FABM 1</h1>
-                    <h2 class="text-xl font-semibold mt-1">${activityData.activityname}</h2>
-                </div>
-                
-                <div class="bg-blue-50 p-4 border-b border-gray-200 text-sm md:text-base">
-                    <div class="flex flex-col md:flex-row justify-between mb-2">
-                        <div><strong>Class Number:</strong> ${user.CN || 'N/A'}</div>
-                        <div><strong>Date:</strong> ${dateTaken}</div>
-                    </div>
-                    <div class="flex flex-col md:flex-row justify-between">
-                        <div><strong>Name:</strong> ${user.LastName}, ${user.FirstName}</div>
-                        <div><strong>Section:</strong> ${activityData.section}</div>
-                    </div>
-                </div>
-
-                <div class="p-6 bg-gray-50/50">
-                    ${contentHtml}
-                </div>
-                
-                <div class="p-4 bg-gray-50 text-center border-t border-gray-200">
-                    <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
-                        Back to Activity List
-                    </button>
-                </div>
+            <div class="flex-1 overflow-y-auto min-w-[250px] p-2">
+                ${navLinksHtml}
             </div>
         </div>
+
+        <button onclick="toggleRightSidebar('${sidebarId}')" class="md:hidden absolute top-4 right-4 z-30 bg-white text-blue-600 p-2 rounded-full shadow-lg border border-gray-200 hover:bg-gray-50">
+            <i class="fas fa-list-ul"></i>
+        </button>
+    </div>
     `;
 }
+
+// --- GLOBAL TOGGLE HELPER ---
+window.toggleRightSidebar = function(sidebarId) {
+    const sidebar = document.getElementById(sidebarId);
+    if (!sidebar) return;
+    
+    if (sidebar.classList.contains('w-0')) {
+        // Expand
+        sidebar.classList.remove('w-0');
+        sidebar.classList.add('w-64');
+    } else {
+        // Collapse
+        sidebar.classList.remove('w-64');
+        sidebar.classList.add('w-0');
+    }
+};
+
+// --- REQUIRED HELPER FUNCTION ---
+window.handleJournalIndent = function(txId, row) {
+    const acctInput = document.getElementById(`acct-${txId}-${row}`);
+    const drInput = document.getElementById(`dr-${txId}-${row}`);
+    const crInput = document.getElementById(`cr-${txId}-${row}`);
+
+    if (!acctInput) return;
+
+    const drVal = drInput ? drInput.value.trim() : '';
+    const crVal = crInput ? crInput.value.trim() : '';
+
+    if (crVal !== '') {
+        acctInput.style.paddingLeft = '1.25rem'; 
+        acctInput.classList.remove('italic', 'text-gray-500');
+    } else if (drVal === '' && crVal === '') {
+        acctInput.style.paddingLeft = '2rem'; 
+        acctInput.classList.add('italic', 'text-gray-500'); 
+    } else {
+        acctInput.style.paddingLeft = '0.5rem'; 
+        acctInput.classList.remove('italic', 'text-gray-500');
+    }
+};
+
+function attachExerciseListeners() {
+    document.querySelectorAll('.btn-reveal-set').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const setId = e.target.getAttribute('data-set-id');
+            const type = e.target.getAttribute('data-type');
+            const container = document.getElementById(setId);
+            
+            const isRevealing = !e.target.classList.contains('revealed');
+            
+            if (isRevealing) {
+                e.target.classList.add('revealed');
+                e.target.innerHTML = `<i class="fas fa-eye-slash mr-2"></i> Hide Answer Key`;
+                e.target.classList.replace('bg-blue-600', 'bg-slate-600');
+                e.target.classList.replace('hover:bg-blue-700', 'hover:bg-slate-700');
+                if(type === 'journal') {
+                    e.target.classList.replace('bg-green-600', 'bg-slate-600');
+                    e.target.classList.replace('hover:bg-green-700', 'hover:bg-slate-700');
+                }
+            } else {
+                e.target.classList.remove('revealed');
+                const label = type === 'journal' ? 'Reveal Journal Entries' : (type === 'problem' ? 'Reveal Solution' : 'Reveal Answer Key');
+                e.target.innerHTML = `<i class="fas fa-eye mr-2"></i> ${label}`;
+                e.target.classList.replace('bg-slate-600', 'bg-blue-600');
+                e.target.classList.replace('hover:bg-slate-700', 'hover:bg-blue-700');
+                if(type === 'journal') {
+                    e.target.classList.replace('bg-slate-600', 'bg-green-600');
+                    e.target.classList.replace('hover:bg-slate-700', 'hover:bg-green-700');
+                }
+            }
+
+            const items = container.querySelectorAll('.exercise-item');
+            items.forEach(item => {
+                const exId = item.getAttribute('data-id');
+                const ansDiv = document.getElementById(`ans-${exId}`);
+                const msgDiv = document.getElementById(`msg-${exId}`);
+                const inputs = item.querySelectorAll('input, textarea');
+                
+                let isAnswered = false;
+
+                if (type === 'mcq') {
+                    const checked = item.querySelector(`input[name="${exId}"]:checked`);
+                    isAnswered = !!checked;
+                } else if (type === 'problem') {
+                    const val = document.getElementById(`input-${exId}`).value.trim();
+                    isAnswered = val.length > 0;
+                } else if (type === 'journal') {
+                    const tableInputs = document.getElementById(`table-${exId}`).querySelectorAll('input');
+                    for (let input of tableInputs) {
+                        if (input.value.trim() !== '') {
+                            isAnswered = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isRevealing) {
+                    inputs.forEach(inp => {
+                        inp.disabled = true;
+                        inp.classList.add('bg-gray-50');
+                    });
+                    if (isAnswered) {
+                        ansDiv.classList.remove('hidden');
+                        ansDiv.classList.add('fade-in');
+                        msgDiv.classList.add('hidden');
+                    } else {
+                        msgDiv.classList.remove('hidden');
+                        msgDiv.classList.add('fade-in');
+                        ansDiv.classList.add('hidden');
+                    }
+                } else {
+                    inputs.forEach(inp => {
+                        inp.disabled = false;
+                        inp.classList.remove('bg-gray-50');
+                    });
+                    ansDiv.classList.add('hidden');
+                    msgDiv.classList.add('hidden');
+                }
+            });
+        });
+    });
+}
+
+// --- HELPER / UI UTILS ---
+
+function closeMobileSidebar() {
+    elements.sidebar().classList.add('-translate-x-full');
+    elements.sidebarOverlay().classList.add('hidden');
+}
+
+function highlightActiveDay(activeLink) {
+    document.querySelectorAll('.day-submenu button').forEach(b => {
+        b.classList.remove('text-blue-300', 'font-bold');
+        b.querySelector('.fa-circle').classList.remove('text-blue-500');
+        b.querySelector('.fa-circle').classList.add('text-[6px]'); 
+    });
+    
+    activeLink.classList.add('text-blue-300', 'font-bold');
+    const dot = activeLink.querySelector('.fa-circle');
+    dot.classList.add('text-blue-500');
+    dot.classList.remove('text-[6px]');
+    dot.classList.add('text-[8px]');
+}
+
+// --- CALENDAR LOGIC (Full Implementation) ---
+
+function setPhilippineTimeDefaults() {
+    const phDateStr = new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"});
+    const phDate = new Date(phDateStr);
+    currentCalendarYear = phDate.getFullYear();
+    currentCalendarMonth = phDate.getMonth();
+}
+
+function generateFlatTopics() {
+    flatTopics = [];
+    courseData.terms.forEach(term => {
+        term.units.forEach(unit => {
+            unit.weeks.forEach(week => {
+                if (week.days && week.days.length > 0) {
+                    week.days.forEach((day, index) => {
+                        flatTopics.push({
+                            id: `${unit.id}|${week.id}|${index}`,
+                            label: `${unit.title.split(':')[0]} - ${week.title.split(':')[0]} - ${day.day}`,
+                            fullTitle: `${day.topic}`
+                        });
+                    });
+                }
+            });
+        });
+    });
+}
+
+function getDateForTopic(unitId, weekId, dayIndex) {
+    const topicKey = `${unitId}|${weekId}|${dayIndex}`;
+    const dates = [];
+    for (const [date, assignedTopic] of Object.entries(calendarAssignments)) {
+        if (assignedTopic === topicKey) {
+            dates.push(date);
+        }
+    }
+    if (dates.length === 0) return null;
+    dates.sort();
+    return formatRanges(dates);
+}
+
+function updateSchedule(dateStr, topicId) {
+    if (topicId === "") {
+        delete calendarAssignments[dateStr];
+    } else {
+        calendarAssignments[dateStr] = topicId;
+    }
+    localStorage.setItem('fabm2_calendar', JSON.stringify(calendarAssignments));
+    
+    const select = document.getElementById(`sel-${dateStr}`);
+    if (select) {
+        if (topicId) {
+            select.classList.add('border-purple-300', 'bg-purple-50', 'text-purple-900', 'font-medium');
+            select.classList.remove('text-gray-500');
+        } else {
+            select.classList.remove('border-purple-300', 'bg-purple-50', 'text-purple-900', 'font-medium');
+            select.classList.add('text-gray-500');
+        }
+    }
+}
+
+function renderCalendarPage() {
+    elements.pageTitle().innerText = "Course Schedule Settings";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    const container = document.createElement('div');
+    container.className = "w-full max-w-7xl mx-auto pb-12 fade-in relative";
+
+    const infoBox = document.createElement('div');
+    infoBox.className = "mb-6 bg-purple-50 border border-purple-200 p-4 rounded-lg text-sm text-purple-800";
+    infoBox.innerHTML = "<i class='fas fa-info-circle mr-2'></i> Select Year and Month to view the calendar. Assign topics to dates to build your schedule (PH Time).";
+    container.appendChild(infoBox);
+
+    const controls = document.createElement('div');
+    controls.className = "flex flex-col md:flex-row gap-4 mb-6 calendar-controls bg-white p-4 rounded-lg border border-gray-200 shadow-sm";
+
+    const yearSelect = document.createElement('select');
+    yearSelect.className = "flex-1 border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 p-2 border";
+    const currentYear = new Date().getFullYear();
+    for(let y = 2024; y <= 2030; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.text = y;
+        if(y === currentCalendarYear) opt.selected = true;
+        yearSelect.appendChild(opt);
+    }
+    
+    const monthSelect = document.createElement('select');
+    monthSelect.className = "flex-1 border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 p-2 border";
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    months.forEach((m, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.text = m;
+        if(idx === currentCalendarMonth) opt.selected = true;
+        monthSelect.appendChild(opt);
+    });
+
+    const calendarContainer = document.createElement('div');
+    
+    yearSelect.onchange = (e) => {
+        currentCalendarYear = parseInt(e.target.value);
+        renderMonthView(calendarContainer);
+    };
+    monthSelect.onchange = (e) => {
+        currentCalendarMonth = parseInt(e.target.value);
+        renderMonthView(calendarContainer);
+    };
+
+    controls.appendChild(yearSelect);
+    controls.appendChild(monthSelect);
+    container.appendChild(controls);
+
+    renderMonthView(calendarContainer); 
+    container.appendChild(calendarContainer);
+
+    content.appendChild(container);
+    
+    setTimeout(() => {
+        const todayRow = document.getElementById('today-row');
+        if (todayRow) {
+            todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            todayRow.classList.add('bg-purple-100'); 
+            setTimeout(() => todayRow.classList.remove('bg-purple-100'), 2000);
+        }
+    }, 100);
+}
+
+function renderMonthView(container) {
+    container.innerHTML = ''; 
+
+    const monthDiv = document.createElement('div');
+    monthDiv.className = "bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in";
+    
+    const monthName = new Date(currentCalendarYear, currentCalendarMonth).toLocaleString('default', { month: 'long' });
+    const monthHeader = document.createElement('div');
+    monthHeader.className = "bg-slate-800 text-white px-6 py-3 font-bold text-lg flex justify-between items-center";
+    monthHeader.innerHTML = `<span>${monthName} ${currentCalendarYear}</span> <span class="text-xs bg-slate-700 px-2 py-1 rounded">PH Time</span>`;
+    monthDiv.appendChild(monthHeader);
+
+    const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+    
+    const now = new Date();
+    const todayStr = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const todayDay = todayStr.getDate();
+    const todayMonth = todayStr.getMonth();
+    const todayYear = todayStr.getFullYear();
+
+    if (daysInMonth > 0) {
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateObj = new Date(currentCalendarYear, currentCalendarMonth, d);
+            
+            const yyyy = currentCalendarYear;
+            const mm = String(currentCalendarMonth + 1).padStart(2, '0');
+            const dd = String(d).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`; 
+
+            const dayName = dateObj.toLocaleDateString('default', { weekday: 'short' });
+            const isWeekend = dayName === 'Sat' || dayName === 'Sun';
+            const currentAssignment = calendarAssignments[dateStr] || "";
+
+            const isToday = (d === todayDay && currentCalendarMonth === todayMonth && currentCalendarYear === todayYear);
+
+            const row = document.createElement('div');
+            if (isToday) row.id = "today-row";
+            
+            const rowClass = `flex items-center border-b border-gray-100 last:border-0 p-3 hover:bg-gray-50 transition-colors duration-500 ${isWeekend ? 'bg-gray-50' : ''} ${isToday ? 'border-l-4 border-l-purple-500' : ''}`;
+            row.className = rowClass;
+            
+            const todayBadge = isToday ? '<span class="ml-2 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-bold">TODAY</span>' : '';
+
+            row.innerHTML = `
+                <div class="w-32 flex-shrink-0">
+                    <div class="font-bold text-slate-700 flex items-center">
+                        ${d} <span class="text-xs text-gray-400 font-normal uppercase ml-1">${dayName}</span>
+                        ${todayBadge}
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <select id="sel-${dateStr}" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 p-2 border bg-white ${currentAssignment ? 'border-purple-300 bg-purple-50 text-purple-900 font-medium' : 'text-gray-500'}" onchange="updateSchedule('${dateStr}', this.value)">
+                        <option value="">-- No Class / Free Day --</option>
+                        ${generateOptionsHtml(currentAssignment)}
+                    </select>
+                </div>
+            `;
+            monthDiv.appendChild(row);
+        }
+    }
+    container.appendChild(monthDiv);
+}
+
+function generateOptionsHtml(selectedValue) {
+    return flatTopics.map(t => {
+        const isSelected = t.id === selectedValue ? 'selected' : '';
+        return `<option value="${t.id}" ${isSelected}>${t.label}: ${t.fullTitle}</option>`;
+    }).join('');
+}
+
+// Start the app
+init();
