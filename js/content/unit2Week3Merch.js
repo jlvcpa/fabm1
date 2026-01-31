@@ -423,30 +423,30 @@ export const unit2Week3Data = {
         instructions: "Complete the 10-column worksheet based on the transactions from Set 1. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
         // Pulling data from your SET 1 JSON
         transactions: [
-            { "date": "Dec 1", "description": "Owner invested ₱100,000 cash and Equipment worth ₱50,000.", "solution": [ { "account": "Cash", "debit": 100000 }, { "account": "Equipment", "debit": 50000 }, { "account": "Owner's Capital", "credit": 150000 } ] },
-            { "date": "Dec 2", "description": "Purchased 2,000 units at ₱20 each on account.", "solution": [ { "account": "Purchases", "debit": 40000 }, { "account": "Accounts Payable", "credit": 40000 } ] },
-            { "date": "Dec 2", "description": "Paid ₱12,000 for 1-year insurance.", "solution": [ { "account": "Prepaid Insurance", "debit": 12000 }, { "account": "Cash", "credit": 12000 } ] },
-            { "date": "Dec 3", "description": "Paid freight in ₱1,000.", "solution": [ { "account": "Freight In", "debit": 1000 }, { "account": "Cash", "credit": 1000 } ] },
-            { "date": "Dec 5", "description": "Returned 200 units.", "solution": [ { "account": "Accounts Payable", "debit": 4000 }, { "account": "Purchase Returns and Allowances", "credit": 4000 } ] },
-            { "date": "Dec 7", "description": "Purchased 1,000 units at ₱25.", "solution": [ { "account": "Purchases", "debit": 25000 }, { "account": "Accounts Payable", "credit": 25000 } ] },
-            { "date": "Dec 10", "description": "Sold 1,500 units on account @ ₱50.", "solution": [ { "account": "Accounts Receivable", "debit": 75000 }, { "account": "Sales", "credit": 75000 } ] },
-            { "date": "Dec 12", "description": "Customer returned 100 units.", "solution": [ { "account": "Sales Returns and Allowances", "debit": 5000 }, { "account": "Accounts Receivable", "credit": 5000 } ] },
-            { "date": "Dec 15", "description": "Advance payment received.", "solution": [ { "account": "Cash", "debit": 5000 }, { "account": "Unearned Revenue", "credit": 5000 } ] },
-            { "date": "Dec 18", "description": "Paid partial payment.", "solution": [ { "account": "Accounts Payable", "debit": 10000 }, { "account": "Cash", "credit": 10000 } ] },
-            { "date": "Dec 20", "description": "Purchased supplies.", "solution": [ { "account": "Supplies", "debit": 1500 }, { "account": "Cash", "credit": 1500 } ] },
-            { "date": "Dec 22", "description": "Collection from customers.", "solution": [ { "account": "Cash", "debit": 15000 }, { "account": "Accounts Receivable", "credit": 15000 } ] },
-            { "date": "Dec 26", "description": "Equipment repairs.", "solution": [ { "account": "Repairs Expense", "debit": 800 }, { "account": "Cash", "credit": 800 } ] },
-            { "date": "Dec 29", "description": "Owner withdrawal.", "solution": [ { "account": "Owner's Drawings", "debit": 1000 }, { "account": "Cash", "credit": 1000 } ] },
-            { "date": "Dec 30", "description": "Paid salaries.", "solution": [ { "account": "Salaries Expense", "debit": 2000 }, { "account": "Cash", "credit": 2000 } ] }
+            { "date": "Dec 1", "description": "Owner invested ₱100,000 cash and Equipment worth ₱50,000.", "rows": 4, "solution": [ { "account": "Cash", "debit": 100000 }, { "account": "Equipment", "debit": 50000 }, { "account": "Owner's Capital", "credit": 150000 }, { "account": "To record initial investment.", "isExplanation": true } ] },
+            { "date": "Dec 2", "description": "Purchased 2,000 units at ₱20 each on account.", "rows": 3, "solution": [ { "account": "Purchases", "debit": 40000 }, { "account": "Accounts Payable", "credit": 40000 }, { "account": "To record purchase on account.", "isExplanation": true } ] },
+            { "date": "Dec 2", "description": "Paid ₱12,000 for 1-year insurance.", "rows": 3, "solution": [ { "account": "Prepaid Insurance", "debit": 12000 }, { "account": "Cash", "credit": 12000 }, { "account": "To record payment of insurance.", "isExplanation": true } ] },
+            { "date": "Dec 3", "description": "Paid freight in ₱1,000.", "rows": 3, "solution": [ { "account": "Freight In", "debit": 1000 }, { "account": "Cash", "credit": 1000 }, { "account": "To record payment of freight.", "isExplanation": true } ] },
+            { "date": "Dec 5", "description": "Returned 200 units.", "rows": 3, "solution": [ { "account": "Accounts Payable", "debit": 4000 }, { "account": "Purchase Returns and Allowances", "credit": 4000 }, { "account": "To record return of goods.", "isExplanation": true } ] },
+            { "date": "Dec 7", "description": "Purchased 1,000 units at ₱25.", "rows": 3, "solution": [ { "account": "Purchases", "debit": 25000 }, { "account": "Accounts Payable", "credit": 25000 }, { "account": "To record purchase on account.", "isExplanation": true } ] },
+            { "date": "Dec 10", "description": "Sold 1,500 units on account @ ₱50.", "rows": 3, "solution": [ { "account": "Accounts Receivable", "debit": 75000 }, { "account": "Sales", "credit": 75000 }, { "account": "To record sales on account.", "isExplanation": true } ] },
+            { "date": "Dec 12", "description": "Customer returned 100 units.", "rows": 3, "solution": [ { "account": "Sales Returns and Allowances", "debit": 5000 }, { "account": "Accounts Receivable", "credit": 5000 }, { "account": "To record return of goods by customer.", "isExplanation": true } ] },
+            { "date": "Dec 15", "description": "Advance payment received.", "rows": 3, "solution": [ { "account": "Cash", "debit": 5000 }, { "account": "Unearned Revenue", "credit": 5000 }, { "account": "To record advance payment received.", "isExplanation": true } ] },
+            { "date": "Dec 18", "description": "Paid partial payment.", "rows": 3, "solution": [ { "account": "Accounts Payable", "debit": 10000 }, { "account": "Cash", "credit": 10000 }, { "account": "To record partial payment of account.", "isExplanation": true } ] },
+            { "date": "Dec 20", "description": "Purchased supplies.", "rows": 3, "solution": [ { "account": "Supplies", "debit": 1500 }, { "account": "Cash", "credit": 1500 }, { "account": "To record purchase of supplies.", "isExplanation": true } ] },
+            { "date": "Dec 22", "description": "Collection from customers.", "rows": 3, "solution": [ { "account": "Cash", "debit": 15000 }, { "account": "Accounts Receivable", "credit": 15000 }, { "account": "To record collection of accounts.", "isExplanation": true } ] },
+            { "date": "Dec 26", "description": "Equipment repairs.", "rows": 3, "solution": [ { "account": "Repairs Expense", "debit": 800 }, { "account": "Cash", "credit": 800 }, { "account": "To record payment for repairs.", "isExplanation": true } ] },
+            { "date": "Dec 29", "description": "Owner withdrawal.", "rows": 3, "solution": [ { "account": "Owner's Drawings", "debit": 1000 }, { "account": "Cash", "credit": 1000 }, { "account": "To record owner withdrawal.", "isExplanation": true } ] },
+            { "date": "Dec 30", "description": "Paid salaries.", "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 2000 }, { "account": "Cash", "credit": 2000 }, { "account": "To record payment of salaries.", "isExplanation": true } ] }
         ],
-        adjustments: [
-            { "description": "1. Accrued utilities expense ₱300." },
-            { "description": "2. Supplies on hand ₱500 (Used ₱1,000)." },
-            { "description": "3. Insurance expired ₱1,000." },
-            { "description": "4. Depreciation ₱833.33." },
-            { "description": "5. Accrued salaries ₱500." },
-            { "description": "6. Record Ending Inventory: ₱33,000 (Units: 1,400 via FIFO)." },
-            { "description": "7. Earned ₱2,000 from advanced payment." }
+        adjustments": [
+            { "date": "Dec 31", "description": "1. Accrued utilities expense ₱300.", "drAcc": "Utilities Expense", "crAcc": "Utilities Payable", "amount": 300, "rows": 3, "solution": [ { "account": "Utilities Expense", "debit": 300 }, { "account": "Utilities Payable", "credit": 300 }, { "account": "To record accrued utilities.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "2. Supplies on hand ₱500 (Used ₱1,000).", "drAcc": "Supplies Expense", "crAcc": "Supplies", "amount": 1000, "rows": 3, "solution": [ { "account": "Supplies Expense", "debit": 1000 }, { "account": "Supplies", "credit": 1000 }, { "account": "To record supplies used.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "3. Insurance expired ₱1,000.", "drAcc": "Insurance Expense", "crAcc": "Prepaid Insurance", "amount": 1000, "rows": 3, "solution": [ { "account": "Insurance Expense", "debit": 1000 }, { "account": "Prepaid Insurance", "credit": 1000 }, { "account": "To record expired insurance.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "4. Depreciation ₱833.33.", "drAcc": "Depreciation Expense", "crAcc": "Accumulated Depreciation", "amount": 833.33, "rows": 3, "solution": [ { "account": "Depreciation Expense", "debit": 833.33 }, { "account": "Accumulated Depreciation", "credit": 833.33 }, { "account": "To record depreciation expense.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "5. Accrued salaries ₱500.", "drAcc": "Salaries Expense", "crAcc": "Salaries Payable", "amount": 500, "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 500 }, { "account": "Salaries Payable", "credit": 500 }, { "account": "To record accrued salaries.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "6. Record Ending Inventory: ₱33,000 (Units: 1,400 via FIFO).", "drAcc": "Merchandise Inventory", "crAcc": "Income Summary", "amount": 33000, "rows": 3, "solution": [ { "account": "Merchandise Inventory", "debit": 33000 }, { "account": "Income Summary", "credit": 33000 }, { "account": "To record ending inventory.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "7. Earned ₱2,000 from advanced payment.", "drAcc": "Unearned Revenue", "crAcc": "Sales", "amount": 2000, "rows": 3, "solution": [ { "account": "Unearned Revenue", "debit": 2000 }, { "account": "Sales", "credit": 2000 }, { "account": "To record revenue earned.", "isExplanation": true } ] }
         ],
         mountLogic: () => {
             // This matches the ID created in the renderDayContent function
