@@ -10,7 +10,7 @@ const html = htm.bind(React.createElement);
 export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     const rows = userAnswers.rows || [];
     
-    // FIX: Ensure footers structure is robust
+    // Safety check for footers
     const rawFooters = userAnswers.footers || {};
     const footers = { 
         totals: rawFooters.totals || {}, 
@@ -21,7 +21,7 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     // 1. Calculate Expected Data
     const mergedAccounts = new Set(Object.keys(ledgerData));
     
-    // FIX: Only add adjustment accounts if they actually exist in the data
+    // Validate adjustments array exists before iterating
     if (Array.isArray(adjustments)) {
         adjustments.forEach(adj => { 
             if (adj.drAcc) mergedAccounts.add(adj.drAcc); 
@@ -29,15 +29,14 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         });
     }
 
-    // FIX: Filter out undefined/null/empty strings to prevent getAccountType crash
+    // Filter out undefined/null/empty accounts to prevent crashes
     const sortedAccounts = sortAccounts(Array.from(mergedAccounts).filter(acc => acc));
 
     const expectedMap = {};
     const columnTotals = { tbDr:0, tbCr:0, adjDr:0, adjCr:0, atbDr:0, atbCr:0, isDr:0, isCr:0, bsDr:0, bsCr:0 };
 
     sortedAccounts.forEach(acc => {
-        // Safety check: skip if acc is somehow invalid
-        if (!acc) return;
+        if (!acc) return; // Skip invalid accounts
 
         // TB
         const lBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
@@ -48,7 +47,6 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         let aDr = 0; let aCr = 0;
         if (Array.isArray(adjustments)) {
             adjustments.forEach(a => { 
-                // Ensure amount exists and account matches
                 const amt = Number(a.amount) || 0;
                 if(a.drAcc === acc) aDr += amt; 
                 if(a.crAcc === acc) aCr += amt; 
@@ -61,15 +59,14 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         const atbCr = net < 0 ? Math.abs(net) : 0;
 
         // IS / BS
-        // FIX: Ensure getAccountType is called safely
         let type = 'Unknown';
         try {
-            type = getAccountType(acc);
+            type = getAccountType(acc); // Safe call
         } catch (e) {
-            console.warn(`Error getting type for account: ${acc}`, e);
+            console.warn("Account type error:", acc);
         }
 
-        const isIS = ['Revenue', 'Expense', 'Cost of Goods Sold', 'Contra Revenue'].includes(type); 
+        const isIS = ['Revenue', 'Expense', 'Cost of Goods Sold', 'Contra Revenue'].includes(type);
         
         const isDr = isIS ? atbDr : 0;
         const isCr = isIS ? atbCr : 0;
@@ -111,12 +108,10 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     let maxScore = 0;
     const validationResults = { rows: {}, footers: { totals: {}, net: {}, final: {} } };
 
-    // Helper to compare
     const checkVal = (userVal, expectedVal) => {
         maxScore++;
         const u = Number(userVal || 0);
         const e = Math.round(Number(expectedVal || 0));
-        // Allow variance of 1 for rounding
         const isCorrect = Math.abs(u - e) <= 1;
         if (isCorrect) score++;
         return isCorrect;
@@ -131,19 +126,9 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
                 rowRes[col] = checkVal(row[col], expectedMap[acc][col]);
             });
         } else if (acc) {
-            // Account exists in user row but not in expected map (or validation failed)
             ['tbDr', 'tbCr', 'adjDr', 'adjCr', 'atbDr', 'atbCr', 'isDr', 'isCr', 'bsDr', 'bsCr'].forEach(col => {
-                // If the user entered nothing (0) and we expect nothing (undefined -> 0), it's correct
-                const isUserEmpty = !row[col] || row[col] == 0;
-                if (isUserEmpty) {
-                     // Technically correct if they added a random row and left it blank, 
-                     // but usually we punish wrong accounts. 
-                     // For now, let's just mark it wrong if they put numbers.
-                     if (row[col] && row[col] != 0) {
-                        maxScore++; // increment max score
-                        // no score increment
-                        rowRes[col] = false;
-                     }
+                if (!row[col] || row[col] == 0) {
+                     if (row[col] && row[col] != 0) { maxScore++; rowRes[col] = false; }
                 } else {
                     maxScore++;
                     rowRes[col] = false;
@@ -153,13 +138,9 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         validationResults.rows[row.id] = rowRes;
     });
     
-    // Add max score for missing accounts that were EXPECTED but not present in user rows
     const userAccounts = new Set(rows.map(r => r.account?.trim()).filter(a => a));
     sortedAccounts.forEach(acc => {
-        if (!userAccounts.has(acc)) {
-            // Missing row penalty (10 columns per row)
-            maxScore += 10;
-        }
+        if (!userAccounts.has(acc)) maxScore += 10;
     });
 
     // Score Footers
@@ -192,7 +173,6 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
                 if(adj.crAcc) accounts.add(adj.crAcc);
             });
         }
-        // FIX: Filter out undefined values here too
         return sortAccounts(Array.from(accounts).filter(a => a));
     }, [ledgerData, adjustments]);
     
@@ -414,7 +394,6 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             ${!isReadOnly && html`
                 <div className="mt-2">
                     <button onClick=${addRow} className="text-xs bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-bold">
-                        <button onClick=${addRow} className="text-xs bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-bold">
                         <${Plus} size=${14}/> Add Row
                     </button>
                 </div>
