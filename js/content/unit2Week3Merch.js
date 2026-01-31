@@ -375,22 +375,89 @@ export const unit2Week3Data = {
                         <h4 class="font-bold text-gray-700 mb-2">A. Allowance for Bad Debts</h4>
                         <p class="text-gray-600 text-sm mb-2">Merchandising businesses often sell on credit. The matching principle requires us to estimate uncollectible accounts in the same period the sales are made.</p>
                         
-                        <div class="bg-gray-50 p-3 rounded text-sm font-mono border-l-4 border-gray-400">
-                             Dr. Bad Debts Expense <span class="float-right">XXX</span><br>
-                             &nbsp;&nbsp;Cr. Allowance for Bad Debts <span class="float-right">XXX</span>
+                        <div class="bg-gray-50 p-4 rounded border-l-4 border-gray-400 font-mono text-sm">
+                            <div class="grid grid-cols-6 gap-4 border-b border-gray-300 mb-2 pb-1 font-bold text-gray-500 text-xs">
+                                <div class="col-span-4">Account Titles</div>
+                                <div class="col-span-1 text-right">Debit</div>
+                                <div class="col-span-1 text-right">Credit</div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-4 mb-1">
+                                <div class="col-span-4">Bad Debts Expense</div>
+                                <div class="col-span-1 text-right">XXX</div>
+                                <div class="col-span-1"></div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-4">
+                                <div class="col-span-4 pl-8">Allowance for Bad Debts</div>
+                                <div class="col-span-1"></div>
+                                <div class="col-span-1 text-right">XXX</div>
+                            </div>
                         </div>
                         <p class="text-gray-500 text-xs mt-2"><strong>Worksheet Impact:</strong> Debit the expense column (Income Statement) and Credit the Balance Sheet column (as a contra-asset to Accounts Receivable).</p>
                     </div>
 
-                    <div>
-                        <h4 class="font-bold text-gray-700 mb-2">B. Inventory Shrinkage</h4>
+                    <div class="mb-6">
+                        <h4 class="font-bold text-gray-700 mb-2">B. Inventory Shrinkage (Shortage)</h4>
                         <p class="text-gray-600 text-sm mb-2">In a Perpetual System, the book balance of inventory may differ from the actual physical count due to theft, breakage, or errors. This difference is called shrinkage.</p>
                         
-                        <div class="bg-gray-50 p-3 rounded text-sm font-mono border-l-4 border-gray-400">
-                             Dr. Cost of Goods Sold <span class="float-right">XXX</span><br>
-                             &nbsp;&nbsp;Cr. Merchandise Inventory <span class="float-right">XXX</span>
+                        <div class="bg-gray-50 p-4 rounded border-l-4 border-gray-400 font-mono text-sm">
+                            <div class="grid grid-cols-6 gap-4 border-b border-gray-300 mb-2 pb-1 font-bold text-gray-500 text-xs">
+                                <div class="col-span-4">Account Titles</div>
+                                <div class="col-span-1 text-right">Debit</div>
+                                <div class="col-span-1 text-right">Credit</div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-4 mb-1">
+                                <div class="col-span-4">Cost of Goods Sold</div>
+                                <div class="col-span-1 text-right">XXX</div>
+                                <div class="col-span-1"></div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-4">
+                                <div class="col-span-4 pl-8">Merchandise Inventory</div>
+                                <div class="col-span-1"></div>
+                                <div class="col-span-1 text-right">XXX</div>
+                            </div>
                         </div>
                         <p class="text-gray-500 text-xs mt-2"><strong>Worksheet Impact:</strong> Increase the Cost of Goods Sold (Debit) and decrease the Asset value (Credit) in the Adjustments column.</p>
+
+                        <div class="bg-yellow-50 p-3 rounded mt-4 border border-yellow-200">
+                             <p class="text-xs text-yellow-900">
+                                <strong>Employee Accountability:</strong> Management must investigate unnatural causes of shrinkage (e.g., theft). If the loss is directly attributable to an identified employee after careful investigation, it is not recorded as an expense. Instead, it is charged as a receivable.
+                             </p>
+                             <div class="bg-white p-2 rounded mt-2 border border-yellow-100 font-mono text-xs">
+                                <div class="grid grid-cols-6 gap-4 mb-1">
+                                    <div class="col-span-4">Receivable from Employee / AR</div>
+                                    <div class="col-span-1 text-right">XXX</div>
+                                    <div class="col-span-1"></div>
+                                </div>
+                                <div class="grid grid-cols-6 gap-4">
+                                    <div class="col-span-4 pl-8">Merchandise Inventory</div>
+                                    <div class="col-span-1"></div>
+                                    <div class="col-span-1 text-right">XXX</div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-bold text-gray-700 mb-2">C. Inventory Overage</h4>
+                        <p class="text-gray-600 text-sm mb-2">Although rare, it is possible for the Physical Count to be <em>higher</em> than the Book Balance (usually due to recording errors). This is recorded as a reduction of COGS.</p>
+                        
+                        <div class="bg-gray-50 p-4 rounded border-l-4 border-gray-400 font-mono text-sm">
+                            <div class="grid grid-cols-6 gap-4 border-b border-gray-300 mb-2 pb-1 font-bold text-gray-500 text-xs">
+                                <div class="col-span-4">Account Titles</div>
+                                <div class="col-span-1 text-right">Debit</div>
+                                <div class="col-span-1 text-right">Credit</div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-4 mb-1">
+                                <div class="col-span-4">Merchandise Inventory</div>
+                                <div class="col-span-1 text-right">XXX</div>
+                                <div class="col-span-1"></div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-4">
+                                <div class="col-span-4 pl-8">Cost of Goods Sold</div>
+                                <div class="col-span-1"></div>
+                                <div class="col-span-1 text-right">XXX</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `,
