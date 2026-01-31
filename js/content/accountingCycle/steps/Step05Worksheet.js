@@ -176,6 +176,7 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
         }
         return sortAccounts(Array.from(accounts).filter(a => a));
     }, [ledgerData, adjustments]);
+    // --- RESTORED LOGIC END ---
     
     return html`
         <div className="border rounded-lg shadow-sm bg-blue-50 overflow-hidden no-print h-full flex flex-col">
@@ -183,11 +184,9 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
                 <span><${Table} size=${16} className="inline mr-2"/>Source: General Ledger Balances (Unadjusted Trial Balance)</span>
                 ${expanded ? html`<${ChevronDown} size=${16}/>` : html`<${ChevronRight} size=${16}/>`}
             </div>
-           
             ${expanded && html`
                 <div className="p-2 max-h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
                     ${allAccounts.map(acc => { 
-                        // ... (keep existing account rendering logic) ...
                         const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                         const bal = accData.debit - accData.credit; 
                         return html`
@@ -313,16 +312,19 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             
             ${renderBanner()}
 
+            {/* LAYOUT UPDATE: 60:40 Split on Desktop, Stacked on Mobile, Equal Heights */}
             <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
-                <div className="w-full lg:w-[60%]">
+                
+                {/* Left Panel: 60% width on Large screens */}
+                <div className="w-full lg:w-[70%]">
                     <${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} />
                 </div>
                 
-                <div className="w-full lg:w-[40%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
+                {/* Right Panel: 40% width on Large screens */}
+                <div className="w-full lg:w-[30%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
                         <${List} size=${16}/> Adjustments Data
                     </div>
-                   
                     <div className="p-2 max-h-40 overflow-y-auto h-full">
                         <ul className="list-decimal list-inside text-xs space-y-1">
                             ${Array.isArray(adjustments) && adjustments.map((adj, i) => html`<li key=${i}>${adj.desc || adj.description}</li>`)}
@@ -332,7 +334,9 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             </div>
 
             <div className="border rounded-lg shadow-md bg-white overflow-x-auto custom-scrollbar">
+                {/* ... (Table code remains exactly the same) ... */}
                 <table className="w-full text-xs min-w-[1200px] border-collapse table-fixed">
+                    {/* ... table headers and body ... */}
                     <thead>
                         <tr className="bg-gray-800 text-white text-center">
                             <th rowSpan="2" className="p-2 border-r border-gray-600 text-left w-48 sticky left-0 bg-gray-800 z-10">Account Title</th>
