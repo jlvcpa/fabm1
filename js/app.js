@@ -13,6 +13,7 @@ let currentUser = null;
 let calendarAssignments = JSON.parse(localStorage.getItem('fabm2_calendar')) || {};
 let flatTopics = []; 
 let currentCalendarYear, currentCalendarMonth;
+const worksheetRoots = new Map(); // Store React roots to avoid double mounting
 
 // --- DOM ELEMENTS ---
 const elements = {
@@ -493,8 +494,8 @@ function renderDayContent(unit, week, dayIndex) {
     const hasMcq = exercises.some(e => e.type === 'mcq');
     const hasProb = exercises.some(e => e.type === 'problem');
     const hasJourn = exercises.some(e => e.type === 'journalizing');
-    // Detect Worksheet Activity
-    const worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
+    // Detect Worksheet Activities (can be multiple)
+    const worksheetActivities = exercises.filter(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
 
     const card = document.createElement('div');
     card.className = "bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden fade-in";
@@ -549,13 +550,13 @@ function renderDayContent(unit, week, dayIndex) {
         tabsContainer.appendChild(tabJourn);
     }
     // New Worksheet Tab
-    if (worksheetActivity) {
+    if (worksheetActivities.length > 0) {
         tabWorksheet = createTabBtn('tab-btn-worksheet', 'fa-table', 'Practice - 10 Columns Worksheet', false);
         tabsContainer.appendChild(tabWorksheet);
     }
 
     navBar.appendChild(tabsContainer);
-
+    
     // Prev/Next Buttons
     const navButtonsGroup = document.createElement('div');
     navButtonsGroup.className = "hidden md:flex items-center gap-2 py-2 px-4 ml-auto"; 
@@ -624,63 +625,17 @@ function renderDayContent(unit, week, dayIndex) {
         tabContentWrapper.appendChild(journDiv);
     }
 
-    // 5. Worksheet Content
+    // 5. Worksheet Content (Updated to support multiple worksheets and sidebar)
     let worksheetDiv;
-    let worksheetRoot = null; 
+    // Map to track roots by container ID
+    // We reuse the global worksheetRoots map defined at top
 
-    if (worksheetActivity) {
+    if (worksheetActivities.length > 0) {
         worksheetDiv = document.createElement('div');
         worksheetDiv.id = "tab-content-worksheet";
-        worksheetDiv.className = "hidden h-full overflow-y-auto p-4 md:p-8";
-
-        // Logic to calculate Ledger Balances from Transactions
-        const ledger = {};
-        if(worksheetActivity.transactions) {
-            worksheetActivity.transactions.forEach(tx => {
-                tx.solution.forEach(line => {
-                    if (line.isExplanation || line.account === "No Entry") return;
-                    if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                    if (line.debit) ledger[line.account].debit += line.debit;
-                    if (line.credit) ledger[line.account].credit += line.credit;
-                });
-            });
-        }
-
-        // Logic to render Instructions and Ledger
-        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
-        Object.keys(ledger).sort().forEach(acc => {
-            const bal = ledger[acc].debit - ledger[acc].credit;
-            if (bal === 0) return;
-            
-            // Logic for Dr/Cr Indicator based on Normal Balance
-            const normalSide = getAccountNormalSide(acc);
-            let sideStr = "";
-            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
-            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
-
-            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
-        });
-        ledgerHtml += `</div>`;
-
-        worksheetDiv.innerHTML = `
-            <div class="prose prose-blue max-w-none mb-8">
-                <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
-                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
-                
-                <div class="mt-4 mb-6">
-                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
-                    ${ledgerHtml}
-                </div>
-
-                <div class="mt-4 mb-6">
-                    <p class="font-bold mb-2">Adjustment Information:</p>
-                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
-                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
-                    </ul>
-                </div>
-            </div>
-            <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
-        `;
+        worksheetDiv.className = "hidden h-full"; // Full height for sidebar layout
+        // Use renderWorksheetContent helper for consistent layout
+        worksheetDiv.innerHTML = renderWorksheetContent(worksheetActivities, dayIndex);
         tabContentWrapper.appendChild(worksheetDiv);
     }
 
@@ -720,31 +675,36 @@ function renderDayContent(unit, week, dayIndex) {
             worksheetDiv.classList.remove('hidden');
             activeBtn = tabWorksheet;
             
-            // Mount React Component ONLY when tab is visible and not already mounted
-            const mountEl = document.getElementById('worksheet-mount');
-            if (mountEl && !worksheetRoot) {
-                // Ensure ledger and adjustments are available from the closure
-                const ledger = {};
-                if(worksheetActivity.transactions) {
-                    worksheetActivity.transactions.forEach(tx => {
-                        tx.solution.forEach(line => {
-                            if (line.isExplanation || line.account === "No Entry") return;
-                            if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                            if (line.debit) ledger[line.account].debit += line.debit;
-                            if (line.credit) ledger[line.account].credit += line.credit;
+            // Mount React Components loop
+            worksheetActivities.forEach((activity, i) => {
+                 const mountId = `worksheet-mount-${dayIndex}-${i}`;
+                 const mountEl = document.getElementById(mountId);
+                 
+                 // Only mount if element exists and not already mounted
+                 if (mountEl && !worksheetRoots.has(mountId)) {
+                    // Logic to calculate Ledger Balances from Transactions
+                    const ledger = {};
+                    if(activity.transactions) {
+                        activity.transactions.forEach(tx => {
+                            tx.solution.forEach(line => {
+                                if (line.isExplanation || line.account === "No Entry") return;
+                                if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                                if (line.debit) ledger[line.account].debit += line.debit;
+                                if (line.credit) ledger[line.account].credit += line.credit;
+                            });
                         });
-                    });
-                }
+                    }
 
-                worksheetRoot = ReactDOM.createRoot(mountEl);
-                // Use the Wrapper Component to manage state!
-                worksheetRoot.render(
-                    React.createElement(WorksheetWrapper, {
-                        ledger: ledger,
-                        adjustments: worksheetActivity.adjustments
-                    })
-                );
-            }
+                    const root = ReactDOM.createRoot(mountEl);
+                    root.render(
+                        React.createElement(WorksheetWrapper, {
+                            ledger: ledger,
+                            adjustments: activity.adjustments
+                        })
+                    );
+                    worksheetRoots.set(mountId, root);
+                 }
+            });
         }
 
         // Activate Button
@@ -774,6 +734,79 @@ function executeExerciseMounts(exercises) {
         }
     });
 }
+
+// --- NEW WORKSHEET RENDERER (Supports Quick Nav) ---
+function renderWorksheetContent(activities, dayIndex) {
+    let contentHtml = '';
+    let navLinksHtml = '';
+    const type = 'worksheet'; // Used for ID generation
+
+    // Build Nav Links if multiple
+    if (activities.length > 1) {
+        activities.forEach((item, index) => {
+            const label = `Worksheet #${index + 1}`;
+            const targetId = `ws-set-${dayIndex}-${index}`;
+            navLinksHtml += `
+                <button onclick="document.getElementById('${targetId}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
+                class="w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-100 flex items-center group">
+                    <i class="fas fa-chevron-right text-xs text-gray-400 mr-2 group-hover:text-blue-500"></i>
+                    ${label}
+                </button>
+            `;
+        });
+    }
+
+    // Build Content
+    activities.forEach((activity, i) => {
+        const setId = `ws-set-${dayIndex}-${i}`;
+        const mountId = `worksheet-mount-${dayIndex}-${i}`;
+        
+        contentHtml += `
+            <div id="${setId}" class="mb-12 border-t-4 border-blue-500 pt-6">
+                <div class="prose prose-blue max-w-none mb-4">
+                    <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${activity.title || `Worksheet ${i+1}`}</h3>
+                    <p class="text-gray-600">${activity.instructions || 'Complete the worksheet using the data below.'}</p>
+                </div>
+                <div id="${mountId}" class="w-full min-h-[500px]"></div>
+            </div>
+        `;
+    });
+
+    // --- Construct Layout with Collapsible Sidebar (Reusable) ---
+    const sidebarId = `sidebar-${type}`;
+    const contentId = `content-${type}`;
+    
+    // Only show sidebar if we have nav links
+    const sidebarWidthClass = navLinksHtml ? "w-0 md:w-64" : "hidden";
+    const toggleBtnHtml = navLinksHtml ? `
+        <button onclick="toggleRightSidebar('${sidebarId}')" class="md:hidden absolute top-4 right-4 z-30 bg-white text-blue-600 p-2 rounded-full shadow-lg border border-gray-200 hover:bg-gray-50">
+            <i class="fas fa-list-ul"></i>
+        </button>
+    ` : '';
+
+    return `
+    <div class="flex h-full relative">
+        <div id="${contentId}" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth h-full">
+            ${contentHtml}
+        </div>
+
+        <div id="${sidebarId}" class="${sidebarWidthClass} transition-all duration-300 border-l border-gray-200 bg-gray-50 flex flex-col h-full absolute md:relative right-0 z-20 shadow-xl md:shadow-none overflow-hidden group">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-white min-w-[250px]">
+                <span class="font-bold text-gray-700 text-sm"><i class="fas fa-location-arrow mr-2"></i> Quick Nav</span>
+                <button onclick="toggleRightSidebar('${sidebarId}')" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto min-w-[250px] p-2">
+                ${navLinksHtml}
+            </div>
+        </div>
+        ${toggleBtnHtml}
+    </div>
+    `;
+}
+
+// ... (Rest of renderCategoryContent and helper functions remain unchanged) ...
 
 // --- NEW CATEGORY CONTENT RENDERER ---
 function renderCategoryContent(exercises, dayIndex, type) {
