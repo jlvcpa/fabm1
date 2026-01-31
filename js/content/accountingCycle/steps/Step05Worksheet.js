@@ -352,7 +352,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
                         <${List} size=${16}/> Adjustments Data
                     </div>
-                    <div className="p-2 h-60 overflow-y-auto">
+                    <div className="p-2 h-40 overflow-y-auto">
                         <ul className="list-decimal list-inside text-xs space-y-1">
                             ${Array.isArray(adjustments) && adjustments.map((adj, i) => html`<li key=${i}>${adj.desc || adj.description}</li>`)}
                         </ul>
