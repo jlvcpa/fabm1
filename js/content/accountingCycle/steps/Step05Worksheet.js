@@ -216,7 +216,7 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
                 ${expanded ? html`<${ChevronDown} size=${16}/>` : html`<${ChevronRight} size=${16}/>`}
             </div>
             ${expanded && html`
-                <div className="p-2 h-60 overflow-y-auto flex flex-wrap gap-2 flex-grow">
+                <div className="p-2 h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
                     ${allAccounts.map(acc => { 
                         const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                         const bal = accData.debit - accData.credit; 
