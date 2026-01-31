@@ -4,9 +4,9 @@ import { formatRanges } from './utils.js';
 import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js
-';
-js/content/accountingCycle/steps/Step05Worksheet.js
+import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js'; 
+import React from 'https://esm.sh/react@18.2.0';
+import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
 // --- STATE MANAGEMENT ---
 let currentUser = null; 
@@ -340,22 +340,6 @@ function renderQuestionImporterPage() {
      } else {
          container.innerHTML = `<div class="p-8 text-center text-gray-500">Importer module not loaded. Uncomment import in app.js</div>`;
      }
-
-    /*
-     Placeholder content until file is linked
-    container.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-blue-500">
-                    <i class="fas fa-file-import text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Question Bank Importer</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>toolQuestionImporter.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
-    */
 }
 
 // --- QUIZZES & ACTIVITIES PAGE RENDERER ---
@@ -371,22 +355,6 @@ function renderQuizzesActivitiesPage() {
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
-    
-    // Placeholder content until file is linked
-    /*
-    content.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-yellow-500">
-                    <i class="fas fa-clipboard-list text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quizzes & Activities</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>quizzesAndActivities.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
-    */
 }
 
 // --- CREATOR PAGE RENDERER ---
@@ -397,22 +365,6 @@ function renderCreatorPage() {
 
     // If you have imported renderQuizActivityCreator, call it here:
     renderQuizActivityCreator(content);
-    
-    // Placeholder content until file is linked
-    /*
-    content.innerHTML = `
-        <div class="w-full max-w-4xl mx-auto p-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                <div class="mb-4 text-green-500">
-                    <i class="fas fa-magic text-5xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Quiz & Activity Creator</h2>
-                <p class="text-gray-600">The content for this module is being imported from <code>quizAndActivityCreator.js</code>.</p>
-                <p class="text-sm text-gray-400 mt-4">Please ensure the file is created and the import is uncommented in app.js</p>
-            </div>
-        </div>
-    `;
-    */
 }
 
 function renderLandingPage() {
@@ -466,6 +418,50 @@ function renderLandingPage() {
 
 // --- DAY RENDERER (The Core Content Logic) ---
 
+function getAccountNormalSide(accountName) {
+    const acc = accountName.toLowerCase();
+    // Assets & Expenses & Drawings = Normal Debit
+    if (acc.includes('cash') || acc.includes('receivable') || acc.includes('inventory') || 
+        acc.includes('supplies') || acc.includes('prepaid') || acc.includes('equipment') || 
+        acc.includes('expense') || acc.includes('drawings') || acc.includes('purchases') || 
+        acc.includes('freight in') || acc.includes('sales returns') || acc.includes('sales discounts')) {
+        return 'dr';
+    }
+    // Everything else (Liabilities, Equity, Revenue, Contra-Assets) = Normal Credit
+    return 'cr';
+}
+
+// --- React Wrapper Component for Worksheet ---
+// This handles the state for the worksheet so "Show Solution" can work
+function WorksheetWrapper({ ledger, adjustments }) {
+    const [wsState, setWsState] = React.useState({ rows: [], footers: {} });
+    const [showFeedback, setShowFeedback] = React.useState(false);
+
+    const handleChange = (field, val) => {
+        setWsState(prev => ({ ...prev, [field]: val }));
+    };
+
+    // Check if Final Total row has data to enable the button
+    const hasFinalTotals = wsState.footers?.final && 
+        Object.values(wsState.footers.final).some(v => v !== "" && v !== undefined);
+
+    return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
+        React.createElement(Step05Worksheet, {
+            ledgerData: ledger, 
+            adjustments: adjustments,
+            data: wsState,
+            onChange: handleChange,
+            showFeedback: showFeedback
+        }),
+        hasFinalTotals ? React.createElement('div', { className: "flex justify-center" }, 
+            React.createElement('button', {
+                className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
+                onClick: () => setShowFeedback(!showFeedback)
+            }, showFeedback ? React.createElement('span', null, "Hide Solution") : React.createElement('span', null, "Show Solution"))
+        ) : null
+    );
+}
+
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
@@ -497,6 +493,8 @@ function renderDayContent(unit, week, dayIndex) {
     const hasMcq = exercises.some(e => e.type === 'mcq');
     const hasProb = exercises.some(e => e.type === 'problem');
     const hasJourn = exercises.some(e => e.type === 'journalizing');
+    // Detect Worksheet Activity
+    const worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
 
     const card = document.createElement('div');
     card.className = "bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden fade-in";
@@ -517,7 +515,6 @@ function renderDayContent(unit, week, dayIndex) {
     navBar.className = "flex flex-wrap items-center justify-between border-b border-gray-200 bg-white min-h-[50px]";
 
     const tabsContainer = document.createElement('div');
-    // Added overflow-x-auto and whitespace-nowrap for horizontal scrolling on mobile
     tabsContainer.className = "flex overflow-x-auto whitespace-nowrap no-scrollbar";
     
     const createTabBtn = (id, icon, label, isActive) => {
@@ -537,7 +534,7 @@ function renderDayContent(unit, week, dayIndex) {
     tabsContainer.appendChild(tabConcepts);
 
     // Conditional Tabs
-    let tabMcq, tabProb, tabJourn;
+    let tabMcq, tabProb, tabJourn, tabWorksheet;
 
     if (hasMcq) {
         tabMcq = createTabBtn('tab-btn-mcq', 'fa-list-ul', 'Practice - Multiple Choice', false);
@@ -551,10 +548,15 @@ function renderDayContent(unit, week, dayIndex) {
         tabJourn = createTabBtn('tab-btn-journ', 'fa-pen-fancy', 'Practice - Journalizing', false);
         tabsContainer.appendChild(tabJourn);
     }
+    // New Worksheet Tab
+    if (worksheetActivity) {
+        tabWorksheet = createTabBtn('tab-btn-worksheet', 'fa-table', 'Practice - 10 Columns Worksheet', false);
+        tabsContainer.appendChild(tabWorksheet);
+    }
 
     navBar.appendChild(tabsContainer);
 
-    // Prev/Next Buttons (Hidden on small screens since we have swipe/scroll)
+    // Prev/Next Buttons
     const navButtonsGroup = document.createElement('div');
     navButtonsGroup.className = "hidden md:flex items-center gap-2 py-2 px-4 ml-auto"; 
 
@@ -582,7 +584,6 @@ function renderDayContent(unit, week, dayIndex) {
     card.appendChild(navBar);
 
     // --- CONTENT AREA ---
-    // Modified to be a flex container to hold the split panes (content + right sidebar)
     const tabContentWrapper = document.createElement('div');
     tabContentWrapper.className = "flex-1 relative overflow-hidden bg-white flex flex-col";
 
@@ -598,7 +599,7 @@ function renderDayContent(unit, week, dayIndex) {
     if (hasMcq) {
         mcqDiv = document.createElement('div');
         mcqDiv.id = "tab-content-mcq";
-        mcqDiv.className = "hidden h-full"; // Full height for internal scrolling
+        mcqDiv.className = "hidden h-full"; 
         mcqDiv.innerHTML = renderCategoryContent(exercises, dayIndex, 'mcq');
         tabContentWrapper.appendChild(mcqDiv);
     }
@@ -623,6 +624,66 @@ function renderDayContent(unit, week, dayIndex) {
         tabContentWrapper.appendChild(journDiv);
     }
 
+    // 5. Worksheet Content
+    let worksheetDiv;
+    let worksheetRoot = null; 
+
+    if (worksheetActivity) {
+        worksheetDiv = document.createElement('div');
+        worksheetDiv.id = "tab-content-worksheet";
+        worksheetDiv.className = "hidden h-full overflow-y-auto p-4 md:p-8";
+
+        // Logic to calculate Ledger Balances from Transactions
+        const ledger = {};
+        if(worksheetActivity.transactions) {
+            worksheetActivity.transactions.forEach(tx => {
+                tx.solution.forEach(line => {
+                    if (line.isExplanation || line.account === "No Entry") return;
+                    if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                    if (line.debit) ledger[line.account].debit += line.debit;
+                    if (line.credit) ledger[line.account].credit += line.credit;
+                });
+            });
+        }
+
+        // Logic to render Instructions and Ledger
+        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
+        Object.keys(ledger).sort().forEach(acc => {
+            const bal = ledger[acc].debit - ledger[acc].credit;
+            if (bal === 0) return;
+            
+            // Logic for Dr/Cr Indicator based on Normal Balance
+            const normalSide = getAccountNormalSide(acc);
+            let sideStr = "";
+            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
+            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
+
+            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
+        });
+        ledgerHtml += `</div>`;
+
+        worksheetDiv.innerHTML = `
+            <div class="prose prose-blue max-w-none mb-8">
+                <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
+                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
+                
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
+                    ${ledgerHtml}
+                </div>
+
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Adjustment Information:</p>
+                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
+                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+            <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
+        `;
+        tabContentWrapper.appendChild(worksheetDiv);
+    }
+
     card.appendChild(tabContentWrapper);
     container.appendChild(card);
     content.appendChild(container);
@@ -634,9 +695,10 @@ function renderDayContent(unit, week, dayIndex) {
         if (mcqDiv) mcqDiv.classList.add('hidden');
         if (probDiv) probDiv.classList.add('hidden');
         if (journDiv) journDiv.classList.add('hidden');
+        if (worksheetDiv) worksheetDiv.classList.add('hidden');
 
         // Deactivate all buttons
-        [tabConcepts, tabMcq, tabProb, tabJourn].forEach(btn => {
+        [tabConcepts, tabMcq, tabProb, tabJourn, tabWorksheet].forEach(btn => {
             if (btn) btn.className = btn.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
         });
 
@@ -654,6 +716,35 @@ function renderDayContent(unit, week, dayIndex) {
         } else if (targetType === 'journal' && journDiv) {
             journDiv.classList.remove('hidden');
             activeBtn = tabJourn;
+        } else if (targetType === 'worksheet' && worksheetDiv) {
+            worksheetDiv.classList.remove('hidden');
+            activeBtn = tabWorksheet;
+            
+            // Mount React Component ONLY when tab is visible and not already mounted
+            const mountEl = document.getElementById('worksheet-mount');
+            if (mountEl && !worksheetRoot) {
+                // Ensure ledger and adjustments are available from the closure
+                const ledger = {};
+                if(worksheetActivity.transactions) {
+                    worksheetActivity.transactions.forEach(tx => {
+                        tx.solution.forEach(line => {
+                            if (line.isExplanation || line.account === "No Entry") return;
+                            if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                            if (line.debit) ledger[line.account].debit += line.debit;
+                            if (line.credit) ledger[line.account].credit += line.credit;
+                        });
+                    });
+                }
+
+                worksheetRoot = ReactDOM.createRoot(mountEl);
+                // Use the Wrapper Component to manage state!
+                worksheetRoot.render(
+                    React.createElement(WorksheetWrapper, {
+                        ledger: ledger,
+                        adjustments: worksheetActivity.adjustments
+                    })
+                );
+            }
         }
 
         // Activate Button
@@ -666,6 +757,7 @@ function renderDayContent(unit, week, dayIndex) {
     if (tabMcq) tabMcq.onclick = () => switchTab('mcq');
     if (tabProb) tabProb.onclick = () => switchTab('problem');
     if (tabJourn) tabJourn.onclick = () => switchTab('journal');
+    if (tabWorksheet) tabWorksheet.onclick = () => switchTab('worksheet');
 
     // Attach Listeners
     attachExerciseListeners();
