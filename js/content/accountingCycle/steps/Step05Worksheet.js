@@ -10,7 +10,7 @@ const html = htm.bind(React.createElement);
 export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     const rows = userAnswers.rows || [];
     
-    // FIX: Ensure footers structure is robust to prevent "Cannot read properties of undefined"
+    // FIX: Ensure footers structure is robust
     const rawFooters = userAnswers.footers || {};
     const footers = { 
         totals: rawFooters.totals || {}, 
@@ -20,13 +20,25 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     
     // 1. Calculate Expected Data
     const mergedAccounts = new Set(Object.keys(ledgerData));
-    adjustments.forEach(adj => { mergedAccounts.add(adj.drAcc); mergedAccounts.add(adj.crAcc); });
-    const sortedAccounts = sortAccounts(Array.from(mergedAccounts));
+    
+    // FIX: Only add adjustment accounts if they actually exist in the data
+    if (Array.isArray(adjustments)) {
+        adjustments.forEach(adj => { 
+            if (adj.drAcc) mergedAccounts.add(adj.drAcc); 
+            if (adj.crAcc) mergedAccounts.add(adj.crAcc); 
+        });
+    }
+
+    // FIX: Filter out undefined/null/empty strings to prevent getAccountType crash
+    const sortedAccounts = sortAccounts(Array.from(mergedAccounts).filter(acc => acc));
 
     const expectedMap = {};
     const columnTotals = { tbDr:0, tbCr:0, adjDr:0, adjCr:0, atbDr:0, atbCr:0, isDr:0, isCr:0, bsDr:0, bsCr:0 };
 
     sortedAccounts.forEach(acc => {
+        // Safety check: skip if acc is somehow invalid
+        if (!acc) return;
+
         // TB
         const lBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
         const tbDr = lBal > 0 ? lBal : 0;
@@ -34,7 +46,14 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         
         // Adj
         let aDr = 0; let aCr = 0;
-        adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
+        if (Array.isArray(adjustments)) {
+            adjustments.forEach(a => { 
+                // Ensure amount exists and account matches
+                const amt = Number(a.amount) || 0;
+                if(a.drAcc === acc) aDr += amt; 
+                if(a.crAcc === acc) aCr += amt; 
+            });
+        }
         
         // ATB
         const net = (tbDr - tbCr) + (aDr - aCr);
@@ -42,8 +61,15 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         const atbCr = net < 0 ? Math.abs(net) : 0;
 
         // IS / BS
-        const type = getAccountType(acc);
-        const isIS = ['Revenue', 'Expense'].includes(type); 
+        // FIX: Ensure getAccountType is called safely
+        let type = 'Unknown';
+        try {
+            type = getAccountType(acc);
+        } catch (e) {
+            console.warn(`Error getting type for account: ${acc}`, e);
+        }
+
+        const isIS = ['Revenue', 'Expense', 'Cost of Goods Sold', 'Contra Revenue'].includes(type); 
         
         const isDr = isIS ? atbDr : 0;
         const isCr = isIS ? atbCr : 0;
@@ -90,6 +116,7 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         maxScore++;
         const u = Number(userVal || 0);
         const e = Math.round(Number(expectedVal || 0));
+        // Allow variance of 1 for rounding
         const isCorrect = Math.abs(u - e) <= 1;
         if (isCorrect) score++;
         return isCorrect;
@@ -104,19 +131,38 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
                 rowRes[col] = checkVal(row[col], expectedMap[acc][col]);
             });
         } else if (acc) {
+            // Account exists in user row but not in expected map (or validation failed)
             ['tbDr', 'tbCr', 'adjDr', 'adjCr', 'atbDr', 'atbCr', 'isDr', 'isCr', 'bsDr', 'bsCr'].forEach(col => {
-                checkVal(row[col], 0);
-                rowRes[col] = false;
+                // If the user entered nothing (0) and we expect nothing (undefined -> 0), it's correct
+                const isUserEmpty = !row[col] || row[col] == 0;
+                if (isUserEmpty) {
+                     // Technically correct if they added a random row and left it blank, 
+                     // but usually we punish wrong accounts. 
+                     // For now, let's just mark it wrong if they put numbers.
+                     if (row[col] && row[col] != 0) {
+                        maxScore++; // increment max score
+                        // no score increment
+                        rowRes[col] = false;
+                     }
+                } else {
+                    maxScore++;
+                    rowRes[col] = false;
+                }
             });
         }
         validationResults.rows[row.id] = rowRes;
     });
     
-    // Add max score for missing rows if any
-    const missingCount = sortedAccounts.length - rows.filter(r => r.account && expectedMap[r.account]).length;
-    if (missingCount > 0) maxScore += (missingCount * 10);
+    // Add max score for missing accounts that were EXPECTED but not present in user rows
+    const userAccounts = new Set(rows.map(r => r.account?.trim()).filter(a => a));
+    sortedAccounts.forEach(acc => {
+        if (!userAccounts.has(acc)) {
+            // Missing row penalty (10 columns per row)
+            maxScore += 10;
+        }
+    });
 
-    // Score Footers - safely accessing footers.totals/net/final
+    // Score Footers
     ['tbDr', 'tbCr', 'adjDr', 'adjCr', 'atbDr', 'atbCr', 'isDr', 'isCr', 'bsDr', 'bsCr'].forEach(col => {
         validationResults.footers.totals[col] = checkVal(footers.totals[col], columnTotals[col]);
         validationResults.footers.final[col] = checkVal(footers.final[col], finalRow[col]);
@@ -140,13 +186,14 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
     
     const allAccounts = useMemo(() => {
         const accounts = new Set(Object.keys(ledgerData));
-        if (adjustments) {
+        if (Array.isArray(adjustments)) {
             adjustments.forEach(adj => {
                 if(adj.drAcc) accounts.add(adj.drAcc);
                 if(adj.crAcc) accounts.add(adj.crAcc);
             });
         }
-        return sortAccounts(Array.from(accounts));
+        // FIX: Filter out undefined values here too
+        return sortAccounts(Array.from(accounts).filter(a => a));
     }, [ledgerData, adjustments]);
     
     return html`
@@ -179,7 +226,7 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
 
 export default function Step05Worksheet({ ledgerData, adjustments, data, onChange, showFeedback, isReadOnly }) {
     
-    const initialRows = useMemo(() => Array.from({ length: 10 }).map((_, i) => ({ id: i, account: '', tbDr: '', tbCr: '', adjDr: '', adjCr: '', atbDr: '', atbCr: '', isDr: '', isCr: '', bsDr: '', bsCr: '' })), []);
+    const initialRows = useMemo(() => Array.from({ length: 15 }).map((_, i) => ({ id: i, account: '', tbDr: '', tbCr: '', adjDr: '', adjCr: '', atbDr: '', atbCr: '', isDr: '', isCr: '', bsDr: '', bsCr: '' })), []);
     const rows = data.rows || initialRows;
 
     const [localFooters, setLocalFooters] = useState({ totals: {}, net: {}, final: {} });
@@ -250,7 +297,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
     };
 
     const renderAccountInput = (row, idx) => {
-        const isValid = validation.expectedMap[row.account];
+        const isValid = validation.expectedMap && validation.expectedMap[row.account];
         let bgClass = "bg-white";
         if (showFeedback) {
             bgClass = isValid ? "text-green-700 font-bold" : (row.account ? "text-red-600 bg-red-50" : "");
@@ -287,7 +334,11 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
                 <div className="flex-1"><${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} /></div>
                 <div className="flex-1 border rounded-lg shadow-sm bg-yellow-50 overflow-hidden">
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2"><${List} size=${16}/> Adjustments Data</div>
-                    <div className="p-2 max-h-40 overflow-y-auto"><ul className="list-decimal list-inside text-xs space-y-1">${adjustments.map(adj => html`<li key=${adj.id}>${adj.desc}</li>`)}</ul></div>
+                    <div className="p-2 max-h-40 overflow-y-auto">
+                        <ul className="list-decimal list-inside text-xs space-y-1">
+                            ${Array.isArray(adjustments) && adjustments.map((adj, i) => html`<li key=${i}>${adj.desc || adj.description}</li>`)}
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -363,6 +414,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             ${!isReadOnly && html`
                 <div className="mt-2">
                     <button onClick=${addRow} className="text-xs bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-bold">
+                        <button onClick=${addRow} className="text-xs bg-blue-50 border border-blue-200 text-blue-600 px-3 py-1 rounded hover:bg-blue-100 flex items-center gap-1 font-bold">
                         <${Plus} size=${14}/> Add Row
                     </button>
                 </div>
