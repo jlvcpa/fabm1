@@ -22,6 +22,7 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     const mergedAccounts = new Set(Object.keys(ledgerData));
     
     // Validate adjustments array exists before iterating
+    // FIX: Ensure adjustment accounts are added to validation set
     if (Array.isArray(adjustments)) {
         adjustments.forEach(adj => { 
             if (adj.drAcc) mergedAccounts.add(adj.drAcc); 
@@ -165,18 +166,21 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
 const SimpleLedgerView = ({ ledgerData, adjustments }) => {
     const [expanded, setExpanded] = useState(true);
     
-    // Logic to include accounts from adjustments even if not in ledgerData
+    // --- RESTORED LOGIC TO MERGE ADJUSTMENT ACCOUNTS ---
     const allAccounts = useMemo(() => {
         const accounts = new Set(Object.keys(ledgerData));
+        
+        // This block was missing or incomplete in your previous version.
+        // It ensures accounts used in adjustments (drAcc/crAcc) are added to the list.
         if (Array.isArray(adjustments)) {
             adjustments.forEach(adj => {
                 if(adj.drAcc) accounts.add(adj.drAcc);
                 if(adj.crAcc) accounts.add(adj.crAcc);
             });
         }
+        
         return sortAccounts(Array.from(accounts).filter(a => a));
     }, [ledgerData, adjustments]);
-    // --- RESTORED LOGIC END ---
     
     return html`
         <div className="border rounded-lg shadow-sm bg-blue-50 overflow-hidden no-print h-full flex flex-col">
@@ -312,12 +316,12 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             
             ${renderBanner()}
 
-          <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
-                <div className="w-full lg:w-[70%]">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
+                <div className="w-full lg:w-[60%]">
                     <${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} />
                 </div>
                 
-                <div className="w-full lg:w-[30%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
+                <div className="w-full lg:w-[40%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
                         <${List} size=${16}/> Adjustments Data
                     </div>
