@@ -7,215 +7,449 @@ export const unit2Week3Data = {
             content: `
                 <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
                     <p class="font-bold text-blue-900">Learning Goal</p>
-                    <p class="text-blue-800">Understand how to extend the Worksheet for a merchandising business, specifically focusing on the treatment of Merchandise Inventory under the Periodic System.</p>
+                    <p class="text-blue-800">Master the two main methods of handling Periodic Inventory in the worksheet: The Direct Extension (Closing Entry) Method and the Adjustment Method.</p>
                 </div>
 
                 <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
                 
-                <div class="space-y-8 mb-6">
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">1. The Merchandising Worksheet</h3>
-                        <p class="text-gray-700 mb-4">
-                            The worksheet for a merchandiser is similar to a service business, but with key differences depending on the inventory system used.
-                        </p>
-                        
-                        <div class="grid md:grid-cols-2 gap-4">
-                            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                                <h4 class="font-bold text-green-800 mb-2">Perpetual System</h4>
-                                <p class="text-sm text-green-900 mb-2">Easier to handle in the worksheet.</p>
-                                <ul class="list-disc pl-5 text-sm text-green-900 space-y-1">
-                                    <li><strong>Inventory Account:</strong> The Trial Balance already shows the <em>Ending Inventory</em> figure (because it's updated real-time).</li>
-                                    <li><strong>COGS Account:</strong> Already exists in the Trial Balance.</li>
-                                    <li><strong>Action:</strong> Simply extend the Inventory balance to the <strong>Balance Sheet Debit</strong> column.</li>
-                                </ul>
-                            </div>
-                            <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                                <h4 class="font-bold text-orange-800 mb-2">Periodic System</h4>
-                                <p class="text-sm text-orange-900 mb-2">Requires specific adjustment steps.</p>
-                                <ul class="list-disc pl-5 text-sm text-orange-900 space-y-1">
-                                    <li><strong>Trial Balance:</strong> Shows <em>Beginning Inventory</em>.</li>
-                                    <li><strong>Adjustment:</strong> There is no "COGS" account yet. We must calculate it using the Income Statement columns.</li>
-                                    <li><strong>Action:</strong> Use the "Direct Extension" method or "Adjustment" method to replace Beginning Inv with Ending Inv.</li>
-                                </ul>
-                            </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">1. The Merchandising Worksheet</h3>
+                    <p class="text-gray-700 mb-4">
+                        The worksheet for a merchandiser is similar to a service business, but with key differences depending on the inventory system used.
+                    </p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 class="font-bold text-green-800 mb-2">Perpetual System</h4>
+                            <p class="text-sm text-green-900 mb-2">Easier to handle in the worksheet.</p>
+                            <ul class="list-disc pl-5 text-sm text-green-900 space-y-1">
+                                <li><strong>Inventory Account:</strong> The Trial Balance already shows the <em>Ending Inventory</em> figure (because it's updated real-time).</li>
+                                <li><strong>COGS Account:</strong> Already exists in the Trial Balance.</li>
+                                <li><strong>Action:</strong> Simply extend the Inventory balance to the <strong>Balance Sheet Debit</strong> column.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h4 class="font-bold text-orange-800 mb-2">Periodic System</h4>
+                            <p class="text-sm text-orange-900 mb-2">Requires specific adjustment steps.</p>
+                            <ul class="list-disc pl-5 text-sm text-orange-900 space-y-1">
+                                <li><strong>Trial Balance:</strong> Shows <em>Beginning Inventory</em>.</li>
+                                <li><strong>Adjustment:</strong> There is no "COGS" account yet. We must calculate it using the Income Statement columns.</li>
+                                <li><strong>Action:</strong> Use the "Direct Extension" method or "Adjustment" method to replace Beginning Inv with Ending Inv.</li>
+                            </ul>
                         </div>
                     </div>
+                </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">2. Handling Inventory in Periodic Worksheet</h3>
-                        <p class="text-gray-700 mb-4">
-                            The most common method places both inventory figures in the <strong>Income Statement</strong> columns to simulate the COGS calculation.
-                        </p>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Method 1: Direct Extension (The Closing Entry Method)</h3>
+                    <div class="bg-gray-100 p-3 rounded text-sm text-gray-700 mb-4 italic border-l-4 border-gray-400">
+                        <p><strong>Concept:</strong> No entries are made in the "Adjustments" columns for inventory. Instead, we extend the Beginning Inventory to the Income Statement Debit column (as a cost) and the Ending Inventory to both the Income Statement Credit column (as a deduction) and Balance Sheet Debit column (as an asset).</p>
+                    </div>
 
-                        <table class="w-full text-sm text-left text-gray-600 border border-gray-300">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <p class="text-gray-700 mb-4 text-sm">
+                        <strong>Problem Data (Hai Company):</strong><br>
+                        • Beginning Inventory (Jan 1): <strong>₱285,000</strong> (from Trial Balance)<br>
+                        • Ending Inventory (Dec 31): <strong>₱350,000</strong> (from Note #4)
+                    </p>
+
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6">
+                        <svg viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
+                            <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
+                            <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
+                            <rect x="200" y="0" width="120" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
+                            <text x="260" y="25" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Balance</text>
+                            <rect x="320" y="0" width="240" height="40" fill="#fee2e2" stroke="#d1d5db"/>
+                            <text x="440" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#991b1b">Income Statement</text>
+                            <text x="380" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Dr</text>
+                            <text x="500" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Cr</text>
+                            <rect x="560" y="0" width="240" height="40" fill="#dbeafe" stroke="#d1d5db"/>
+                            <text x="680" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Balance Sheet</text>
+                            <text x="620" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Dr</text>
+                            <text x="740" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Cr</text>
+                            <text x="10" y="80" font-family="monospace" font-size="12" fill="#1f2937">Merch. Inventory</text>
+                            <rect x="205" y="60" width="50" height="30" rx="4" fill="#f3f4f6" stroke="#9ca3af"/>
+                            <text x="230" y="80" text-anchor="middle" font-family="monospace" font-size="11" fill="#000">285k</text>
+                            <path d="M 260 75 Q 320 50 350 70" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                            <rect x="355" y="60" width="50" height="30" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
+                            <text x="380" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#991b1b">285k</text>
+                            <text x="380" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#ef4444">(Beg)</text>
+                            <rect x="475" y="60" width="50" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+                            <text x="500" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#166534">350k</text>
+                            <text x="500" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#16a34a">(End)</text>
+                            <path d="M 530 75 L 590 75" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowheadBlue)"/>
+                            <rect x="595" y="60" width="50" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+                            <text x="620" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#1e40af">350k</text>
+                            <text x="620" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#2563eb">(End)</text>
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" /></marker>
+                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" /></marker>
+                            </defs>
+                        </svg>
+                    </div>
+
+                    <h4 class="font-bold text-gray-800 mb-2">Completed Worksheet: Direct Extension Method</h4>
+                    <div class="overflow-x-auto border border-gray-300 rounded-lg mb-6 shadow-sm bg-white">
+                        <table class="min-w-[900px] w-full text-xs text-right border-collapse">
+                            <thead class="bg-gray-100 text-gray-700 border-b-2 border-gray-300">
                                 <tr>
-                                    <th class="px-4 py-3 border-r w-1/3">Item</th>
-                                    <th class="px-4 py-3 border-r">Income Statement Cols</th>
-                                    <th class="px-4 py-3">Balance Sheet Cols</th>
+                                    <th class="p-2 border text-left font-bold w-1/5 sticky left-0 bg-gray-100 z-10">Account Titles</th>
+                                    <th class="p-2 border text-center font-bold" colspan="2">Trial Balance</th>
+                                    <th class="p-2 border text-center font-bold text-yellow-800 bg-yellow-50" colspan="2">Adjustments</th>
+                                    <th class="p-2 border text-center font-bold text-blue-800 bg-blue-50" colspan="2">Adjusted TB</th>
+                                    <th class="p-2 border text-center font-bold text-red-800 bg-red-50" colspan="2">Income Statement</th>
+                                    <th class="p-2 border text-center font-bold text-indigo-800 bg-indigo-50" colspan="2">Balance Sheet</th>
+                                </tr>
+                                <tr class="text-[10px]">
+                                    <th class="p-1 border sticky left-0 bg-gray-100"></th>
+                                    <th class="p-1 border w-20">Dr</th><th class="p-1 border w-20">Cr</th>
+                                    <th class="p-1 border w-20 bg-yellow-50">Dr</th><th class="p-1 border w-20 bg-yellow-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-blue-50">Dr</th><th class="p-1 border w-20 bg-blue-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-red-50">Dr</th><th class="p-1 border w-20 bg-red-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-indigo-50">Dr</th><th class="p-1 border w-20 bg-indigo-50">Cr</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr class="bg-white border-b">
-                                    <td class="px-4 py-3 font-medium text-gray-900 border-r">Beginning Inventory</td>
-                                    <td class="px-4 py-3 border-r text-red-600">DEBIT <br><span class="text-xs text-gray-500">(Added to cost)</span></td>
-                                    <td class="px-4 py-3 text-gray-400">-</td>
+                            <tbody class="font-mono text-gray-600">
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Cash</td><td class="p-2 border">67,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">67,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">67,500</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Receivable</td><td class="p-2 border">22,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">22,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">22,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr class="bg-red-50">
+                                    <td class="p-2 border text-left font-sans font-bold text-gray-900 sticky left-0 bg-red-50">Merch. Inventory</td>
+                                    <td class="p-2 border font-bold">285,000</td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td>
+                                    <td class="p-2 border bg-blue-50 font-bold">285,000</td><td class="p-2 border bg-blue-50"></td>
+                                    <td class="p-2 border bg-red-50 font-bold text-red-600">285,000</td><td class="p-2 border bg-red-50 font-bold text-green-600">350,000</td>
+                                    <td class="p-2 border bg-indigo-50 font-bold text-blue-600">350,000</td><td class="p-2 border bg-indigo-50"></td>
                                 </tr>
-                                <tr class="bg-gray-50 border-b">
-                                    <td class="px-4 py-3 font-medium text-gray-900 border-r">Ending Inventory</td>
-                                    <td class="px-4 py-3 border-r text-green-600">CREDIT <br><span class="text-xs text-gray-500">(Deducted from cost)</span></td>
-                                    <td class="px-4 py-3 text-blue-600 font-bold">DEBIT <br><span class="text-xs text-gray-500">(Asset carried forward)</span></td>
+
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Office Supplies</td><td class="p-2 border">10,600</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-blue-50">4,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">4,200</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Prepaid Insurance</td><td class="p-2 border">7,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-blue-50">5,775</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">5,775</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Building</td><td class="p-2 border">113,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">113,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">113,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accum. Dep - Bldg</td><td class="p-2 border"></td><td class="p-2 border">22,500</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">22,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">22,500</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Payable</td><td class="p-2 border"></td><td class="p-2 border">25,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">25,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">25,000</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Capital</td><td class="p-2 border"></td><td class="p-2 border">472,580</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">472,580</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">472,580</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Drawings</td><td class="p-2 border">36,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">36,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">36,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales</td><td class="p-2 border"></td><td class="p-2 border">894,440</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">894,440</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">894,440</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Discounts</td><td class="p-2 border">10,200</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">10,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">10,200</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Returns & Allow</td><td class="p-2 border">44,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">44,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">44,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchases</td><td class="p-2 border">760,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">760,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">760,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchase Discounts</td><td class="p-2 border"></td><td class="p-2 border">6,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">6,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">6,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purch Returns & Allow</td><td class="p-2 border"></td><td class="p-2 border">7,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">7,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">7,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Freight In</td><td class="p-2 border">21,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">21,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">21,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Salaries Expense</td><td class="p-2 border">4,220</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">8,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">8,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Advertising Expense</td><td class="p-2 border">19,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">19,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">19,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Maintenance Expense</td><td class="p-2 border">32,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">32,700</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">32,700</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Expense</td><td class="p-2 border">2,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">2,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">2,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Income</td><td class="p-2 border"></td><td class="p-2 border">9,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">9,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">9,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Supplies Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">6,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">6,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Insurance Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">1,925</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">1,925</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accrued Expense Payable</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">4,180</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">4,180</td></tr>
+
+                                <tr class="font-bold bg-gray-50 border-t-2 border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-50">TOTALS</td>
+                                    <td class="p-2 border">1,436,520</td><td class="p-2 border">1,436,520</td>
+                                    <td class="p-2 border bg-yellow-50">12,505</td><td class="p-2 border bg-yellow-50">12,505</td>
+                                    <td class="p-2 border bg-blue-50">1,440,700</td><td class="p-2 border bg-blue-50">1,440,700</td>
+                                    <td class="p-2 border bg-red-50 text-red-800">1,192,225</td><td class="p-2 border bg-red-50 text-red-800">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50 text-indigo-800">598,475</td><td class="p-2 border bg-indigo-50 text-indigo-800">524,260</td>
+                                </tr>
+
+                                <tr class="font-bold bg-green-50">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-green-50 text-green-800">NET INCOME</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-red-50 text-green-700">74,215</td><td class="p-2 border bg-red-50"></td>
+                                    <td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50 text-green-700">74,215</td>
+                                </tr>
+
+                                <tr class="font-bold bg-gray-100 border-b-2 border-double border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-100">GRAND TOTALS</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-red-50">1,266,440</td><td class="p-2 border bg-red-50">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50">598,475</td><td class="p-2 border bg-indigo-50">598,475</td>
                                 </tr>
                             </tbody>
                         </table>
-                        <div class="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200 text-sm text-yellow-800">
-                            <strong>Note:</strong> By Debiting Beg. Inv. and Crediting End. Inv. in the Income Statement columns, the difference combined with Purchases automatically results in the Cost of Goods Sold.
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Method 2: The Adjustment Method</h3>
+                    <div class="bg-indigo-50 p-3 rounded text-sm text-indigo-900 mb-4 italic border-l-4 border-indigo-400">
+                        <p><strong>Concept:</strong> We use the <strong>Adjustments Columns</strong> to formally remove the old inventory and record the new one. We use the account <strong>Income Summary</strong> to offset these entries.</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <h4 class="font-bold text-red-700 text-sm mb-2">Step A: Remove Beginning Inventory</h4>
+                            <p class="text-xs text-gray-600 mb-1">We need to zero out the old 285k.</p>
+                            <div class="bg-gray-100 p-2 rounded font-mono text-xs">
+                                Dr. Income Summary  285,000<br>
+                                &nbsp;&nbsp;Cr. Merch Inventory 285,000
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-green-700 text-sm mb-2">Step B: Record Ending Inventory</h4>
+                            <p class="text-xs text-gray-600 mb-1">We need to set up the new 350k.</p>
+                            <div class="bg-gray-100 p-2 rounded font-mono text-xs">
+                                Dr. Merch Inventory 350,000<br>
+                                &nbsp;&nbsp;Cr. Income Summary  350,000
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-8">
-                        <h3 class="text-xl font-bold text-indigo-900 mb-4">3. Applied Example: Hai Company (Step-by-Step)</h3>
-                        
-                        <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 mb-6">
-                            <p class="font-bold text-indigo-900 text-sm">Problem Data (from image):</p>
-                            <ul class="list-disc pl-5 text-sm text-indigo-800 mt-1">
-                                <li><strong>Merchandise Inventory (Jan 1 / Beginning):</strong> ₱285,000 (Debit in Trial Balance)</li>
-                                <li><strong>Note #4 Ending Inventory (Dec 31):</strong> ₱350,000</li>
-                            </ul>
-                        </div>
+                    <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-6">
+                        <svg viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
+                            <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
+                            <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
+                            <rect x="200" y="0" width="100" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
+                            <text x="250" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Bal</text>
+                            <text x="225" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Dr</text>
+                            <rect x="300" y="0" width="160" height="40" fill="#fef3c7" stroke="#d1d5db"/>
+                            <text x="380" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#92400e">Adjustments</text>
+                            <text x="340" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#92400e">Dr</text>
+                            <text x="420" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#92400e">Cr</text>
+                            <rect x="460" y="0" width="100" height="40" fill="#e0f2fe" stroke="#d1d5db"/>
+                            <text x="510" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#0369a1">Adj. TB</text>
+                            <text x="485" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#0369a1">Dr</text>
+                            <rect x="560" y="0" width="240" height="40" fill="#f3f4f6" stroke="#d1d5db"/>
+                            <text x="680" y="25" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">IS / BS</text>
+                            <text x="10" y="70" font-family="monospace" font-size="11" fill="#1f2937">Merch. Inventory</text>
+                            <text x="225" y="70" text-anchor="middle" font-family="monospace" font-size="10" fill="#000">285k</text>
+                            <rect x="400" y="55" width="40" height="20" rx="2" fill="#fee2e2" stroke="#ef4444"/>
+                            <text x="420" y="68" text-anchor="middle" font-family="monospace" font-size="10" fill="#991b1b">285k</text>
+                            <rect x="320" y="55" width="40" height="20" rx="2" fill="#dcfce7" stroke="#16a34a"/>
+                            <text x="340" y="68" text-anchor="middle" font-family="monospace" font-size="10" fill="#166534">350k</text>
+                            <text x="485" y="70" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1e40af">350k</text>
+                            <path d="M 510 65 L 580 65" stroke="#1e40af" stroke-width="1" stroke-dasharray="2" marker-end="url(#arrowheadBlue)"/>
+                            <text x="620" y="70" text-anchor="middle" font-size="9" fill="#1e40af">To BS Debit</text>
+                            <text x="10" y="120" font-family="monospace" font-size="11" fill="#1f2937">Income Summary</text>
+                            <rect x="320" y="105" width="40" height="20" rx="2" fill="#fee2e2" stroke="#ef4444"/>
+                            <text x="340" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#991b1b">285k</text>
+                            <rect x="400" y="105" width="40" height="20" rx="2" fill="#dcfce7" stroke="#16a34a"/>
+                            <text x="420" y="118" text-anchor="middle" font-family="monospace" font-size="10" fill="#166534">350k</text>
+                            <path d="M 235 75 Q 280 120 320 115" stroke="#ef4444" stroke-width="1" fill="none" marker-end="url(#arrowhead)"/>
+                            <text x="250" y="100" font-size="8" fill="#ef4444">Transfer Cost</text>
+                            <path d="M 360 65 Q 380 90 400 105" stroke="#16a34a" stroke-width="1" fill="none" marker-end="url(#arrowheadGreen)"/>
+                            <text x="375" y="85" font-size="8" fill="#16a34a">Set Up Asset</text>
+                            <defs>
+                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" /></marker>
+                                <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#1e40af" /></marker>
+                                <marker id="arrowheadGreen" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#16a34a" /></marker>
+                            </defs>
+                        </svg>
+                    </div>
 
-                        <p class="text-gray-700 mb-4 text-sm">
-                            Using the <strong>Direct Extension Method</strong>, we handle inventory in three specific steps across the worksheet columns:
-                        </p>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="border rounded p-3 bg-red-50">
-                                <span class="block text-xs font-bold uppercase text-red-500 mb-1">Step 1: The Cost</span>
-                                <p class="text-sm font-semibold">Extend Beginning Inventory</p>
-                                <p class="text-xs text-gray-600 mt-2">Move the <strong>₱285,000</strong> from Trial Balance Debit to <strong>Income Statement Debit</strong>.</p>
-                                <p class="text-xs text-red-500 italic mt-1">Reason: It is part of the cost of goods available for sale.</p>
-                            </div>
-                            <div class="border rounded p-3 bg-green-50">
-                                <span class="block text-xs font-bold uppercase text-green-600 mb-1">Step 2: The Deduction</span>
-                                <p class="text-sm font-semibold">Enter Ending Inventory (Credit)</p>
-                                <p class="text-xs text-gray-600 mt-2">Input the new <strong>₱350,000</strong> directly into <strong>Income Statement Credit</strong>.</p>
-                                <p class="text-xs text-green-600 italic mt-1">Reason: This unsold amount is subtracted from cost to find COGS.</p>
-                            </div>
-                            <div class="border rounded p-3 bg-blue-50">
-                                <span class="block text-xs font-bold uppercase text-blue-600 mb-1">Step 3: The Asset</span>
-                                <p class="text-sm font-semibold">Enter Ending Inventory (Debit)</p>
-                                <p class="text-xs text-gray-600 mt-2">Input the new <strong>₱350,000</strong> directly into <strong>Balance Sheet Debit</strong>.</p>
-                                <p class="text-xs text-blue-600 italic mt-1">Reason: It is the current asset we own at year-end.</p>
-                            </div>
-                        </div>
-
-                        <div class="w-full overflow-x-auto border border-gray-300 rounded-lg mb-4">
-                            <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" class="w-full min-w-[600px] bg-white">
-                                <rect x="0" y="0" width="800" height="40" fill="#f3f4f6" />
-                                <text x="10" y="25" font-family="monospace" font-weight="bold" font-size="12" fill="#374151">Account Titles</text>
+                    <h4 class="font-bold text-gray-800 mb-2">Completed Worksheet: Adjustment Method</h4>
+                    <div class="overflow-x-auto border border-gray-300 rounded-lg mb-6 shadow-sm bg-white">
+                        <table class="min-w-[900px] w-full text-xs text-right border-collapse">
+                            <thead class="bg-gray-100 text-gray-700 border-b-2 border-gray-300">
+                                <tr>
+                                    <th class="p-2 border text-left font-bold w-1/5 sticky left-0 bg-gray-100 z-10">Account Titles</th>
+                                    <th class="p-2 border text-center font-bold" colspan="2">Trial Balance</th>
+                                    <th class="p-2 border text-center font-bold text-yellow-800 bg-yellow-50" colspan="2">Adjustments</th>
+                                    <th class="p-2 border text-center font-bold text-blue-800 bg-blue-50" colspan="2">Adjusted TB</th>
+                                    <th class="p-2 border text-center font-bold text-red-800 bg-red-50" colspan="2">Income Statement</th>
+                                    <th class="p-2 border text-center font-bold text-indigo-800 bg-indigo-50" colspan="2">Balance Sheet</th>
+                                </tr>
+                                <tr class="text-[10px]">
+                                    <th class="p-1 border sticky left-0 bg-gray-100"></th>
+                                    <th class="p-1 border w-20">Dr</th><th class="p-1 border w-20">Cr</th>
+                                    <th class="p-1 border w-20 bg-yellow-50">Dr</th><th class="p-1 border w-20 bg-yellow-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-blue-50">Dr</th><th class="p-1 border w-20 bg-blue-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-red-50">Dr</th><th class="p-1 border w-20 bg-red-50">Cr</th>
+                                    <th class="p-1 border w-20 bg-indigo-50">Dr</th><th class="p-1 border w-20 bg-indigo-50">Cr</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-mono text-gray-600">
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Cash</td><td class="p-2 border">67,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">67,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">67,500</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Receivable</td><td class="p-2 border">22,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">22,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">22,000</td><td class="p-2 border bg-indigo-50"></td></tr>
                                 
-                                <rect x="200" y="0" width="120" height="40" fill="#e5e7eb" stroke="#d1d5db"/>
-                                <text x="260" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#374151">Trial Balance</text>
-                                <text x="230" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Dr</text>
-                                <text x="290" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#6b7280">Cr</text>
+                                <tr class="bg-yellow-50">
+                                    <td class="p-2 border text-left font-sans font-bold text-gray-900 sticky left-0 bg-yellow-50">Merch. Inventory</td>
+                                    <td class="p-2 border font-bold">285,000</td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-green-600">350,000</td><td class="p-2 border bg-yellow-50 font-bold text-red-600">285,000</td>
+                                    <td class="p-2 border bg-blue-50 font-bold">350,000</td><td class="p-2 border bg-blue-50"></td>
+                                    <td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td>
+                                    <td class="p-2 border bg-indigo-50 font-bold text-blue-600">350,000</td><td class="p-2 border bg-indigo-50"></td>
+                                </tr>
 
-                                <rect x="320" y="0" width="240" height="40" fill="#fee2e2" stroke="#d1d5db"/>
-                                <text x="440" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#991b1b">Income Statement</text>
-                                <text x="380" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Dr</text>
-                                <text x="500" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#991b1b">Cr</text>
-
-                                <rect x="560" y="0" width="240" height="40" fill="#dbeafe" stroke="#d1d5db"/>
-                                <text x="680" y="18" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#1e40af">Balance Sheet</text>
-                                <text x="620" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Dr</text>
-                                <text x="740" y="32" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#1e40af">Cr</text>
-
-                                <text x="10" y="80" font-family="monospace" font-size="12" fill="#1f2937">Merch. Inventory</text>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Office Supplies</td><td class="p-2 border">10,600</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-blue-50">4,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">4,200</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Prepaid Insurance</td><td class="p-2 border">7,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-blue-50">5,775</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">5,775</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Building</td><td class="p-2 border">113,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">113,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">113,000</td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accum. Dep - Bldg</td><td class="p-2 border"></td><td class="p-2 border">22,500</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">22,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">22,500</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accounts Payable</td><td class="p-2 border"></td><td class="p-2 border">25,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">25,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">25,000</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Capital</td><td class="p-2 border"></td><td class="p-2 border">472,580</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">472,580</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">472,580</td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Haya Hai, Drawings</td><td class="p-2 border">36,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">36,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50">36,000</td><td class="p-2 border bg-indigo-50"></td></tr>
                                 
-                                <rect x="205" y="60" width="50" height="30" rx="4" fill="#f3f4f6" stroke="#9ca3af"/>
-                                <text x="230" y="80" text-anchor="middle" font-family="monospace" font-size="11" fill="#000">285k</text>
+                                <tr class="bg-yellow-50">
+                                    <td class="p-2 border text-left font-sans font-bold text-gray-900 sticky left-0 bg-yellow-50">Income Summary</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-yellow-50 font-bold text-red-600">285,000</td><td class="p-2 border bg-yellow-50 font-bold text-green-600">350,000</td>
+                                    <td class="p-2 border bg-blue-50 font-bold">285,000</td><td class="p-2 border bg-blue-50 font-bold">350,000</td>
+                                    <td class="p-2 border bg-red-50 font-bold text-red-600">285,000</td><td class="p-2 border bg-red-50 font-bold text-green-600">350,000</td>
+                                    <td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td>
+                                </tr>
 
-                                <path d="M 260 75 Q 320 50 350 70" stroke="#ef4444" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales</td><td class="p-2 border"></td><td class="p-2 border">894,440</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">894,440</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">894,440</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Discounts</td><td class="p-2 border">10,200</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">10,200</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">10,200</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Sales Returns & Allow</td><td class="p-2 border">44,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">44,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">44,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchases</td><td class="p-2 border">760,000</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">760,000</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">760,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purchase Discounts</td><td class="p-2 border"></td><td class="p-2 border">6,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">6,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">6,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Purch Returns & Allow</td><td class="p-2 border"></td><td class="p-2 border">7,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">7,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">7,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Freight In</td><td class="p-2 border">21,300</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">21,300</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">21,300</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Salaries Expense</td><td class="p-2 border">4,220</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">8,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">8,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Advertising Expense</td><td class="p-2 border">19,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">19,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">19,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Maintenance Expense</td><td class="p-2 border">32,700</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">32,700</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">32,700</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Expense</td><td class="p-2 border">2,500</td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">2,500</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">2,500</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Interest Income</td><td class="p-2 border"></td><td class="p-2 border">9,000</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">9,000</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50">9,000</td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Supplies Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">6,400</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">6,400</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">6,400</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Insurance Expense</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50">1,925</td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-blue-50">1,925</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-red-50">1,925</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50"></td></tr>
+                                <tr><td class="p-2 border text-left font-sans sticky left-0 bg-white">Accrued Expense Payable</td><td class="p-2 border"></td><td class="p-2 border"></td><td class="p-2 border bg-yellow-50"></td><td class="p-2 border bg-yellow-50">4,180</td><td class="p-2 border bg-blue-50"></td><td class="p-2 border bg-blue-50">4,180</td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-red-50"></td><td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50">4,180</td></tr>
 
-                                <rect x="355" y="60" width="50" height="30" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="2"/>
-                                <text x="380" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#991b1b">285k</text>
-                                <text x="380" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#ef4444">(Beg)</text>
+                                <tr class="font-bold bg-gray-50 border-t-2 border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-50">TOTALS</td>
+                                    <td class="p-2 border">1,436,520</td><td class="p-2 border">1,436,520</td>
+                                    <td class="p-2 border bg-yellow-50">647,505</td><td class="p-2 border bg-yellow-50">647,505</td>
+                                    <td class="p-2 border bg-blue-50">1,790,700</td><td class="p-2 border bg-blue-50">1,790,700</td>
+                                    <td class="p-2 border bg-red-50 text-red-800">1,192,225</td><td class="p-2 border bg-red-50 text-red-800">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50 text-indigo-800">598,475</td><td class="p-2 border bg-indigo-50 text-indigo-800">524,260</td>
+                                </tr>
 
-                                <rect x="475" y="60" width="50" height="30" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-                                <text x="500" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#166534">350k</text>
-                                <text x="500" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#16a34a">(End)</text>
+                                <tr class="font-bold bg-green-50">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-green-50 text-green-800">NET INCOME</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-green-50"></td><td class="p-2 border bg-green-50"></td>
+                                    <td class="p-2 border bg-red-50 text-green-700">74,215</td><td class="p-2 border bg-red-50"></td>
+                                    <td class="p-2 border bg-indigo-50"></td><td class="p-2 border bg-indigo-50 text-green-700">74,215</td>
+                                </tr>
 
-                                <path d="M 530 75 L 590 75" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrowheadBlue)"/>
+                                <tr class="font-bold bg-gray-100 border-b-2 border-double border-black">
+                                    <td class="p-2 border text-left font-sans sticky left-0 bg-gray-100">GRAND TOTALS</td>
+                                    <td class="p-2 border"></td><td class="p-2 border"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-gray-100"></td><td class="p-2 border bg-gray-100"></td>
+                                    <td class="p-2 border bg-red-50">1,266,440</td><td class="p-2 border bg-red-50">1,266,440</td>
+                                    <td class="p-2 border bg-indigo-50">598,475</td><td class="p-2 border bg-indigo-50">598,475</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                                <rect x="595" y="60" width="50" height="30" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
-                                <text x="620" y="80" text-anchor="middle" font-family="monospace" font-size="11" font-weight="bold" fill="#1e40af">350k</text>
-                                <text x="620" y="105" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#2563eb">(End)</text>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3">Understanding the Closing Entries</h3>
+                    <p class="text-gray-700 mb-4 text-sm">
+                        Whether you use Method 1 or Method 2 in the worksheet, the final result in the ledger is accomplished via <strong>Closing Entries</strong> at year-end.
+                    </p>
 
-                                <defs>
-                                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                      <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
-                                    </marker>
-                                    <marker id="arrowheadBlue" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
-                                        <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-                                    </marker>
-                                </defs>
-                            </svg>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="border border-red-200 rounded p-4 bg-red-50">
+                            <h4 class="font-bold text-red-800 text-sm border-b border-red-200 pb-2 mb-2">1. Closing Beginning Inventory</h4>
+                            <p class="text-xs text-gray-700 mb-2">We treat the beginning inventory (₱285k) as an <strong>Expense</strong> (Cost of Goods Sold).</p>
+                            <div class="bg-white p-2 rounded border border-red-100 font-mono text-xs">
+                                Dr. Income Summary <span class="float-right">285,000</span><br>
+                                &nbsp;&nbsp;Cr. Merch Inventory <span class="float-right">285,000</span>
+                            </div>
                         </div>
-                        <div class="p-3 bg-gray-50 rounded text-xs text-gray-500 italic">
-                            Illustration: Note how the 285k flows to Income Dr (Cost), and the new 350k is inserted into both Income Cr (Deduction) and Balance Sheet Dr (Asset).
+
+                        <div class="border border-green-200 rounded p-4 bg-green-50">
+                            <h4 class="font-bold text-green-800 text-sm border-b border-green-200 pb-2 mb-2">2. Setting Up Ending Inventory</h4>
+                            <p class="text-xs text-gray-700 mb-2">We treat the ending inventory (₱350k) as an <strong>Asset</strong> deduction from cost.</p>
+                            <div class="bg-white p-2 rounded border border-green-100 font-mono text-xs">
+                                Dr. Merch Inventory <span class="float-right">350,000</span><br>
+                                &nbsp;&nbsp;Cr. Income Summary <span class="float-right">350,000</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             `,
             exercises: [
-                {
-                    type: "mcq",
-                    question: "In a Periodic Inventory System worksheet, the amount shown for Merchandise Inventory in the Trial Balance columns represents:",
-                    options: [
-                        "Ending Inventory",
-                        "Beginning Inventory",
-                        "Cost of Goods Sold",
-                        "Net Purchases"
-                    ],
-                    correctIndex: 1,
-                    explanation: "Under the periodic system, the inventory account is not touched during the year, so the Trial Balance still shows the balance from the start of the year."
-                },
-                {
-                    type: "mcq",
-                    question: "Where is the Ending Inventory entered in the worksheet under the Periodic System?",
-                    options: [
-                        "Income Statement Debit and Balance Sheet Credit",
-                        "Income Statement Credit and Balance Sheet Debit",
-                        "Trial Balance Debit only",
-                        "Adjusted Trial Balance Credit only"
-                    ],
-                    correctIndex: 1,
-                    explanation: "It is credited in the Income Statement (to reduce COGS/Cost available) and debited in the Balance Sheet (to record the asset)."
-                },
-                {
-                    type: "mcq",
-                    question: "In a Perpetual System, why is no special adjustment needed for Ending Inventory in the worksheet?",
-                    options: [
-                        "Because merchandisers don't use worksheets.",
-                        "Because the Cost of Goods Sold is estimated.",
-                        "Because the Inventory account balance is already updated to the current Ending Inventory amount.",
-                        "Because Inventory is an expense."
-                    ],
-                    correctIndex: 2,
-                    explanation: "Perpetual systems update the inventory account with every purchase and sale, so the Trial Balance already reflects the correct ending asset value."
-                },
-                {
-                    type: "problem",
-                    question: "In the Income Statement columns of a worksheet, the Debit column total is ₱500,000 and the Credit column total is ₱650,000. What is the result?",
-                    answer: "Net Income of ₱150,000",
-                    explanation: "Credits (Revenues) exceed Debits (Expenses). 650,000 - 500,000 = 150,000 Net Income."
-                },
-                {
-                    type: "problem",
-                    question: "If Beginning Inventory is ₱20,000 and Ending Inventory is ₱35,000. In the Periodic Worksheet Income Statement columns, you will enter:",
-                    answer: "Debit ₱20,000 and Credit ₱35,000",
-                    explanation: "Debit the Beginning Inventory (Cost) and Credit the Ending Inventory (Deduction from Cost)."
-                }
-            ]
+    // ... your existing MCQ and Problem items ...
+    {
+        type: "mcq",
+        question: "In a Periodic Inventory System worksheet, the amount shown for Merchandise Inventory in the Trial Balance columns represents:",
+        options: ["Ending Inventory", "Beginning Inventory", "Cost of Goods Sold", "Net Purchases"],
+        correctIndex: 1,
+        explanation: "Under the periodic system, the inventory account is not touched during the year, so the Trial Balance still shows the balance from the start of the year."
+    },
+    {
+        type: "mcq",
+        question: "Where is the Ending Inventory entered in the worksheet under the Periodic System?",
+        options: [
+            "Income Statement Debit and Balance Sheet Credit",
+            "Income Statement Credit and Balance Sheet Debit",
+            "Trial Balance Debit only",
+            "Adjusted Trial Balance Credit only"
+        ],
+        correctIndex: 1,
+        explanation: "It is credited in the Income Statement (to reduce COGS/Cost available) and debited in the Balance Sheet (to record the asset)."
+    },
+    {
+        type: "mcq",
+        question: "In a Perpetual System, why is no special adjustment needed for Ending Inventory in the worksheet?",
+        options: [
+            "Because merchandisers don't use worksheets.",
+            "Because the Cost of Goods Sold is estimated.",
+            "Because the Inventory account balance is already updated to the current Ending Inventory amount.",
+            "Because Inventory is an expense."
+        ],
+        correctIndex: 2,
+        explanation: "Perpetual systems update the inventory account with every purchase and sale, so the Trial Balance already reflects the correct ending asset value."
+    },
+    {
+        type: "problem",
+        question: "In the Income Statement columns of a worksheet, the Debit column total is ₱500,000 and the Credit column total is ₱650,000. What is the result?",
+        answer: "Net Income of ₱150,000",
+        explanation: "Credits (Revenues) exceed Debits (Expenses). 650,000 - 500,000 = 150,000 Net Income."
+    },
+    {
+        type: "problem",
+        question: "If Beginning Inventory is ₱20,000 and Ending Inventory is ₱35,000. In the Periodic Worksheet Income Statement columns, you will enter:",
+        answer: "Debit ₱20,000 and Credit ₱35,000",
+        explanation: "Debit the Beginning Inventory (Cost) and Credit the Ending Inventory (Deduction from Cost)."
+    },
+
+    // --- NEW WORKSHEET ACTIVITY TYPE ---
+    {
+        type: "worksheet",
+        id: "WS-SET1-FIFO",
+        title: "Worksheet Activity: Set 1 (Periodic FIFO)",
+        instructions: "Complete the 10-column worksheet based on the transactions from Set 1. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
+        // Pulling data from your SET 1 JSON
+        transactions: [
+            { "date": "Dec 1", "description": "Owner invested ₱100,000 cash and Equipment worth ₱50,000.", "rows": 4, "solution": [ { "account": "Cash", "debit": 100000 }, { "account": "Equipment", "debit": 50000 }, { "account": "Owner's Capital", "credit": 150000 }, { "account": "To record initial investment.", "isExplanation": true } ] },
+            { "date": "Dec 2", "description": "Purchased 2,000 units at ₱20 each on account.", "rows": 3, "solution": [ { "account": "Purchases", "debit": 40000 }, { "account": "Accounts Payable", "credit": 40000 }, { "account": "To record purchase on account.", "isExplanation": true } ] },
+            { "date": "Dec 2", "description": "Paid ₱12,000 for 1-year insurance.", "rows": 3, "solution": [ { "account": "Prepaid Insurance", "debit": 12000 }, { "account": "Cash", "credit": 12000 }, { "account": "To record payment of insurance.", "isExplanation": true } ] },
+            { "date": "Dec 3", "description": "Paid freight in ₱1,000.", "rows": 3, "solution": [ { "account": "Freight In", "debit": 1000 }, { "account": "Cash", "credit": 1000 }, { "account": "To record payment of freight.", "isExplanation": true } ] },
+            { "date": "Dec 5", "description": "Returned 200 units.", "rows": 3, "solution": [ { "account": "Accounts Payable", "debit": 4000 }, { "account": "Purchase Returns and Allowances", "credit": 4000 }, { "account": "To record return of goods.", "isExplanation": true } ] },
+            { "date": "Dec 7", "description": "Purchased 1,000 units at ₱25.", "rows": 3, "solution": [ { "account": "Purchases", "debit": 25000 }, { "account": "Accounts Payable", "credit": 25000 }, { "account": "To record purchase on account.", "isExplanation": true } ] },
+            { "date": "Dec 10", "description": "Sold 1,500 units on account @ ₱50.", "rows": 3, "solution": [ { "account": "Accounts Receivable", "debit": 75000 }, { "account": "Sales", "credit": 75000 }, { "account": "To record sales on account.", "isExplanation": true } ] },
+            { "date": "Dec 12", "description": "Customer returned 100 units.", "rows": 3, "solution": [ { "account": "Sales Returns and Allowances", "debit": 5000 }, { "account": "Accounts Receivable", "credit": 5000 }, { "account": "To record return of goods by customer.", "isExplanation": true } ] },
+            { "date": "Dec 15", "description": "Advance payment received.", "rows": 3, "solution": [ { "account": "Cash", "debit": 5000 }, { "account": "Unearned Revenue", "credit": 5000 }, { "account": "To record advance payment received.", "isExplanation": true } ] },
+            { "date": "Dec 18", "description": "Paid partial payment.", "rows": 3, "solution": [ { "account": "Accounts Payable", "debit": 10000 }, { "account": "Cash", "credit": 10000 }, { "account": "To record partial payment of account.", "isExplanation": true } ] },
+            { "date": "Dec 20", "description": "Purchased supplies.", "rows": 3, "solution": [ { "account": "Supplies", "debit": 1500 }, { "account": "Cash", "credit": 1500 }, { "account": "To record purchase of supplies.", "isExplanation": true } ] },
+            { "date": "Dec 22", "description": "Collection from customers.", "rows": 3, "solution": [ { "account": "Cash", "debit": 15000 }, { "account": "Accounts Receivable", "credit": 15000 }, { "account": "To record collection of accounts.", "isExplanation": true } ] },
+            { "date": "Dec 26", "description": "Equipment repairs.", "rows": 3, "solution": [ { "account": "Repairs Expense", "debit": 800 }, { "account": "Cash", "credit": 800 }, { "account": "To record payment for repairs.", "isExplanation": true } ] },
+            { "date": "Dec 29", "description": "Owner withdrawal.", "rows": 3, "solution": [ { "account": "Owner's Drawings", "debit": 1000 }, { "account": "Cash", "credit": 1000 }, { "account": "To record owner withdrawal.", "isExplanation": true } ] },
+            { "date": "Dec 30", "description": "Paid salaries.", "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 2000 }, { "account": "Cash", "credit": 2000 }, { "account": "To record payment of salaries.", "isExplanation": true } ] }
+        ],
+        adjustments: [
+            { "date": "Dec 31", "description": "Supplies on hand ₱500 (Used ₱1,000).", "rows": 3, "solution": [ { "account": "Supplies Expense", "debit": 1000 }, { "account": "Supplies", "credit": 1000 }, { "account": "To record supplies used.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Insurance expired ₱1,000.", "rows": 3, "solution": [ { "account": "Insurance Expense", "debit": 1000 }, { "account": "Prepaid Insurance", "credit": 1000 }, { "account": "To record expired insurance.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Depreciation ₱833.33.", "rows": 3, "solution": [ { "account": "Depreciation Expense", "debit": 833.33 }, { "account": "Accumulated Depreciation", "credit": 833.33 }, { "account": "To record depreciation expense.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Accrued salaries ₱500.", "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 500 }, { "account": "Accrued Expenses Payable", "credit": 500 }, { "account": "To record accrued salaries.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Accrued utilities expense ₱300.", "rows": 3, "solution": [ { "account": "Utilities Expense", "debit": 300 }, { "account": "Accrued Expenses Payable", "credit": 300 }, { "account": "To record accrued utilities.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Earned ₱2,000 from advanced payment.", "rows": 3, "solution": [ { "account": "Unearned Revenue", "debit": 2000 }, { "account": "Sales", "credit": 2000 }, { "account": "To record revenue earned.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Record Ending Inventory: ₱33,000 (Units: 1,400 via FIFO).", "rows": 3, "solution": [ { "account": "Merchandise Inventory", "debit": 33000 }, { "account": "Income Summary", "credit": 33000 }, { "account": "To record ending inventory.", "isExplanation": true } ] }
+        ],
+    }
+]
         },
         // ... (Keep Day 2, Day 3, and Day 4 objects exactly as they were in the previous code) ...
         {
