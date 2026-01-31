@@ -178,14 +178,16 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
     }, [ledgerData, adjustments]);
     
     return html`
-        <div className="mb-4 border rounded-lg shadow-sm bg-blue-50 overflow-hidden no-print">
-            <div className="bg-blue-100 p-2 font-bold text-blue-900 cursor-pointer flex justify-between" onClick=${()=>setExpanded(!expanded)}>
+        <div className="border rounded-lg shadow-sm bg-blue-50 overflow-hidden no-print h-full flex flex-col">
+            <div className="bg-blue-100 p-2 font-bold text-blue-900 cursor-pointer flex justify-between shrink-0" onClick=${()=>setExpanded(!expanded)}>
                 <span><${Table} size=${16} className="inline mr-2"/>Source: General Ledger Balances (Unadjusted Trial Balance)</span>
                 ${expanded ? html`<${ChevronDown} size=${16}/>` : html`<${ChevronRight} size=${16}/>`}
             </div>
+            {/* CHANGED: Added flex-grow to fill space if needed */}
             ${expanded && html`
-                <div className="p-2 max-h-40 overflow-y-auto flex flex-wrap gap-2">
+                <div className="p-2 max-h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
                     ${allAccounts.map(acc => { 
+                        // ... (keep existing account rendering logic) ...
                         const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                         const bal = accData.debit - accData.credit; 
                         return html`
@@ -311,11 +313,17 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             
             ${renderBanner()}
 
-            <div className="flex flex-col lg:flex-row gap-4 mb-4">
-                <div className="flex-1"><${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} /></div>
-                <div className="flex-1 border rounded-lg shadow-sm bg-yellow-50 overflow-hidden">
-                    <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2"><${List} size=${16}/> Adjustments Data</div>
-                    <div className="p-2 max-h-40 overflow-y-auto">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
+                <div className="w-full lg:w-[60%]">
+                    <${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} />
+                </div>
+                
+                <div className="w-full lg:w-[40%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
+                    <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
+                        <${List} size=${16}/> Adjustments Data
+                    </div>
+                    {/* CHANGED: Added h-full to make it fill the parent height */}
+                    <div className="p-2 max-h-40 overflow-y-auto h-full">
                         <ul className="list-decimal list-inside text-xs space-y-1">
                             ${Array.isArray(adjustments) && adjustments.map((adj, i) => html`<li key=${i}>${adj.desc || adj.description}</li>`)}
                         </ul>
