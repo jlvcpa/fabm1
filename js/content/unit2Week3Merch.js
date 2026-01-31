@@ -439,7 +439,7 @@ export const unit2Week3Data = {
             { "date": "Dec 29", "description": "Owner withdrawal.", "rows": 3, "solution": [ { "account": "Owner's Drawings", "debit": 1000 }, { "account": "Cash", "credit": 1000 }, { "account": "To record owner withdrawal.", "isExplanation": true } ] },
             { "date": "Dec 30", "description": "Paid salaries.", "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 2000 }, { "account": "Cash", "credit": 2000 }, { "account": "To record payment of salaries.", "isExplanation": true } ] }
         ],
-        adjustments": [
+        adjustments: [
             { "date": "Dec 31", "description": "1. Accrued utilities expense ₱300.", "drAcc": "Utilities Expense", "crAcc": "Utilities Payable", "amount": 300, "rows": 3, "solution": [ { "account": "Utilities Expense", "debit": 300 }, { "account": "Utilities Payable", "credit": 300 }, { "account": "To record accrued utilities.", "isExplanation": true } ] },
             { "date": "Dec 31", "description": "2. Supplies on hand ₱500 (Used ₱1,000).", "drAcc": "Supplies Expense", "crAcc": "Supplies", "amount": 1000, "rows": 3, "solution": [ { "account": "Supplies Expense", "debit": 1000 }, { "account": "Supplies", "credit": 1000 }, { "account": "To record supplies used.", "isExplanation": true } ] },
             { "date": "Dec 31", "description": "3. Insurance expired ₱1,000.", "drAcc": "Insurance Expense", "crAcc": "Prepaid Insurance", "amount": 1000, "rows": 3, "solution": [ { "account": "Insurance Expense", "debit": 1000 }, { "account": "Prepaid Insurance", "credit": 1000 }, { "account": "To record expired insurance.", "isExplanation": true } ] },
