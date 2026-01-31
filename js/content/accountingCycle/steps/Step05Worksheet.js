@@ -330,9 +330,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             </div>
 
             <div className="border rounded-lg shadow-md bg-white overflow-x-auto custom-scrollbar">
-                {/* ... (Table code remains exactly the same) ... */}
                 <table className="w-full text-xs min-w-[1200px] border-collapse table-fixed">
-                    {/* ... table headers and body ... */}
                     <thead>
                         <tr className="bg-gray-800 text-white text-center">
                             <th rowSpan="2" className="p-2 border-r border-gray-600 text-left w-48 sticky left-0 bg-gray-800 z-10">Account Title</th>
