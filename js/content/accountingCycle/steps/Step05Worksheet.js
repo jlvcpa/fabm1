@@ -22,11 +22,20 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     const mergedAccounts = new Set(Object.keys(ledgerData));
     
     // Validate adjustments array exists before iterating
-    // FIX: Ensure adjustment accounts are added to validation set
     if (Array.isArray(adjustments)) {
         adjustments.forEach(adj => { 
+            // Support legacy format (drAcc/crAcc)
             if (adj.drAcc) mergedAccounts.add(adj.drAcc); 
             if (adj.crAcc) mergedAccounts.add(adj.crAcc); 
+            
+            // Support new format (solution array)
+            if (Array.isArray(adj.solution)) {
+                adj.solution.forEach(line => {
+                    if (line.account && !line.isExplanation && line.account !== "No Entry") {
+                        mergedAccounts.add(line.account);
+                    }
+                });
+            }
         });
     }
 
@@ -48,9 +57,21 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         let aDr = 0; let aCr = 0;
         if (Array.isArray(adjustments)) {
             adjustments.forEach(a => { 
-                const amt = Number(a.amount) || 0;
-                if(a.drAcc === acc) aDr += amt; 
-                if(a.crAcc === acc) aCr += amt; 
+                // Check new solution format
+                if (Array.isArray(a.solution)) {
+                    a.solution.forEach(line => {
+                        if (line.account === acc) {
+                            if (line.debit) aDr += Number(line.debit);
+                            if (line.credit) aCr += Number(line.credit);
+                        }
+                    });
+                } 
+                // Fallback to old format
+                else {
+                    const amt = Number(a.amount) || 0;
+                    if(a.drAcc === acc) aDr += amt; 
+                    if(a.crAcc === acc) aCr += amt; 
+                }
             });
         }
         
@@ -166,19 +187,25 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
 const SimpleLedgerView = ({ ledgerData, adjustments }) => {
     const [expanded, setExpanded] = useState(true);
     
-    // --- RESTORED LOGIC TO MERGE ADJUSTMENT ACCOUNTS ---
+    // Logic to include accounts from adjustments even if not in ledgerData
     const allAccounts = useMemo(() => {
         const accounts = new Set(Object.keys(ledgerData));
-        
-        // This block was missing or incomplete in your previous version.
-        // It ensures accounts used in adjustments (drAcc/crAcc) are added to the list.
         if (Array.isArray(adjustments)) {
             adjustments.forEach(adj => {
+                // Check legacy format
                 if(adj.drAcc) accounts.add(adj.drAcc);
                 if(adj.crAcc) accounts.add(adj.crAcc);
+                
+                // Check new solution array format
+                if (Array.isArray(adj.solution)) {
+                    adj.solution.forEach(line => {
+                        if (line.account && !line.isExplanation && line.account !== "No Entry") {
+                            accounts.add(line.account);
+                        }
+                    });
+                }
             });
         }
-        
         return sortAccounts(Array.from(accounts).filter(a => a));
     }, [ledgerData, adjustments]);
     
@@ -189,7 +216,7 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
                 ${expanded ? html`<${ChevronDown} size=${16}/>` : html`<${ChevronRight} size=${16}/>`}
             </div>
             ${expanded && html`
-                <div className="p-2 max-h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
+                <div className="p-2 h-60 overflow-y-auto flex flex-wrap gap-2 flex-grow">
                     ${allAccounts.map(acc => { 
                         const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                         const bal = accData.debit - accData.credit; 
@@ -317,15 +344,15 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             ${renderBanner()}
 
             <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
-                <div className="w-full lg:w-[60%]">
+                <div className="w-full lg:w-[70%]">
                     <${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} />
                 </div>
                 
-                <div className="w-full lg:w-[40%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
+                <div className="w-full lg:w-[30%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
                         <${List} size=${16}/> Adjustments Data
                     </div>
-                    <div className="p-2 max-h-40 overflow-y-auto h-full">
+                    <div className="p-2 h-60 overflow-y-auto">
                         <ul className="list-decimal list-inside text-xs space-y-1">
                             ${Array.isArray(adjustments) && adjustments.map((adj, i) => html`<li key=${i}>${adj.desc || adj.description}</li>`)}
                         </ul>
