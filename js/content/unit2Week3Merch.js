@@ -440,13 +440,13 @@ export const unit2Week3Data = {
             { "date": "Dec 30", "description": "Paid salaries.", "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 2000 }, { "account": "Cash", "credit": 2000 }, { "account": "To record payment of salaries.", "isExplanation": true } ] }
         ],
         adjustments: [
-            { "date": "Dec 31", "description": "Accrued utilities expense ₱300.", "rows": 3, "solution": [ { "account": "Utilities Expense", "debit": 300 }, { "account": "Accrued Expenses Payable", "credit": 300 }, { "account": "To record accrued utilities.", "isExplanation": true } ] },
             { "date": "Dec 31", "description": "Supplies on hand ₱500 (Used ₱1,000).", "rows": 3, "solution": [ { "account": "Supplies Expense", "debit": 1000 }, { "account": "Supplies", "credit": 1000 }, { "account": "To record supplies used.", "isExplanation": true } ] },
             { "date": "Dec 31", "description": "Insurance expired ₱1,000.", "rows": 3, "solution": [ { "account": "Insurance Expense", "debit": 1000 }, { "account": "Prepaid Insurance", "credit": 1000 }, { "account": "To record expired insurance.", "isExplanation": true } ] },
             { "date": "Dec 31", "description": "Depreciation ₱833.33.", "rows": 3, "solution": [ { "account": "Depreciation Expense", "debit": 833.33 }, { "account": "Accumulated Depreciation", "credit": 833.33 }, { "account": "To record depreciation expense.", "isExplanation": true } ] },
             { "date": "Dec 31", "description": "Accrued salaries ₱500.", "rows": 3, "solution": [ { "account": "Salaries Expense", "debit": 500 }, { "account": "Accrued Expenses Payable", "credit": 500 }, { "account": "To record accrued salaries.", "isExplanation": true } ] },
-            { "date": "Dec 31", "description": "6. Record Ending Inventory: ₱33,000 (Units: 1,400 via FIFO).", "rows": 3, "solution": [ { "account": "Merchandise Inventory", "debit": 33000 }, { "account": "Income Summary", "credit": 33000 }, { "account": "To record ending inventory.", "isExplanation": true } ] },
-            { "date": "Dec 31", "description": "7. Earned ₱2,000 from advanced payment.", "rows": 3, "solution": [ { "account": "Unearned Revenue", "debit": 2000 }, { "account": "Sales", "credit": 2000 }, { "account": "To record revenue earned.", "isExplanation": true } ] }
+            { "date": "Dec 31", "description": "Accrued utilities expense ₱300.", "rows": 3, "solution": [ { "account": "Utilities Expense", "debit": 300 }, { "account": "Accrued Expenses Payable", "credit": 300 }, { "account": "To record accrued utilities.", "isExplanation": true } ] },
+            { "date": "Dec 31", "description": "Earned ₱2,000 from advanced payment.", "rows": 3, "solution": [ { "account": "Unearned Revenue", "debit": 2000 }, { "account": "Sales", "credit": 2000 }, { "account": "To record revenue earned.", "isExplanation": true } ] }
+            { "date": "Dec 31", "description": "Record Ending Inventory: ₱33,000 (Units: 1,400 via FIFO).", "rows": 3, "solution": [ { "account": "Merchandise Inventory", "debit": 33000 }, { "account": "Income Summary", "credit": 33000 }, { "account": "To record ending inventory.", "isExplanation": true } ] },
         ],
     }
 ]
