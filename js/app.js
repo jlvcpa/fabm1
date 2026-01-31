@@ -420,21 +420,21 @@ function renderLandingPage() {
 
 function getAccountNormalSide(accountName) {
     const acc = accountName.toLowerCase();
-    // Assets & Expenses & Drawings = Normal Debit
-    if (acc.includes('cash') || acc.includes('receivable') || acc.includes('inventory') || 
-        acc.includes('supplies') || acc.includes('prepaid') || acc.includes('equipment') || 
-        acc.includes('expense') || acc.includes('drawings') || acc.includes('purchases') || 
-        acc.includes('freight in') || acc.includes('sales returns') || acc.includes('sales discounts')) {
-        return 'dr';
+    // Credits: Payable, Capital, Revenue, Sales, Accumulated Dep, Allowance for Bad Debts, Unearned
+    if (acc.includes('payable') || acc.includes('capital') || acc.includes('accumulated') || acc.includes('revenue') || acc.includes('sales') || acc.includes('equity') || acc.includes('unearned')) {
+        // Exception: Sales Returns/Discounts are Dr
+        if (acc.includes('returns') || acc.includes('discounts')) return 'dr';
+        return 'cr';
     }
-    // Everything else (Liabilities, Equity, Revenue, Contra-Assets) = Normal Credit
-    return 'cr';
+    // Debits: Cash, Receivable, Inventory, Supplies, Prepaid, Equipment, Land, Building, Drawings, Expense
+    return 'dr';
 }
 
 // --- React Wrapper Component for Worksheet ---
-// This handles the state for the worksheet so "Show Solution" can work
 function WorksheetWrapper({ ledger, adjustments }) {
-    const [wsState, setWsState] = React.useState({ rows: [], footers: {} });
+    // FIX: Initialize rows as undefined so component generates default rows
+    // Initialize footers empty
+    const [wsState, setWsState] = React.useState({ rows: undefined, footers: {} });
     const [showFeedback, setShowFeedback] = React.useState(false);
 
     const handleChange = (field, val) => {
@@ -655,8 +655,11 @@ function renderDayContent(unit, week, dayIndex) {
             // Logic for Dr/Cr Indicator based on Normal Balance
             const normalSide = getAccountNormalSide(acc);
             let sideStr = "";
-            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
-            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
+            
+            // Normal Dr (Asset/Exp): show (CR) if negative (Credit balance)
+            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; 
+            // Normal Cr (Liab/Eq/Rev): show (DR) if positive (Debit balance)
+            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; 
 
             ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
         });
@@ -824,8 +827,8 @@ function renderCategoryContent(exercises, dayIndex, type) {
 
                 if (type === 'mcq') {
                     const optionsHtml = ex.options.map((opt, optIndex) => `
-                        <label class="flex items-start p-3 rounded border border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors bg-white">
-                            <input type="radio" name="${exId}" value="${optIndex}" class="mt-1 mr-3 text-blue-600 focus:ring-blue-500" data-qid="${exId}">
+                        <label class="flex items-start p-3 border border-gray-200 rounded hover:bg-blue-50 cursor-pointer transition-colors bg-white mb-2 shadow-sm">
+                            <input type="radio" name="${exId}" value="${optIndex}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0">
                             <span class="text-sm text-gray-700">${opt}</span>
                         </label>
                     `).join('');
