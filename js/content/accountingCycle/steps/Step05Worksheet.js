@@ -312,15 +312,11 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             
             ${renderBanner()}
 
-            {/* LAYOUT UPDATE: 60:40 Split on Desktop, Stacked on Mobile, Equal Heights */}
-            <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
-                
-                {/* Left Panel: 60% width on Large screens */}
+          <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
                 <div className="w-full lg:w-[70%]">
                     <${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} />
                 </div>
                 
-                {/* Right Panel: 40% width on Large screens */}
                 <div className="w-full lg:w-[30%] border rounded-lg shadow-sm bg-yellow-50 overflow-hidden flex flex-col">
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
                         <${List} size=${16}/> Adjustments Data
