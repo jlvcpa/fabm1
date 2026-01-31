@@ -183,7 +183,7 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
                 <span><${Table} size=${16} className="inline mr-2"/>Source: General Ledger Balances (Unadjusted Trial Balance)</span>
                 ${expanded ? html`<${ChevronDown} size=${16}/>` : html`<${ChevronRight} size=${16}/>`}
             </div>
-            {/* CHANGED: Added flex-grow to fill space if needed */}
+           
             ${expanded && html`
                 <div className="p-2 max-h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
                     ${allAccounts.map(acc => { 
