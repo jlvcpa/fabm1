@@ -660,37 +660,10 @@ function renderDayContent(unit, week, dayIndex) {
         }
 
         // Logic to render Instructions and Ledger
-        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
-        Object.keys(ledger).sort().forEach(acc => {
-            const bal = ledger[acc].debit - ledger[acc].credit;
-            if (bal === 0) return;
-            
-            // Logic for Dr/Cr Indicator based on Normal Balance
-            const normalSide = getAccountNormalSide(acc);
-            let sideStr = "";
-            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
-            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
-
-            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
-        });
-        ledgerHtml += `</div>`;
-
         worksheetDiv.innerHTML = `
-            <div class="prose prose-blue max-w-none mb-8">
+            <div class="prose prose-blue max-w-none mb-4">
                 <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
-                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
-                
-                <div class="mt-4 mb-6">
-                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
-                    ${ledgerHtml}
-                </div>
-
-                <div class="mt-4 mb-6">
-                    <p class="font-bold mb-2">Adjustment Information:</p>
-                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
-                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
-                    </ul>
-                </div>
+                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet below.'}</p>
             </div>
             <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
         `;
