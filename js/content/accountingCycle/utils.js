@@ -130,13 +130,26 @@ export const ActivityHelper = {
 };
 
 export const getAccountType = (acc) => {
-    if (['Cash', 'Accounts Receivable', 'Merchandise Inventory', 'Supplies', 'Prepaid Rent', 'Equipment', 'Furniture', 'Building', 'Land'].includes(acc)) return 'Asset';
-    if (acc.includes('Accumulated Depreciation')) return 'Asset';
-    if (['Accounts Payable', 'Notes Payable', 'Salaries Payable', 'Utilities Payable', 'Interest Payable', 'Unearned Revenue'].includes(acc)) return 'Liability';
-    if (['Owner, Capital', 'Share Capital', 'Retained Earnings'].includes(acc)) return 'Equity'; 
-    if (['Owner, Drawings', 'Dividends'].includes(acc)) return 'Equity';
-    if (acc.includes('Revenue') || acc === 'Sales' || acc.includes('Income') || acc.includes('Sales Discounts') || acc.includes('Sales Returns')) return 'Revenue';
-    if (acc.includes('Expense') || acc === 'Cost of Goods Sold' || acc === 'Purchases' || acc.includes('Purchase Discounts') || acc.includes('Purchase Returns') || acc === 'Freight In' || acc === 'Freight Out') return 'Expense';
+    // Clean the input to avoid case sensitivity issues
+    const name = acc.trim(); 
+    
+    // 1. ASSETS (Specific checks + Catch-all for common assets)
+    if (['Cash', 'Accounts Receivable', 'Merchandise Inventory', 'Supplies', 'Prepaid Rent', 'Equipment', 'Furniture', 'Building', 'Land'].includes(name)) return 'Asset';
+    if (name.includes('Prepaid') || name.includes('Receivable') || name.includes('Accumulated Depreciation')) return 'Asset';
+
+    // 2. LIABILITIES (The "Payable" check handles Accrued Expenses Payable automatically)
+    if (name.includes('Payable') || name.includes('Unearned')) return 'Liability';
+
+    // 3. EQUITY
+    if (name.includes('Capital') || name.includes('Drawings') || name.includes('Retained Earnings') || name.includes('Dividends')) return 'Equity';
+
+    // 4. REVENUE
+    if (name.includes('Revenue') || name === 'Sales' || name.includes('Income') || name.includes('Sales Discounts') || name.includes('Sales Returns')) return 'Revenue';
+
+    // 5. EXPENSES
+    if (name.includes('Expense') || name === 'Cost of Goods Sold' || name === 'Purchases' || name.includes('Purchase Discounts') || name.includes('Purchase Returns') || name === 'Freight In' || name === 'Freight Out') return 'Expense';
+
+    // Default Fallback
     return 'Asset';
 };
 
