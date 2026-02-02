@@ -1066,7 +1066,6 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Total Equity: Share Capital ₱100k; Retained Earnings ₱50k.", "answer": "₱150,000", "explanation": "100,000 + 50,000 = 150,000.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Liabilities & Equity: Assets ₱77,000.", "answer": "₱77,000", "explanation": "Must equal Assets.", "isCurrency": true},
     ...merchTransactionPracData
-]
             ]
         }
     ]
