@@ -1,4 +1,4 @@
-import { merchTransactionPracData } from '../questionBank/qbMerchTransactions.js';
+import { merchTransactionPracData } from './questionBank/qbMerchTransactions.js';
 // Content for Unit 2 Week 3: Merchandising Business - Financial Statements
 export const unit2Week3Data = {
     week3: [
