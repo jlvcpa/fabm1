@@ -482,9 +482,6 @@ function WorksheetWrapper({ ledger, adjustments }) {
     );
 }
 
-// Add this import to the top of your app.js if it's not already there
-import { merchTransactionPracData } from './content/questionBank/qbMerchTransactions.js';
-
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
