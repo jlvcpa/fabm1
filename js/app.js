@@ -4,7 +4,7 @@ import { formatRanges } from './utils.js';
 import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-import Step05Worksheet from './content/accountingCycle/steps/Step05Worksheet.js'; 
+import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js'; 
 import React from 'https://esm.sh/react@18.2.0';
 import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
@@ -454,9 +454,15 @@ function WorksheetWrapper({ ledger, adjustments }) {
         setWsState(prev => ({ ...prev, [field]: val }));
     };
 
-    // Check if Final Total row has data to enable the button
-    const hasFinalTotals = wsState.footers?.final && 
-        Object.values(wsState.footers.final).some(v => v !== "" && v !== undefined);
+    // Calculate score in real-time to determine button visibility
+    const validation = React.useMemo(() => {
+        return validateStep05(ledger, adjustments, wsState);
+    }, [ledger, adjustments, wsState]);
+
+    const percentage = validation.maxScore > 0 ? (validation.score / validation.maxScore) : 0;
+
+    // Button Condition: Score must be at least 75% (0.75)
+    const showButton = percentage >= 0.75;
 
     return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
         React.createElement(Step05Worksheet, {
@@ -466,7 +472,7 @@ function WorksheetWrapper({ ledger, adjustments }) {
             onChange: handleChange,
             showFeedback: showFeedback
         }),
-        hasFinalTotals ? React.createElement('div', { className: "flex justify-center" }, 
+        showButton ? React.createElement('div', { className: "flex justify-center" }, 
             React.createElement('button', {
                 className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
                 onClick: () => setShowFeedback(!showFeedback)
@@ -474,7 +480,6 @@ function WorksheetWrapper({ ledger, adjustments }) {
         ) : null
     );
 }
-
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
