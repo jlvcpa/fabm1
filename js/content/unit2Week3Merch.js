@@ -719,7 +719,8 @@ export const unit2Week3Data = {
   {"type": "mcq", "question": "The account 'Freight In' is a:", "options": ["Operating Expense", "Adjunct account to Purchases", "Contra-revenue", "Liability"], "correctIndex": 1, "explanation": "It is added to Purchases (adjunct) to determine cost."},
   {"type": "mcq", "question": "If a company has Net Sales of ₱100 and COGS of ₱70, what is the Markup on Cost?", "options": ["30%", "42.8%", "70%", "100%"], "correctIndex": 1, "explanation": "Profit is 30. Markup on Cost = 30/70 ≈ 42.8%."},
   {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."}
-]
+    ...merchTransactionPracData
+            ]
         },
         {
             day: "Day 3",
@@ -898,6 +899,7 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Gross Profit: Net Sales ₱150,000; Mark up on cost is 50%.", "answer": "₱50,000", "explanation": "Sales = Cost * 1.5. Cost = 150,000 / 1.5 = 100,000. GP = 150 - 100 = 50.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Net Income: Sales ₱200; Expenses ₱150; Dividends ₱20.", "answer": "₱50", "explanation": "200 - 150 = 50. Dividends are not an expense.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Selling & Admin: Op Income ₱20,000; Gross Profit ₱55,000.", "answer": "₱35,000", "explanation": "55,000 - 20,000 = 35,000.", "isCurrency": true},
+    ...merchTransactionPracData
 
             ]
         },
@@ -963,56 +965,108 @@ export const unit2Week3Data = {
                 </div>
             `,
             exercises: [
-                {
-                    type: "mcq",
-                    question: "Merchandise Inventory is classified as:",
-                    options: [
-                        "Non-current Asset",
-                        "Current Asset",
-                        "Current Liability",
-                        "Owner's Equity"
-                    ],
-                    correctIndex: 1,
-                    explanation: "Inventory is a Current Asset because it is held for sale in the normal operating cycle."
-                },
-                {
-                    type: "mcq",
-                    question: "In the Order of Liquidity, where does Merchandise Inventory usually appear?",
-                    options: [
-                        "Before Cash",
-                        "Before Accounts Receivable",
-                        "After Accounts Receivable but before Prepaid Expenses",
-                        "After Property, Plant, and Equipment"
-                    ],
-                    correctIndex: 2,
-                    explanation: "It is less liquid than Receivables (must be sold first), but more liquid than Prepaids (which are consumed)."
-                },
-                {
-                    type: "mcq",
-                    question: "Which of the following accounts would NOT appear on the Balance Sheet?",
-                    options: [
-                        "Accumulated Depreciation",
-                        "Unearned Revenue",
-                        "Cost of Goods Sold",
-                        "Accounts Payable"
-                    ],
-                    correctIndex: 2,
-                    explanation: "Cost of Goods Sold is an expense account and appears on the Income Statement."
-                },
-                {
-                    type: "problem",
-                    question: "Calculate Total Current Assets: Cash ₱50,000; Accounts Receivable ₱30,000; Inventory ₱40,000; Equipment ₱100,000; Accounts Payable ₱20,000.",
-                    answer: "₱120,000",
-                    explanation: "Cash (50k) + AR (30k) + Inventory (40k) = 120,000. Equipment is Non-Current. AP is a Liability.",
-                    isCurrency: true
-                },
-                {
-                    type: "problem",
-                    question: "Calculate Owner's Equity (End): Assets ₱500,000; Liabilities ₱200,000.",
-                    answer: "₱300,000",
-                    explanation: "Assets - Liabilities = Equity. 500,000 - 200,000 = 300,000.",
-                    isCurrency: true
-                }
+  {"type": "mcq", "question": "Which Balance Sheet format lists Assets on the left side and Liabilities/Equity on the right side?", "options": ["Report Format", "Account Format", "Single-Step Format", "Multi-Step Format"], "correctIndex": 1, "explanation": "The Account Format resembles a T-account with side-by-side presentation."},
+  {"type": "mcq", "question": "The Report Format of the Balance Sheet presents accounts in what orientation?", "options": ["Horizontally", "Vertically", "Diagonally", "Randomly"], "correctIndex": 1, "explanation": "It lists Assets at the top, followed by Liabilities, then Equity below, in a vertical layout."},
+  {"type": "mcq", "question": "Which of the following is the defining characteristic of a Current Asset?", "options": ["Useful life over 1 year", "Converted to cash or used within one year or operating cycle", "Intangible nature", "Held for investment purposes"], "correctIndex": 1, "explanation": "Current assets are liquid assets expected to be realized within 12 months."},
+  {"type": "mcq", "question": "Merchandise Inventory is reported on the Balance Sheet at:", "options": ["Selling Price", "Net Realizable Value or Cost (whichever is lower)", "Future Value", "Scrap Value"], "correctIndex": 1, "explanation": "Inventory is valued at the lower of cost or net realizable value (LCNRV)."},
+  {"type": "mcq", "question": "Which of the following is a Non-Current Asset?", "options": ["Accounts Receivable", "Prepaid Rent", "Store Equipment", "Office Supplies"], "correctIndex": 2, "explanation": "Equipment is a long-term tangible asset (Property, Plant, and Equipment)."},
+  {"type": "mcq", "question": "Unearned Revenue is classified as a:", "options": ["Current Asset", "Current Liability", "Revenue", "Owner's Equity"], "correctIndex": 1, "explanation": "It represents an obligation to deliver goods/services in the future, typically within a year."},
+  {"type": "mcq", "question": "The fundamental accounting equation used in the Balance Sheet is:", "options": ["Assets = Liabilities + Equity", "Assets + Liabilities = Equity", "Revenue - Expenses = Net Income", "Assets = Liabilities - Equity"], "correctIndex": 0, "explanation": "Assets must always equal the sum of claims (Liabilities and Equity) against them."},
+  {"type": "mcq", "question": "Which account reduces the book value of Property, Plant, and Equipment?", "options": ["Depreciation Expense", "Accumulated Depreciation", "Maintenance Expense", "Equipment Payable"], "correctIndex": 1, "explanation": "Accumulated Depreciation is a contra-asset account deducted from the related asset."},
+  {"type": "mcq", "question": "In a merchandising business, 'Accounts Payable' usually arises from:", "options": ["Borrowing from a bank", "Purchasing inventory on credit", "Selling goods on credit", "Paying salaries"], "correctIndex": 1, "explanation": "Accounts Payable is the liability created when buying merchandise or supplies on account."},
+  {"type": "mcq", "question": "The Statement of Changes in Equity bridges which two statements?", "options": ["Balance Sheet and Cash Flow", "Income Statement and Balance Sheet", "Income Statement and Cash Flow", "Trial Balance and Ledger"], "correctIndex": 1, "explanation": "It takes Net Income from the IS and updates the Capital account for the BS."},
+  {"type": "mcq", "question": "Which item appears in the Statement of Changes in Equity as a deduction?", "options": ["Net Income", "Additional Investments", "Owner's Drawings", "Revenues"], "correctIndex": 2, "explanation": "Drawings represent the owner taking resources out of the business, reducing equity."},
+  {"type": "mcq", "question": "Notes Payable due in 24 months is classified as:", "options": ["Current Liability", "Non-Current Liability", "Current Asset", "Equity"], "correctIndex": 1, "explanation": "Obligations due beyond one year are Non-Current."},
+  {"type": "mcq", "question": "Prepaid Insurance is a(n):", "options": ["Expense", "Current Liability", "Current Asset", "Non-Current Asset"], "correctIndex": 2, "explanation": "It represents a future economic benefit (coverage) usually expiring within a year."},
+  {"type": "mcq", "question": "Which of these is NOT a Current Asset?", "options": ["Cash", "Inventory", "Accounts Receivable", "Land"], "correctIndex": 3, "explanation": "Land is a Non-Current Asset (PPE) as it is not consumed or sold in the normal cycle."},
+  {"type": "mcq", "question": "Total Equity is calculated as:", "options": ["Total Assets + Total Liabilities", "Total Assets - Total Liabilities", "Current Assets - Current Liabilities", "Net Income + Sales"], "correctIndex": 1, "explanation": "This is a rearrangement of the accounting equation (A = L + OE -> OE = A - L)."},
+  {"type": "mcq", "question": "Current portion of Long-Term Debt is reported as:", "options": ["Non-Current Liability", "Current Liability", "Equity", "Expense"], "correctIndex": 1, "explanation": "The portion of debt due within the next 12 months is reclassified as Current."},
+  {"type": "mcq", "question": "Which account is listed first under Current Assets?", "options": ["Inventory", "Accounts Receivable", "Cash and Cash Equivalents", "Prepaid Expense"], "correctIndex": 2, "explanation": "Assets are listed in order of liquidity; Cash is the most liquid."},
+  {"type": "mcq", "question": "Accumulated Depreciation is presented in the Balance Sheet:", "options": ["Under Liabilities", "As a deduction from Current Assets", "As a deduction from Non-Current Assets", "Under Equity"], "correctIndex": 2, "explanation": "It is deducted from the specific Non-Current Asset (PPE) to show Net Book Value."},
+  {"type": "mcq", "question": "Net Income from the Income Statement affects which section of the Balance Sheet?", "options": ["Current Assets", "Non-Current Liabilities", "Owner's Equity", "Current Liabilities"], "correctIndex": 2, "explanation": "Net Income increases Owner's Equity (specifically Capital/Retained Earnings)."},
+  {"type": "mcq", "question": "Accrued Salaries Payable is a:", "options": ["Current Asset", "Current Liability", "Expense", "Non-Current Liability"], "correctIndex": 1, "explanation": "It is a short-term obligation to pay employees."},
+  {"type": "mcq", "question": "A net loss for the period will:", "options": ["Increase Assets", "Increase Equity", "Decrease Equity", "Decrease Liabilities"], "correctIndex": 2, "explanation": "Net Loss reduces the owner's claim on the business assets."},
+  {"type": "mcq", "question": "Which is an intangible asset?", "options": ["Inventory", "Building", "Patent", "Cash"], "correctIndex": 2, "explanation": "Patents lack physical substance and are non-current intangible assets."},
+  {"type": "mcq", "question": "Working Capital is defined as:", "options": ["Total Assets - Total Liabilities", "Current Assets - Current Liabilities", "Cash - Current Liabilities", "Equity + Liabilities"], "correctIndex": 1, "explanation": "Working Capital measures short-term liquidity."},
+  {"type": "mcq", "question": "The 'Owner, Capital' account balance at the end of the year is found on:", "options": ["Income Statement only", "Statement of Changes in Equity and Balance Sheet", "Balance Sheet only", "Cash Flow Statement only"], "correctIndex": 1, "explanation": "It is calculated in the SCE and the final balance is carried to the BS."},
+  {"type": "mcq", "question": "If a company uses the Report Form, 'Total Liabilities and Owner's Equity' appears:", "options": ["At the bottom", "On the right side", "On the left side", "It does not appear"], "correctIndex": 0, "explanation": "In Report form, it is the final total at the bottom of the vertical list."},
+  {"type": "mcq", "question": "Office Supplies on hand are a(n):", "options": ["Expense", "Current Asset", "Non-Current Asset", "Liability"], "correctIndex": 1, "explanation": "Unused supplies are assets; they become expenses when used."},
+  {"type": "mcq", "question": "Mortgage Payable is typically a:", "options": ["Current Asset", "Current Liability", "Non-Current Liability", "Equity"], "correctIndex": 2, "explanation": "Mortgages are usually long-term debts."},
+  {"type": "mcq", "question": "Which of the following increases Owner's Equity?", "options": ["Drawings", "Net Loss", "Additional Investment", "Payment of Liabilities"], "correctIndex": 2, "explanation": "Investments by the owner add to the capital."},
+  {"type": "mcq", "question": "Customer deposits for future orders are recorded as:", "options": ["Accounts Receivable", "Unearned Revenue", "Sales Revenue", "Prepaid Expense"], "correctIndex": 1, "explanation": "It is a liability (Unearned Revenue) until the goods are delivered."},
+  {"type": "mcq", "question": "The heading of a Balance Sheet includes:", "options": ["Period Ended", "For the Year Ended", "As of [Date]", "For the Month Ended"], "correctIndex": 2, "explanation": "The Balance Sheet is a snapshot at a specific point in time ('As of')."},
+  {"type": "mcq", "question": "Allowance for Doubtful Accounts is a:", "options": ["Liability", "Expense", "Contra-Asset", "Equity"], "correctIndex": 2, "explanation": "It reduces the book value of Accounts Receivable."},
+  {"type": "mcq", "question": "Copyrights are classified under:", "options": ["Current Assets", "Property, Plant, and Equipment", "Non-Current Assets (Intangible)", "Other Assets"], "correctIndex": 2, "explanation": "Copyrights are long-term rights (Intangible Assets)."},
+  {"type": "mcq", "question": "Accounts Receivable represents:", "options": ["Money owed by the business", "Money owed to the business by customers", "Cash in bank", "Prepaid expenses"], "correctIndex": 1, "explanation": "It is the right to receive cash in the future from sales on credit."},
+  {"type": "mcq", "question": "A debit balance in the Asset account indicates:", "options": ["Decrease", "Normal Balance", "Error", "Liability"], "correctIndex": 1, "explanation": "Assets normally have debit balances."},
+  {"type": "mcq", "question": "Which statement about the Statement of Changes in Equity is TRUE?", "options": ["It reports cash flows", "It shows the financial position", "It explains the change in owner's capital during the period", "It details all revenues and expenses"], "correctIndex": 2, "explanation": "It details why Capital changed (Income, Loss, Investments, Drawings)."},
+  {"type": "mcq", "question": "Cost of Goods Sold appears on the Balance Sheet. (True/False)", "options": ["True", "False", "Only in Perpetual System", "Only in Periodic System"], "correctIndex": 1, "explanation": "COGS is an Income Statement account, not a Balance Sheet account."},
+  {"type": "mcq", "question": "Furniture and Fixtures are:", "options": ["Current Assets", "Non-Current Assets", "Liabilities", "Expenses"], "correctIndex": 1, "explanation": "They are long-term tangible assets used in operations."},
+  {"type": "mcq", "question": "If Total Assets increase and Total Liabilities stay the same, Equity must:", "options": ["Decrease", "Stay the same", "Increase", "Become zero"], "correctIndex": 2, "explanation": "A = L + E. If A goes up and L is constant, E must go up."},
+  {"type": "mcq", "question": "Bank Overdraft is generally classified as:", "options": ["Current Asset (negative)", "Current Liability", "Non-Current Liability", "Expense"], "correctIndex": 1, "explanation": "It is a short-term obligation to the bank."},
+  {"type": "mcq", "question": "Assets are listed in the Balance Sheet in order of:", "options": ["Magnitude", "Alphabetical order", "Liquidity", "Age"], "correctIndex": 2, "explanation": "Standard reporting standard is order of liquidity."},
+  {"type": "mcq", "question": "The residual interest in the assets of the enterprise after deducting all its liabilities is:", "options": ["Revenue", "Net Income", "Equity", "Expense"], "correctIndex": 2, "explanation": "This is the definition of Equity."},
+  {"type": "mcq", "question": "Which is a 'Real' or 'Permanent' account?", "options": ["Sales", "Rent Expense", "Accounts Payable", "Income Summary"], "correctIndex": 2, "explanation": "Balance Sheet accounts (Assets, Liabilities, Equity) are permanent."},
+  {"type": "mcq", "question": "Notes Receivable due in 6 months is:", "options": ["Current Asset", "Non-Current Asset", "Current Liability", "Revenue"], "correctIndex": 0, "explanation": "Receivables due within a year are Current Assets."},
+  {"type": "mcq", "question": "When an owner withdraws cash, the immediate effect on the Balance Sheet is:", "options": ["Decrease Assets, Decrease Liabilities", "Decrease Assets, Decrease Equity", "Increase Liabilities, Decrease Equity", "No change"], "correctIndex": 1, "explanation": "Cash (Asset) decreases and Capital (Equity) decreases."},
+  {"type": "mcq", "question": "Retained Earnings (in a corporation) or Accumulated Capital (in a sole prop) represents:", "options": ["Cash held", "Accumulated profits not distributed", "Total Revenue", "Investments"], "correctIndex": 1, "explanation": "It represents the earnings kept in the business."},
+  {"type": "mcq", "question": "Long-term Investment in Stocks is a:", "options": ["Current Asset", "Non-Current Asset", "Equity", "Liability"], "correctIndex": 1, "explanation": "Investments held for >1 year are Non-Current."},
+  {"type": "mcq", "question": "Interest Payable is a:", "options": ["Expense", "Current Liability", "Asset", "Income"], "correctIndex": 1, "explanation": "Accrued interest to be paid is a liability."},
+  {"type": "mcq", "question": "Land held for speculation (not used in operations) is classified as:", "options": ["PPE", "Investment Property / Long-term Investment", "Inventory", "Intangible Asset"], "correctIndex": 1, "explanation": "If not used in operations, it is an Investment, not PPE."},
+  {"type": "mcq", "question": "Which of the following is NOT a characteristic of a liability?", "options": ["Present obligation", "Arises from past events", "Requires future outflow of resources", "Must be paid in cash only"], "correctIndex": 3, "explanation": "Liabilities can be settled by transferring other assets or providing services, not just cash."},
+  {"type": "mcq", "question": "Total Liabilities + Total Equity equals:", "options": ["Net Income", "Total Assets", "Working Capital", "Current Assets"], "correctIndex": 1, "explanation": "The other side of the accounting equation."},
+  {"type": "problem", "question": "Calculate Total Current Assets: Cash ₱10,000; AR ₱5,000; Inventory ₱8,000; Supplies ₱2,000; Equipment ₱50,000.", "answer": "₱25,000", "explanation": "10,000 + 5,000 + 8,000 + 2,000 = 25,000. Equipment is Non-Current.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Book Value of Vehicle: Cost ₱800,000; Accumulated Depreciation ₱250,000.", "answer": "₱550,000", "explanation": "800,000 - 250,000 = 550,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Assets: Current Assets ₱150,000; PPE ₱300,000; Intangible Assets ₱50,000.", "answer": "₱500,000", "explanation": "150,000 + 300,000 + 50,000 = 500,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Owner's Capital: Beg Capital ₱100,000; Net Income ₱40,000; Drawings ₱10,000.", "answer": "₱130,000", "explanation": "100,000 + 40,000 - 10,000 = 130,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Liabilities: Accounts Payable ₱20,000; Notes Payable (Short-term) ₱10,000; Mortgage Payable ₱100,000.", "answer": "₱130,000", "explanation": "20,000 + 10,000 + 100,000 = 130,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Equity: Assets ₱1,000,000; Liabilities ₱400,000.", "answer": "₱600,000", "explanation": "1,000,000 - 400,000 = 600,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Working Capital: Current Assets ₱80,000; Current Liabilities ₱30,000.", "answer": "₱50,000", "explanation": "80,000 - 30,000 = 50,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Non-Current Assets: Land ₱200,000; Building ₱500,000; Accum Depr - Bldg ₱100,000; Inventory ₱50,000.", "answer": "₱600,000", "explanation": "Land (200k) + Net Bldg (400k) = 600,000. Inventory is Current.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Current Liabilities: Accounts Payable ₱15,000; Salaries Payable ₱5,000; Unearned Revenue ₱2,000; Note Payable (due in 2 years) ₱20,000.", "answer": "₱22,000", "explanation": "15,000 + 5,000 + 2,000 = 22,000. Note Payable is Non-Current.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Accounts Receivable: Accounts Receivable ₱50,000; Allowance for Doubtful Accounts ₱3,000.", "answer": "₱47,000", "explanation": "50,000 - 3,000 = 47,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Change in Equity: Net Income ₱25,000; Additional Investment ₱5,000; Drawings ₱2,000.", "answer": "₱28,000", "explanation": "Increase of 25,000 + 5,000 - 2,000 = 28,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Assets: Liability ₱50,000; Equity ₱75,000.", "answer": "₱125,000", "explanation": "50,000 + 75,000 = 125,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Merchandise Inventory: Current Assets ₱100,000; Cash ₱20,000; AR ₱30,000; Prepaids ₱5,000. (Only other item is Inventory).", "answer": "₱45,000", "explanation": "100,000 - 20,000 - 30,000 - 5,000 = 45,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Non-Current Liabilities: Mortgage Payable ₱150,000; Bonds Payable ₱200,000; Accounts Payable ₱50,000.", "answer": "₱350,000", "explanation": "150,000 + 200,000 = 350,000. AP is Current.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Income given Equity change: Beg Equity ₱50,000; End Equity ₱70,000; Drawings ₱5,000; No investments.", "answer": "₱25,000", "explanation": "End = Beg + NI - Draw. 70 = 50 + NI - 5. 70 = 45 + NI. NI = 25.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Liabilities and Equity: Total Assets are ₱900,000.", "answer": "₱900,000", "explanation": "Assets = Liabilities + Equity.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Prepaid Insurance (End): Beg Bal ₱2,000; Paid ₱6,000; Expensed ₱5,000.", "answer": "₱3,000", "explanation": "2,000 + 6,000 - 5,000 = 3,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Cost of Land: Purchase Price ₱500,000; Broker Commission ₱20,000; Demolition of old shack ₱10,000.", "answer": "₱530,000", "explanation": "All costs to get land ready for use are capitalized: 500k + 20k + 10k = 530,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Accounts Payable End: Beg AP ₱10,000; Purchases on credit ₱40,000; Payments to suppliers ₱35,000.", "answer": "₱15,000", "explanation": "10,000 + 40,000 - 35,000 = 15,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net PPE: Gross PPE ₱1,200,000; Accumulated Depreciation ₱400,000.", "answer": "₱800,000", "explanation": "1,200,000 - 400,000 = 800,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Current Ratio: Current Assets ₱200,000; Current Liabilities ₱100,000.", "answer": "2.0", "explanation": "200,000 / 100,000 = 2.", "isCurrency": false},
+  {"type": "problem", "question": "Calculate Owner's Drawings: Beg Cap ₱20,000; NI ₱10,000; End Cap ₱25,000.", "answer": "₱5,000", "explanation": "25 = 20 + 10 - D. 25 = 30 - D. D = 5.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Liabilities: Assets ₱80,000; Equity ₱35,000.", "answer": "₱45,000", "explanation": "80,000 - 35,000 = 45,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Equity after loss: Beg Cap ₱100,000; Net Loss ₱20,000; Drawings ₱0.", "answer": "₱80,000", "explanation": "100,000 - 20,000 = 80,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Cash Balance: Total Assets ₱150,000; Non-Cash Assets ₱120,000.", "answer": "₱30,000", "explanation": "150,000 - 120,000 = 30,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Accrued Interest Payable: Loan ₱100,000; 10% interest; 3 months accrued.", "answer": "₱2,500", "explanation": "100,000 * 0.10 * 3/12 = 2,500.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Quick Assets: Cash ₱5,000; AR ₱4,000; Inventory ₱6,000; Prepaids ₱1,000.", "answer": "₱9,000", "explanation": "Quick Assets = Cash + AR. Inventory and Prepaids are excluded. 5,000 + 4,000 = 9,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Debt Ratio: Total Liabilities ₱500,000; Total Assets ₱1,000,000.", "answer": "50%", "explanation": "500,000 / 1,000,000 = 0.50 or 50%.", "isCurrency": false},
+  {"type": "problem", "question": "Calculate Supplies Expense: Beg Supplies ₱500; Purchased ₱1,500; End Supplies ₱800.", "answer": "₱1,200", "explanation": "(500 + 1,500) - 800 = 1,200.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Intangible Assets: Patents ₱20,000; Trademarks ₱15,000; Goodwill ₱10,000.", "answer": "₱45,000", "explanation": "20,000 + 15,000 + 10,000 = 45,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Unearned Revenue (End): Beg ₱4,000; Received ₱10,000; Earned ₱12,000.", "answer": "₱2,000", "explanation": "4,000 + 10,000 - 12,000 = 2,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Interest Receivable: Note amount ₱50,000; 6%; 6 months.", "answer": "₱1,500", "explanation": "50,000 * 0.06 * 6/12 = 1,500.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Current Assets: Cash ₱10k; AR ₱20k; Equipment ₱100k; Inventory ₱30k.", "answer": "₱60,000", "explanation": "10 + 20 + 30 = 60.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Depreciation Expense (SL): Cost ₱100,000; Salvage ₱10,000; Life 9 years.", "answer": "₱10,000", "explanation": "(100,000 - 10,000) / 9 = 10,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Accumulated Depreciation (Year 2): Depreciation is ₱5,000 per year.", "answer": "₱10,000", "explanation": "5,000 * 2 = 10,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Book Value: Cost ₱50,000; Year 1 Depr ₱5,000; Year 2 Depr ₱5,000.", "answer": "₱40,000", "explanation": "50,000 - 10,000 = 40,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Capital: Beg ₱10; Inv ₱5; Net Loss ₱2; Draw ₱1.", "answer": "₱12", "explanation": "10 + 5 - 2 - 1 = 12.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Liabilities: Current ₱40,000; Non-Current ₱60,000.", "answer": "₱100,000", "explanation": "40,000 + 60,000 = 100,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Assets: Total Assets ₱200,000; Total Liabilities ₱80,000.", "answer": "₱120,000", "explanation": "Net Assets = Equity = A - L = 120,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Cash from Equity: If Owner invests ₱50,000 cash, how much does Cash increase?", "answer": "₱50,000", "explanation": "Direct increase.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Decrease in Equity: Net Loss ₱5,000; Drawings ₱3,000.", "answer": "₱8,000", "explanation": "Both reduce equity. Total reduction = 8,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Notes Payable (Current): Total Note ₱100,000; ₱10,000 payable each year. How much is Current Liability?", "answer": "₱10,000", "explanation": "Only the portion due in the next 12 months is Current.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Notes Payable (Non-Current): Total Note ₱100,000; ₱10,000 current portion.", "answer": "₱90,000", "explanation": "100,000 - 10,000 = 90,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Inventory: Sales ₱200k; GP ₱50k; GAS ₱180k. Find End Inv.", "answer": "₱30,000", "explanation": "COGS = 150k. End Inv = GAS - COGS = 180 - 150 = 30.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Assets: Equity ₱10; Liab ₱20.", "answer": "₱30", "explanation": "10 + 20 = 30.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Office Equipment Net: Cost ₱50,000; Accum Depr ₱45,000.", "answer": "₱5,000", "explanation": "50,000 - 45,000 = 5,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Operating Cycle Assets: Cash ₱5; AR ₱5; Inv ₱5; Land ₱100.", "answer": "₱15", "explanation": "Operating cycle assets are Current Assets: 5+5+5=15.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Owner's Investment: End Cap ₱50k; Beg Cap ₱40k; NI ₱5k; Draw ₱0.", "answer": "₱5,000", "explanation": "50 = 40 + 5 + Inv. 50 = 45 + Inv. Inv = 5.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Equity: Share Capital ₱100k; Retained Earnings ₱50k.", "answer": "₱150,000", "explanation": "100,000 + 50,000 = 150,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Liabilities & Equity: Assets ₱77,000.", "answer": "₱77,000", "explanation": "Must equal Assets.", "isCurrency": true},
+    ...merchTransactionPracData
+]
             ]
         }
     ]
