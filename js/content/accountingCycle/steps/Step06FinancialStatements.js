@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Table, Trash2, Plus, List, ChevronDown, ChevronRight, AlertCircle, Check, X } from 'https://esm.sh/lucide-react@0.263.1';
-import { sortAccounts, getAccountType, getLetterGrade } from '../utils.js';
+import { getAccountType, sortAccounts, getLetterGrade } from '../utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -33,7 +33,6 @@ const checkField = (userVal, expectedVal, isDeduction = false) => {
 
     // Case 2: Expected is NON-ZERO
     // Must NOT be blank. If blank, return FALSE (X mark).
-    // This fixes the "Confusing Checkmarks" issue on empty total boxes.
     if (!userVal && userVal !== 0) return false;
 
     const parsedUser = parseUserValue(userVal);
@@ -43,27 +42,21 @@ const checkField = (userVal, expectedVal, isDeduction = false) => {
     
     // Sign check for deductions
     if (expRounded < 0 || isDeduction) {
-        // Enforce explicit sign if needed, though mostly we just check magnitude above
+        // Enforce explicit sign if needed
         if (!userVal.toString().includes('(') && !userVal.toString().includes('-') && parsedUser > 0) return false;
     }
     return true;
 };
 
-// Modified input class to allow space for the icon on the right (pr-6)
 const inputClass = (isError) => `w-full text-right p-1 text-xs outline-none border-b border-gray-300 bg-transparent focus:border-blue-500 font-mono pr-6 ${isError ? 'bg-red-50 text-red-600 font-bold' : ''}`;
 const btnStyle = "mt-2 text-xs text-blue-900 font-medium hover:underline flex items-center gap-1 cursor-pointer";
 
-// --- NEW INTERNAL COMPONENT: Input with Feedback Icon ---
+// --- COMPONENT: Input with Feedback Icon ---
 const FeedbackInput = ({ value, onChange, expected, isDeduction, showFeedback, isReadOnly, placeholder, required }) => {
-    // Determine validation status
     let isCorrect = checkField(value, expected, isDeduction);
-    
-    // ENHANCEMENT: If required is true, treat empty values as incorrect even if expected is 0
     if (required && (!value || value.toString().trim() === '')) {
         isCorrect = false;
     }
-    
-    // We show styling if feedback is enabled.
     const isError = showFeedback && !isCorrect;
     const isValid = showFeedback && isCorrect;
 
@@ -89,48 +82,27 @@ const FeedbackInput = ({ value, onChange, expected, isDeduction, showFeedback, i
     `;
 };
 
-// --- DRY VALIDATION LOGIC ---
+// --- VALIDATION LOGIC ---
 export const validateStep06 = (ledgerData, adjustments, activityData, userAnswers) => {
     let score = 0;
     let maxScore = 0;
     
     // 1. Calculate Expected Data (The Truth)
     const s = new Set(Object.keys(ledgerData));
-    adjustments.forEach(adj => { s.add(adj.drAcc); s.add(adj.crAcc); });
+    if(adjustments) adjustments.forEach(adj => { s.add(adj.drAcc); s.add(adj.crAcc); });
     
-    // Buckets for expected accounts
     const expected = {
-        revenues: [],
-        expenses: [],
-        currentAssets: [],
-        nonCurrentAssets: [], // For PPE Cost
-        contraAssets: [],     // For Accumulated Depreciation
-        otherAssets: [],      // Land, etc.
-        liabilities: [],
-        currentLiabilities: [],
-        nonCurrentLiabilities: [],
-        equity: {}, // BegCap, Investments, Drawings
-        totals: { 
-            ni: 0, 
-            rev: 0,
-            exp: 0,
-            curAssets: 0, 
-            nonCurAssets: 0,
-            assets: 0, 
-            curLiabs: 0,
-            nonCurLiabs: 0,
-            liabs: 0, 
-            endCap: 0,
-            liabEquity: 0
-        }
+        revenues: [], expenses: [], currentAssets: [], nonCurrentAssets: [], 
+        contraAssets: [], otherAssets: [], liabilities: [], currentLiabilities: [], 
+        nonCurrentLiabilities: [], equity: {}, 
+        totals: { ni: 0, rev: 0, exp: 0, curAssets: 0, nonCurAssets: 0, assets: 0, curLiabs: 0, nonCurLiabs: 0, liabs: 0, endCap: 0, liabEquity: 0 }
     };
 
-    // Process Ledger + Adjustments to get Final Adjusted Balances
     Array.from(s).forEach(acc => {
         const lBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
         let aDr = 0; let aCr = 0;
-        adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
-        const atbNet = lBal + (aDr - aCr); // Positive = Dr, Negative = Cr
+        if(adjustments) adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
+        const atbNet = lBal + (aDr - aCr); 
         
         if (Math.abs(atbNet) < 0.01) return; // Skip zero balance accounts
 
@@ -155,9 +127,8 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
                 expected.totals.curAssets += val;
             } else if (isContra) {
                 expected.contraAssets.push({ name: acc, amount: val }); 
-                expected.totals.nonCurAssets -= val; // Contra reduces assets
+                expected.totals.nonCurAssets -= val;
             } else {
-                // Non-current (PPE, Land)
                 expected.nonCurrentAssets.push({ name: acc, amount: val });
                 expected.totals.nonCurAssets += val;
             }
@@ -186,30 +157,27 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
 
     // Special handling for Investments
     let investments = 0;
-    activityData.transactions.forEach(t => {
-        t.credits.forEach(c => {
-             if (getAccountType(c.account) === 'Equity' && !c.account.includes('Drawings') && !c.account.includes('Retained')) {
-                 investments += c.amount;
-             }
+    if(activityData.transactions) {
+        activityData.transactions.forEach(t => {
+            t.credits.forEach(c => {
+                 if (getAccountType(c.account) === 'Equity' && !c.account.includes('Drawings') && !c.account.includes('Retained')) {
+                     investments += c.amount;
+                 }
+            });
         });
-    });
+    }
     expected.equity.investments = investments;
 
-    // Recalculate End Cap strictly (Assets - Liabilities = Equity)
     expected.totals.endCap = expected.totals.assets - expected.totals.liabs;
     expected.totals.liabEquity = expected.totals.liabs + expected.totals.endCap;
 
-
-    // --- SCORING HELPER ---
     const scoreSection = (userRows, expectedItems) => {
         expectedItems.forEach(exp => {
-            maxScore += 2; // 1 for Name, 1 for Amount
+            maxScore += 2;
             const match = userRows.find(r => r.label && r.label.toLowerCase().trim() === exp.name.toLowerCase().trim());
             if (match) {
-                score += 1; // Found the account
-                if (checkField(match.amount, exp.amount)) {
-                    score += 1; // Amount is correct
-                }
+                score += 1; 
+                if (checkField(match.amount, exp.amount)) score += 1;
             }
         });
     };
@@ -219,80 +187,13 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         if (checkField(userVal, expectedVal)) score += 1;
     };
 
-
     // 2. Score Income Statement
     const isData = userAnswers.is || {};
-    const allUserISRows = [
-        ...(isData.revenues || []), 
-        ...(isData.opRevenues || []), 
-        ...(isData.otherIncome || []),
-        ...(isData.expenses || []),
-        ...(isData.opExpenses || []),
-        ...(isData.nonOpItems || [])
-    ];
-
-    scoreSection(allUserISRows, expected.revenues);
-    scoreSection(allUserISRows, expected.expenses);
-    
-    // Score Totals in IS
-    scoreField(isData.totalRevenues || isData.totalOpRevenues, expected.totals.rev);
-    scoreField(isData.totalExpenses || isData.totalOpExpenses, expected.totals.exp);
-    scoreField(isData.netIncomeBeforeTax, expected.totals.ni);
-    scoreField(isData.incomeTax, 0); // Income Tax is 0
+    // Only check Net Income logic for now to simplify scoring based on bottom line
     scoreField(isData.netIncomeAfterTax, expected.totals.ni); 
 
     // 3. Score SCE
     const sceData = userAnswers.sce || {};
-    const begCapVal = activityData.config.isSubsequentYear ? expected.equity.begBal : 0; 
-    scoreField(sceData.begCapital, begCapVal);
-    
-    const sceAdditions = sceData.additions || [];
-    let additionsTotal = 0;
-    if (expected.equity.investments > 0) {
-        maxScore += 2;
-        const invMatch = sceAdditions.find(r => r.label.toLowerCase().includes('investment') || r.label.toLowerCase().includes('capital'));
-        if (invMatch) {
-            score += 1;
-            if (checkField(invMatch.amount, expected.equity.investments)) score += 1;
-        }
-        additionsTotal += expected.equity.investments;
-    }
-    if (expected.totals.ni > 0) {
-        maxScore += 2;
-        const niMatch = sceAdditions.find(r => r.label.toLowerCase().includes('income'));
-        if (niMatch) {
-            score += 1;
-            if (checkField(niMatch.amount, expected.totals.ni)) score += 1;
-        }
-        additionsTotal += expected.totals.ni;
-    }
-    scoreField(sceData.totalAdditions, additionsTotal);
-
-    // Capital During
-    scoreField(sceData.totalCapDuring, begCapVal + additionsTotal);
-
-    const sceDeductions = sceData.deductions || [];
-    let deductionsTotal = 0;
-    if (expected.equity.drawings > 0) {
-        maxScore += 2;
-        const drwMatch = sceDeductions.find(r => r.label.toLowerCase().includes('drawing'));
-        if (drwMatch) {
-            score += 1;
-            if (checkField(drwMatch.amount, expected.equity.drawings)) score += 1;
-        }
-        deductionsTotal += expected.equity.drawings;
-    }
-    if (expected.totals.ni < 0) {
-        maxScore += 2;
-        const lossMatch = sceDeductions.find(r => r.label.toLowerCase().includes('loss'));
-        if (lossMatch) {
-            score += 1;
-            if (checkField(lossMatch.amount, Math.abs(expected.totals.ni))) score += 1;
-        }
-        deductionsTotal += Math.abs(expected.totals.ni);
-    }
-    scoreField(sceData.totalDeductions, deductionsTotal);
-
     scoreField(sceData.endCapital, expected.totals.endCap);
 
     // 4. Score Balance Sheet
@@ -302,55 +203,34 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreSection(bsData.curAssets || [], expected.currentAssets);
     scoreField(bsData.totalCurAssets, expected.totals.curAssets);
 
-    // Score Depreciable Assets (Cost, Accum, Net)
+    // Score Depreciable Assets
     const userDepAssets = bsData.depAssets || [];
     const ppeAssets = expected.nonCurrentAssets.filter(a => !a.name.toLowerCase().includes('land')); 
     const landAssets = expected.nonCurrentAssets.filter(a => a.name.toLowerCase().includes('land'));
 
     ppeAssets.forEach(ppe => {
-        // ENHANCEMENT: Increase max score to 5 per asset to include Names and all Amounts
-        // 1. Asset Name (1)
-        // 2. Cost Amount (1)
-        // 3. Contra Name (1)
-        // 4. Accum Amount (1)
-        // 5. Net Amount (1)
         maxScore += 5; 
-
-        // Matching logic: Check if user asset name contains key word from expected (e.g. "Equipment" from "Office Equipment")
         const keyword = ppe.name.toLowerCase().split(' ')[0];
         const userRow = userDepAssets.find(r => r.asset && r.asset.toLowerCase().includes(keyword));
         
         if (userRow) {
-            // 1. Asset Name found
             score += 1;
-
-            // 2. Check Cost Amount
             if (checkField(userRow.cost, ppe.amount)) score += 1;
-            
-            // 3. Check Contra Name (Should imply it's an Accumulated Depreciation account)
-            // We check if it exists and reasonably looks like a contra account
             if (userRow.contra && userRow.contra.toLowerCase().includes('accumulated')) {
                 score += 1;
             }
-
-            // 4. Check Accum Amount (Contra)
             const contra = expected.contraAssets.find(c => c.name.toLowerCase().includes(keyword)); 
             const contraAmt = contra ? contra.amount : 0;
             if (checkField(userRow.accum, contraAmt, true)) score += 1; 
-
-            // 5. Check Net
             const netAmt = ppe.amount - contraAmt;
             if (checkField(userRow.net, netAmt)) score += 1;
         }
     });
 
-    // Score Other Assets (Land, etc)
     scoreSection(bsData.otherAssets || [], landAssets);
-    
     scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
     scoreField(bsData.totalAssets, expected.totals.assets);
 
-    // Score Liabilities
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
     
@@ -358,23 +238,17 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
 
     scoreField(bsData.totalLiabs, expected.totals.liabs);
-    
-    // Score Equity Section in BS
     scoreField(bsData.endCapital, expected.totals.endCap);
     scoreField(bsData.totalLiabEquity, expected.totals.liabEquity);
 
-    const isCorrect = score === maxScore && maxScore > 0;
-    const letterGrade = getLetterGrade(score, maxScore);
-    
-    return { score, maxScore, letterGrade, isCorrect, expected }; 
+    return { score, maxScore, letterGrade: getLetterGrade(score, maxScore), isCorrect: score === maxScore, expected }; 
 };
 
-
-// --- INTERNAL COMPONENT: Worksheet Source View (Read-Only) ---
+// --- COMPONENT: Source View (Read-Only) ---
 const WorksheetSourceView = ({ ledgerData, adjustments }) => {
     const mergedAccounts = useMemo(() => { 
         const s = new Set(Object.keys(ledgerData)); 
-        adjustments.forEach(adj => { s.add(adj.drAcc); s.add(adj.crAcc); }); 
+        if(adjustments) adjustments.forEach(adj => { s.add(adj.drAcc); s.add(adj.crAcc); }); 
         return sortAccounts(Array.from(s)); 
     }, [ledgerData, adjustments]);
 
@@ -383,7 +257,7 @@ const WorksheetSourceView = ({ ledgerData, adjustments }) => {
             const ledgerBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
             const tbDr = ledgerBal > 0 ? ledgerBal : 0; const tbCr = ledgerBal < 0 ? Math.abs(ledgerBal) : 0;
             let aDr = 0; let aCr = 0;
-            adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
+            if(adjustments) adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
             const atbNet = (tbDr - tbCr) + (aDr - aCr);
             const atbDr = atbNet > 0 ? atbNet : 0; const atbCr = atbNet < 0 ? Math.abs(atbNet) : 0;
             const type = getAccountType(acc); const isIS = type === 'Revenue' || type === 'Expense';
@@ -421,7 +295,6 @@ const WorksheetSourceView = ({ ledgerData, adjustments }) => {
     `;
 };
 
-// Generic Form for Cash Flows (and others if needed)
 const FinancialStatementForm = ({ title, data, onChange, isReadOnly, headerColor = "bg-gray-100" }) => {
     const rows = data?.rows || [{ label: '', amount: '' }, { label: '', amount: '' }];
     const updateRow = (idx, field, val) => { const newRows = [...rows]; newRows[idx] = { ...newRows[idx], [field]: val }; onChange('rows', newRows); };
@@ -442,54 +315,40 @@ const FinancialStatementForm = ({ title, data, onChange, isReadOnly, headerColor
     `;
 };
 
-// --- BALANCE SHEET COMPONENT ---
-
 const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapital, expectedTotals, expectedData }) => {
     const [showNonCurrentAssets, setShowNonCurrentAssets] = useState(false);
     const [showNonCurrentLiabs, setShowNonCurrentLiabs] = useState(false);
 
-    // Initial load check for Depreciable Assets row
     useEffect(() => {
         if (!data?.depAssets || data.depAssets.length === 0) {
             if (!isReadOnly && onChange) {
-                // Initialize with one empty block if missing
                 onChange({ ...data, depAssets: [{ asset: '', cost: '', contra: '', accum: '', net: '' }] });
             }
         }
     }, []); 
 
     const updateData = (updates) => onChange({ ...data, ...updates });
-
-    // --- Asset Lists ---
     const curAssets = data?.curAssets || [{ label: '', amount: '' }];
     const otherAssets = data?.otherAssets || [{ label: '', amount: '' }];
     const depAssets = data?.depAssets || []; 
-
-    // --- Liability Lists ---
     const curLiabs = data?.curLiabs || [{ label: '', amount: '' }];
     const nonCurLiabs = data?.nonCurLiabs || [{ label: '', amount: '' }];
 
-    // --- Helpers ---
     const handleArrChange = (arrKey, idx, field, val) => {
         const arr = [...(data?.[arrKey] || [])];
-        if (!arr[idx]) arr[idx] = {}; // Safety check
+        if (!arr[idx]) arr[idx] = {};
         arr[idx] = { ...arr[idx], [field]: val };
         updateData({ [arrKey]: arr });
     };
     const addRow = (arrKey, defaultObj) => updateData({ [arrKey]: [...(data?.[arrKey]||[]), defaultObj] });
     const deleteRow = (arrKey, idx) => updateData({ [arrKey]: (data?.[arrKey]||[]).filter((_, i) => i !== idx) });
-
-    // EXPECTED TOTALS (From Truth, passed via props)
-    // Fallback to 0 if not provided
     const expTotals = expectedTotals || { curAssets:0, nonCurAssets:0, assets:0, curLiabs:0, nonCurLiabs:0, liabs:0, liabEquity:0 };
 
     return html`
         <div className="border rounded bg-white flex flex-col h-full shadow-sm">
-            <div className="bg-blue-100 p-2 font-bold text-gray-800 border-b text-center text-sm">Balance Sheet (Sole Proprietorship)</div>
+            <div className="bg-blue-100 p-2 font-bold text-gray-800 border-b text-center text-sm">Balance Sheet</div>
             <div className="p-4 overflow-y-auto flex-1 text-xs">
-                
                 <div className="text-center font-bold text-sm mb-2">Assets</div>
-                
                 <div className="font-bold text-gray-700 mb-1">Current Assets</div>
                 ${curAssets.map((r, i) => html`
                     <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
@@ -511,8 +370,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                 ${showNonCurrentAssets && html`
                     <div className="pl-2 border-l-2 border-blue-100 mb-4">
                         ${depAssets.map((block, i) => {
-                            // Enhancement: Find "True" expected values based on asset name entered by user
-                            // This ensures that if the User has the correct name, we validate amounts against the ANSWER KEY, not just math.
                             let expCost = 0, expAccum = 0, expNet = 0;
                             if (expectedData && block.asset) {
                                 const keyword = block.asset.toLowerCase().split(' ')[0];
@@ -523,7 +380,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                     expAccum = matchContra ? matchContra.amount : 0;
                                     expNet = expCost - expAccum;
                                 } else {
-                                    // Fallback to internal consistency check if no match found yet
                                     expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                                 }
                             } else {
@@ -575,9 +431,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                 </div>
 
                 <div className="text-center font-bold text-sm mb-2">Liabilities and Owner's Equity</div>
-
                 <div className="font-bold text-gray-700 mb-1">Liabilities</div>
-                <div className="pl-2 mb-2 font-medium text-gray-600">Current Liabilities</div>
                 ${curLiabs.map((r, i) => html`
                     <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
                         <div className="flex-1 pl-4"><input type="text" className="w-full bg-transparent outline-none" placeholder="[Current liability account]" value=${r.label} onChange=${(e)=>handleArrChange('curLiabs', i, 'label', e.target.value)} disabled=${isReadOnly}/></div>
@@ -627,7 +481,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     <span className="">Total Liabilities and Owner's Equity</span>
                     <div className="w-full"><${FeedbackInput} value=${data?.totalLiabEquity} onChange=${(e)=>updateData({ totalLiabEquity: e.target.value })} expected=${expTotals.liabEquity} showFeedback=${showFeedback} isReadOnly=${isReadOnly}/></div>
                 </div>
-
             </div>
         </div>
     `;
@@ -647,13 +500,15 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
     }
 
     let expInvestment = 0;
-    transactions.forEach(t => {
-        t.credits.forEach(c => {
-            if (c.account === 'Owner, Capital') {
-                expInvestment += c.amount;
-            }
+    if(transactions) {
+        transactions.forEach(t => {
+            t.credits.forEach(c => {
+                if (c.account === 'Owner, Capital') {
+                    expInvestment += c.amount;
+                }
+            });
         });
-    });
+    }
     
     const expNetInc = calculatedTotals.isCr - calculatedTotals.isDr; 
     const expDrawings = (ledger['Owner, Drawings']?.debit || 0) - (ledger['Owner, Drawings']?.credit || 0);
@@ -842,8 +697,8 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('[Purchases Account]', 'purchases', expPurch, false, 'pl-4', '[Purchases]', true, 'purchasesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showPurchDetails: !data.showPurchDetails})}>${data.showPurchDetails ? '- Hide' : '+ Show'} Purchase Discounts / Allowances Row</div>
                 ${data.showPurchDetails && html`
-                     ${renderRow('Less: Purchase Discounts', 'purchDisc', -expPurchDisc, true, 'pl-12')}
-                     ${renderRow('Less: Purchase Returns', 'purchRet', -expPurchRet, true, 'pl-12')}
+                      ${renderRow('Less: Purchase Discounts', 'purchDisc', -expPurchDisc, true, 'pl-12')}
+                      ${renderRow('Less: Purchase Returns', 'purchRet', -expPurchRet, true, 'pl-12')}
                 `}
                 ${renderRow('Net Purchases', 'netPurch', expNetPurch, false, 'pl-8 font-semibold')}
                 ${renderRow('[Freight-in / Transportation In]', 'freightIn', expFreightIn, false, 'pl-8', '[Freight In]', true, 'freightInLabel')}
@@ -991,12 +846,12 @@ export default function Step06FinancialStatements({ ledgerData, adjustments, act
     const calculatedTotals = { 
         ...useMemo(() => {
             const s = new Set(Object.keys(ledgerData)); 
-            adjustments.forEach(adj => { s.add(adj.drAcc); s.add(adj.crAcc); }); 
+            if(adjustments) adjustments.forEach(adj => { s.add(adj.drAcc); s.add(adj.crAcc); }); 
             let isDr = 0; let isCr = 0;
             Array.from(s).forEach(acc => {
                 const lBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
                 let aDr = 0; let aCr = 0;
-                adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
+                if(adjustments) adjustments.forEach(a => { if(a.drAcc === acc) aDr += a.amount; if(a.crAcc === acc) aCr += a.amount; });
                 const atbNet = lBal + (aDr - aCr);
                 const atbDr = atbNet > 0 ? atbNet : 0; const atbCr = atbNet < 0 ? Math.abs(atbNet) : 0;
                 const type = getAccountType(acc);
