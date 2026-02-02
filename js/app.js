@@ -5,7 +5,7 @@ import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js';
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { merchTransactionPracData } from './content/questionBank/qbMerchTransactions.js';
-import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js'; 
+import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js';
 import React from 'https://esm.sh/react@18.2.0';
 import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
@@ -207,7 +207,7 @@ function renderSidebar(role) {
                         dayBtn.innerHTML = `<i class="fas fa-circle text-[6px]"></i> <span>${day.day}: ${day.topic}</span>`;
                         
                         dayBtn.onclick = () => {
-                            renderDayContent(unit, week, index);
+                            Content(unit, week, index);
                             closeMobileSidebar();
                             highlightActiveDay(dayBtn);
                         };
@@ -482,6 +482,9 @@ function WorksheetWrapper({ ledger, adjustments }) {
     );
 }
 
+// Add this import to the top of your app.js if it's not already there
+import { merchTransactionPracData } from './content/questionBank/qbMerchTransactions.js';
+
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
@@ -514,16 +517,18 @@ function renderDayContent(unit, week, dayIndex) {
     const hasProb = exercises.some(e => e.type === 'problem');
     const hasJourn = exercises.some(e => e.type === 'journalizing');
     
-    // Detect and Enrich Worksheet Activity
-    let worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
-    
-    // Override worksheet data if a matching ID is found in the new Question Bank
-    if (worksheetActivity) {
-        const qbData = merchTransactionPracData.find(qb => qb.id === worksheetActivity.id);
-        if (qbData) {
-            worksheetActivity = { ...worksheetActivity, ...qbData };
-        }
-    }
+    // Detect Worksheet Activities (can be multiple)
+    // Enrich with data from qbMerchTransactions.js if needed
+    const worksheetActivities = exercises
+        .filter(ex => ex.type === 'worksheet' || ex.type === 'accountingCycleSimulation' || ex.id?.includes('Worksheet'))
+        .map(ex => {
+            // Find matching detailed data in the imported Question Bank if it exists
+            if (typeof merchTransactionPracData !== 'undefined') {
+                const qbData = merchTransactionPracData.find(qb => qb.id === ex.id);
+                return qbData ? { ...ex, ...qbData } : ex;
+            }
+            return ex;
+        });
 
     const card = document.createElement('div');
     card.className = "bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden fade-in";
@@ -578,7 +583,7 @@ function renderDayContent(unit, week, dayIndex) {
         tabsContainer.appendChild(tabJourn);
     }
     // New Worksheet Tab
-    if (worksheetActivity) {
+    if (worksheetActivities.length > 0) {
         tabWorksheet = createTabBtn('tab-btn-worksheet', 'fa-table', 'Practice - 10 Columns Worksheet', false);
         tabsContainer.appendChild(tabWorksheet);
     }
@@ -653,70 +658,17 @@ function renderDayContent(unit, week, dayIndex) {
         tabContentWrapper.appendChild(journDiv);
     }
 
-    // 5. Worksheet Content
+    // 5. Worksheet Content (Updated to support multiple worksheets and sidebar)
     let worksheetDiv;
-    let worksheetRoot = null; 
+    // Map to track roots by container ID
+    // We reuse the global worksheetRoots map defined at top
 
-    if (worksheetActivity) {
+    if (worksheetActivities.length > 0) {
         worksheetDiv = document.createElement('div');
         worksheetDiv.id = "tab-content-worksheet";
-        worksheetDiv.className = "hidden h-full overflow-y-auto p-4 md:p-8";
-
-        // Logic to calculate Ledger Balances from Transactions
-        const ledger = {};
-        if(worksheetActivity.transactions) {
-            worksheetActivity.transactions.forEach(tx => {
-                // Handle both new and old structure (solution vs rows directly)
-                const solArray = tx.solution || [];
-                solArray.forEach(line => {
-                    if (line.isExplanation || line.account === "No Entry") return;
-                    if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                    
-                    // Handle both numeric and string amounts safely
-                    const dr = parseFloat(line.debit) || 0;
-                    const cr = parseFloat(line.credit) || 0;
-                    
-                    if (dr > 0) ledger[line.account].debit += dr;
-                    if (cr > 0) ledger[line.account].credit += cr;
-                });
-            });
-        }
-
-        // Logic to render Instructions and Ledger
-        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
-        Object.keys(ledger).sort().forEach(acc => {
-            const bal = ledger[acc].debit - ledger[acc].credit;
-            if (bal === 0) return;
-            
-            // Logic for Dr/Cr Indicator based on Normal Balance
-            const normalSide = getAccountNormalSide(acc);
-            let sideStr = "";
-            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
-            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
-
-            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
-        });
-        ledgerHtml += `</div>`;
-
-        worksheetDiv.innerHTML = `
-            <div class="prose prose-blue max-w-none mb-8">
-                <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
-                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
-                
-                <div class="mt-4 mb-6">
-                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
-                    ${ledgerHtml}
-                </div>
-
-                <div class="mt-4 mb-6">
-                    <p class="font-bold mb-2">Adjustment Information:</p>
-                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
-                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
-                    </ul>
-                </div>
-            </div>
-            <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
-        `;
+        worksheetDiv.className = "hidden h-full"; // Full height for sidebar layout
+        // Use renderWorksheetContent helper for consistent layout
+        worksheetDiv.innerHTML = renderWorksheetContent(worksheetActivities, dayIndex);
         tabContentWrapper.appendChild(worksheetDiv);
     }
 
@@ -756,36 +708,41 @@ function renderDayContent(unit, week, dayIndex) {
             worksheetDiv.classList.remove('hidden');
             activeBtn = tabWorksheet;
             
-            // Mount React Component ONLY when tab is visible and not already mounted
-            const mountEl = document.getElementById('worksheet-mount');
-            if (mountEl && !worksheetRoot) {
-                // Ensure ledger is calculated and passed down
-                const ledger = {};
-                if(worksheetActivity.transactions) {
-                    worksheetActivity.transactions.forEach(tx => {
-                        const solArray = tx.solution || [];
-                        solArray.forEach(line => {
-                            if (line.isExplanation || line.account === "No Entry") return;
-                            if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                            
-                            const dr = parseFloat(line.debit) || 0;
-                            const cr = parseFloat(line.credit) || 0;
-                            
-                            if (dr > 0) ledger[line.account].debit += dr;
-                            if (cr > 0) ledger[line.account].credit += cr;
+            // Mount React Components loop
+            worksheetActivities.forEach((activity, i) => {
+                 const mountId = `worksheet-mount-${dayIndex}-${i}`;
+                 const mountEl = document.getElementById(mountId);
+                 
+                 // Only mount if element exists and not already mounted
+                 if (mountEl && !worksheetRoots.has(mountId)) {
+                    // Logic to calculate Ledger Balances from Transactions
+                    const ledger = {};
+                    if(activity.transactions) {
+                        activity.transactions.forEach(tx => {
+                            tx.solution.forEach(line => {
+                                if (line.isExplanation || line.account === "No Entry") return;
+                                if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                                
+                                // Handle both numeric and string amounts safely
+                                const dr = parseFloat(line.debit) || 0;
+                                const cr = parseFloat(line.credit) || 0;
+                                
+                                if (dr > 0) ledger[line.account].debit += dr;
+                                if (cr > 0) ledger[line.account].credit += cr;
+                            });
                         });
-                    });
-                }
+                    }
 
-                worksheetRoot = ReactDOM.createRoot(mountEl);
-                // Use the Wrapper Component to manage state!
-                worksheetRoot.render(
-                    React.createElement(WorksheetWrapper, {
-                        ledger: ledger,
-                        adjustments: worksheetActivity.adjustments
-                    })
-                );
-            }
+                    const root = ReactDOM.createRoot(mountEl);
+                    root.render(
+                        React.createElement(WorksheetWrapper, {
+                            ledger: ledger,
+                            adjustments: activity.adjustments
+                        })
+                    );
+                    worksheetRoots.set(mountId, root);
+                 }
+            });
         }
 
         // Activate Button
