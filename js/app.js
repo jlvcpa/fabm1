@@ -4,6 +4,7 @@ import { formatRanges } from './utils.js';
 import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { merchTransactionPracData } from './content/questionBank/qbMerchTransactions.js';
 import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js'; 
 import React from 'https://esm.sh/react@18.2.0';
 import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
@@ -480,6 +481,7 @@ function WorksheetWrapper({ ledger, adjustments }) {
         ) : null
     );
 }
+
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
     
@@ -511,8 +513,17 @@ function renderDayContent(unit, week, dayIndex) {
     const hasMcq = exercises.some(e => e.type === 'mcq');
     const hasProb = exercises.some(e => e.type === 'problem');
     const hasJourn = exercises.some(e => e.type === 'journalizing');
-    // Detect Worksheet Activity
-    const worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
+    
+    // Detect and Enrich Worksheet Activity
+    let worksheetActivity = exercises.find(ex => ex.type === 'worksheet' || ex.id?.includes('Worksheet'));
+    
+    // Override worksheet data if a matching ID is found in the new Question Bank
+    if (worksheetActivity) {
+        const qbData = merchTransactionPracData.find(qb => qb.id === worksheetActivity.id);
+        if (qbData) {
+            worksheetActivity = { ...worksheetActivity, ...qbData };
+        }
+    }
 
     const card = document.createElement('div');
     card.className = "bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden fade-in";
@@ -655,20 +666,54 @@ function renderDayContent(unit, week, dayIndex) {
         const ledger = {};
         if(worksheetActivity.transactions) {
             worksheetActivity.transactions.forEach(tx => {
-                tx.solution.forEach(line => {
+                // Handle both new and old structure (solution vs rows directly)
+                const solArray = tx.solution || [];
+                solArray.forEach(line => {
                     if (line.isExplanation || line.account === "No Entry") return;
                     if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                    if (line.debit) ledger[line.account].debit += line.debit;
-                    if (line.credit) ledger[line.account].credit += line.credit;
+                    
+                    // Handle both numeric and string amounts safely
+                    const dr = parseFloat(line.debit) || 0;
+                    const cr = parseFloat(line.credit) || 0;
+                    
+                    if (dr > 0) ledger[line.account].debit += dr;
+                    if (cr > 0) ledger[line.account].credit += cr;
                 });
             });
         }
 
         // Logic to render Instructions and Ledger
+        let ledgerHtml = `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-1 font-mono text-sm bg-gray-50 p-4 border rounded">`;
+        Object.keys(ledger).sort().forEach(acc => {
+            const bal = ledger[acc].debit - ledger[acc].credit;
+            if (bal === 0) return;
+            
+            // Logic for Dr/Cr Indicator based on Normal Balance
+            const normalSide = getAccountNormalSide(acc);
+            let sideStr = "";
+            if (normalSide === 'dr' && bal < 0) sideStr = " (CR)"; // Credit balance for Dr account
+            else if (normalSide === 'cr' && bal > 0) sideStr = " (DR)"; // Debit balance for Cr account
+
+            ledgerHtml += `<div class="flex justify-between border-b border-gray-200"><span>${acc}</span><span class="font-bold">${Math.abs(bal).toLocaleString()}${sideStr}</span></div>`;
+        });
+        ledgerHtml += `</div>`;
+
         worksheetDiv.innerHTML = `
-            <div class="prose prose-blue max-w-none mb-4">
+            <div class="prose prose-blue max-w-none mb-8">
                 <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${worksheetActivity.title || 'Worksheet Preparation'}</h3>
-                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet below.'}</p>
+                <p class="text-gray-600">${worksheetActivity.instructions || 'Complete the worksheet using the data below.'}</p>
+                
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Unadjusted Trial Balance:</p>
+                    ${ledgerHtml}
+                </div>
+
+                <div class="mt-4 mb-6">
+                    <p class="font-bold mb-2">Adjustment Information:</p>
+                    <ul class="text-sm space-y-2 bg-yellow-50 p-4 border border-yellow-200 rounded">
+                        ${worksheetActivity.adjustments.map(adj => `<li class="flex gap-2"><span><i class="fas fa-edit text-yellow-600"></i></span><span>${adj.description}</span></li>`).join('')}
+                    </ul>
+                </div>
             </div>
             <div id="worksheet-mount" class="w-full min-h-[500px]"></div>
         `;
@@ -714,15 +759,20 @@ function renderDayContent(unit, week, dayIndex) {
             // Mount React Component ONLY when tab is visible and not already mounted
             const mountEl = document.getElementById('worksheet-mount');
             if (mountEl && !worksheetRoot) {
-                // Ensure ledger and adjustments are available from the closure
+                // Ensure ledger is calculated and passed down
                 const ledger = {};
                 if(worksheetActivity.transactions) {
                     worksheetActivity.transactions.forEach(tx => {
-                        tx.solution.forEach(line => {
+                        const solArray = tx.solution || [];
+                        solArray.forEach(line => {
                             if (line.isExplanation || line.account === "No Entry") return;
                             if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                            if (line.debit) ledger[line.account].debit += line.debit;
-                            if (line.credit) ledger[line.account].credit += line.credit;
+                            
+                            const dr = parseFloat(line.debit) || 0;
+                            const cr = parseFloat(line.credit) || 0;
+                            
+                            if (dr > 0) ledger[line.account].debit += dr;
+                            if (cr > 0) ledger[line.account].credit += cr;
                         });
                     });
                 }
