@@ -208,5 +208,3 @@ export const merchTransactionPracData = [
 ];
 
 export const merchTransactionsExamData = [];
-
-export const merchTransactionsExamData = [];
