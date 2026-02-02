@@ -718,7 +718,7 @@ export const unit2Week3Data = {
   {"type": "mcq", "question": "Income from Operations is calculated by deducting what from Gross Profit?", "options": ["Cost of Goods Sold", "Operating Expenses", "Income Taxes", "Interest"], "correctIndex": 1, "explanation": "Gross Profit - Operating Expenses = Income from Operations."},
   {"type": "mcq", "question": "The account 'Freight In' is a:", "options": ["Operating Expense", "Adjunct account to Purchases", "Contra-revenue", "Liability"], "correctIndex": 1, "explanation": "It is added to Purchases (adjunct) to determine cost."},
   {"type": "mcq", "question": "If a company has Net Sales of ₱100 and COGS of ₱70, what is the Markup on Cost?", "options": ["30%", "42.8%", "70%", "100%"], "correctIndex": 1, "explanation": "Profit is 30. Markup on Cost = 30/70 ≈ 42.8%."},
-  {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."}
+  {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."},
     ...merchTransactionPracData
             ]
         },
