@@ -14,6 +14,7 @@ let currentUser = null;
 let calendarAssignments = JSON.parse(localStorage.getItem('fabm2_calendar')) || {};
 let flatTopics = []; 
 let currentCalendarYear, currentCalendarMonth;
+const worksheetRoots = new Map(); // Store React roots to avoid double mounting
 
 // --- DOM ELEMENTS ---
 const elements = {
@@ -207,7 +208,8 @@ function renderSidebar(role) {
                         dayBtn.innerHTML = `<i class="fas fa-circle text-[6px]"></i> <span>${day.day}: ${day.topic}</span>`;
                         
                         dayBtn.onclick = () => {
-                            Content(unit, week, index);
+                            // FIXED: Was "Content(...)", changed to "renderDayContent(...)"
+                            renderDayContent(unit, week, index);
                             closeMobileSidebar();
                             highlightActiveDay(dayBtn);
                         };
@@ -768,6 +770,77 @@ function executeExerciseMounts(exercises) {
             }, 0);
         }
     });
+}
+
+// --- NEW WORKSHEET RENDERER (Supports Quick Nav) ---
+function renderWorksheetContent(activities, dayIndex) {
+    let contentHtml = '';
+    let navLinksHtml = '';
+    const type = 'worksheet'; // Used for ID generation
+
+    // Build Nav Links if multiple
+    if (activities.length > 1) {
+        activities.forEach((item, index) => {
+            const label = `Worksheet #${index + 1}`;
+            const targetId = `ws-set-${dayIndex}-${index}`;
+            navLinksHtml += `
+                <button onclick="document.getElementById('${targetId}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
+                class="w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-100 flex items-center group">
+                    <i class="fas fa-chevron-right text-xs text-gray-400 mr-2 group-hover:text-blue-500"></i>
+                    ${label}
+                </button>
+            `;
+        });
+    }
+
+    // Build Content
+    activities.forEach((activity, i) => {
+        const setId = `ws-set-${dayIndex}-${i}`;
+        const mountId = `worksheet-mount-${dayIndex}-${i}`;
+        
+        contentHtml += `
+            <div id="${setId}" class="mb-12 border-t-4 border-blue-500 pt-6">
+                <div class="prose prose-blue max-w-none mb-4">
+                    <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${activity.title || `Worksheet ${i+1}`}</h3>
+                    <p class="text-gray-600">${activity.instructions || 'Complete the worksheet using the data below.'}</p>
+                </div>
+                <div id="${mountId}" class="w-full min-h-[500px]"></div>
+            </div>
+        `;
+    });
+
+    // --- Construct Layout with Collapsible Sidebar (Reusable) ---
+    const sidebarId = `sidebar-${type}`;
+    const contentId = `content-${type}`;
+    
+    // Only show sidebar if we have nav links
+    const sidebarWidthClass = navLinksHtml ? "w-0 md:w-64" : "hidden";
+    const toggleBtnHtml = navLinksHtml ? `
+        <button onclick="toggleRightSidebar('${sidebarId}')" class="md:hidden absolute top-4 right-4 z-30 bg-white text-blue-600 p-2 rounded-full shadow-lg border border-gray-200 hover:bg-gray-50">
+            <i class="fas fa-list-ul"></i>
+        </button>
+    ` : '';
+
+    return `
+    <div class="flex h-full relative">
+        <div id="${contentId}" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth h-full">
+            ${contentHtml}
+        </div>
+
+        <div id="${sidebarId}" class="${sidebarWidthClass} transition-all duration-300 border-l border-gray-200 bg-gray-50 flex flex-col h-full absolute md:relative right-0 z-20 shadow-xl md:shadow-none overflow-hidden group">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-white min-w-[250px]">
+                <span class="font-bold text-gray-700 text-sm"><i class="fas fa-location-arrow mr-2"></i> Quick Nav</span>
+                <button onclick="toggleRightSidebar('${sidebarId}')" class="text-gray-400 hover:text-red-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto min-w-[250px] p-2">
+                ${navLinksHtml}
+            </div>
+        </div>
+        ${toggleBtnHtml}
+    </div>
+    `;
 }
 
 // --- NEW CATEGORY CONTENT RENDERER ---
