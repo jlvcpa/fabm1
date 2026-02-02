@@ -1190,14 +1190,13 @@ export const unit2Week3Data = {
             ]
         },
         {
-            day: "Day 4",
-            topic: "Financial Statement - Practice",
-            content: `
-                [ Please add soeme review of the income statement, statement of changes in equity, and balance sheet that ends with a not to review  day 1 to 3)
-            `,
-            exercises: [
-                    ...merchTransactionPracData
-              ]
-        }
+    day: "Day 4",
+    topic: "Financial Statement - Practice",
+    content: `...`,
+    exercises: merchTransactionPracData.map(ex => ({ 
+        ...ex, 
+        type: "financialStatement" // <--- Override type here so app.js renders FS tab
+    }))
+}
     ]
 };
