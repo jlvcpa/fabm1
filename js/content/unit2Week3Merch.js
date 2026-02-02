@@ -569,56 +569,153 @@ export const unit2Week3Data = {
         },
         // ... (Keep Day 2, Day 3, and Day 4 objects exactly as they were in the previous code) ...
         {
-            day: "Day 2",
-            topic: "Net Sales, COGS, Gross Profit, and Operating Expenses",
-            content: `
-                <div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-500">
-                    <p class="font-bold text-indigo-900">Learning Goal</p>
-                    <p class="text-indigo-800">Master the computation of the core components of a Merchandising Income Statement: Net Sales, Cost of Goods Sold (COGS), and Gross Profit.</p>
+  "day": "Day 2",
+  "topic": "Income Statement - Merchandising Business",
+  "content": `
+    <div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-500 mb-8">
+        <p class="font-bold text-indigo-900">Learning Goal</p>
+        <p class="text-indigo-800">Master the comprehensive structure of a Merchandising Income Statement. You will learn to distinguish between Single-Step and Multi-Step formats, compute core components like Net Sales, COGS, and Gross Profit, and correctly classify Operating Expenses into Selling and Administrative categories to determine the final Net Income.</p>
+    </div>
+
+    <div class="space-y-8">
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">1. Single-Step vs. Multi-Step Income Statements</h3>
+            <p class="text-gray-700 mb-4">
+                The income statement can be presented in two primary formats depending on the level of detail required. A <strong>Single-Step</strong> statement is simple, grouping all revenues together and subtracting all expenses in one go to find Net Income. In contrast, the <strong>Multi-Step</strong> statement is essential for merchandising businesses because it calculates intermediate subtotals. This format reveals critical performance metrics like <em>Gross Profit</em> and <em>Operating Income</em>, allowing stakeholders to analyze the profitability of core operations separately from other expenses.
+            </p>
+            
+            <div class="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-100 uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3 border-r">Format</th>
+                            <th class="px-4 py-3 border-r">Structure</th>
+                            <th class="px-4 py-3">Best For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td class="px-4 py-3 font-bold text-gray-900 border-r">Single-Step</td>
+                            <td class="px-4 py-3 border-r">
+                                Total Revenues <br>
+                                <span class="text-red-600">- Total Expenses</span><br>
+                                = Net Income
+                            </td>
+                            <td class="px-4 py-3">Service businesses or simple operations where Cost of Goods Sold is not a major factor.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-gray-900 border-r">Multi-Step</td>
+                            <td class="px-4 py-3 border-r">
+                                Net Sales - COGS = <strong>Gross Profit</strong><br>
+                                - Operating Expenses<br>
+                                = Net Income
+                            </td>
+                            <td class="px-4 py-3">Merchandising businesses. Highlights the margin earned on products sold vs. the cost of running the business.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">2. Net Sales</h3>
+            <p class="text-gray-700 mb-4">
+                Net Sales represents the actual revenue a company earns from its customers after all necessary deductions are made. It is the starting point of a multi-step income statement and is more accurate than "Gross Sales" because it reflects the reality that not all sold goods stay sold or are paid for at full price. To calculate it, we take the total Gross Sales and subtract any goods customers returned (Sales Returns) and any discounts we gave them for paying early (Sales Discounts).
+            </p>
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm max-w-md">
+                <h4 class="text-lg font-bold text-purple-700 mb-2">Net Sales Computation</h4>
+                <div class="bg-purple-50 p-3 rounded font-mono text-sm border-l-4 border-purple-400">
+                    <p>Gross Sales</p>
+                    <p class="text-red-600">- Sales Returns & Allowances</p>
+                    <p class="text-red-600 border-b border-gray-400 pb-1">- Sales Discounts</p>
+                    <p class="font-bold pt-1 text-purple-900">= Net Sales</p>
                 </div>
+            </div>
+        </section>
 
-                <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
-                
-                <div class="space-y-6 mb-6">
-                    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-bold text-purple-700 mb-2">1. Net Sales</h3>
-                        <p class="text-sm text-gray-600 mb-3">The actual revenue earned from selling goods.</p>
-                        <div class="bg-gray-100 p-3 rounded font-mono text-sm border-l-4 border-purple-400">
-                            <p>Gross Sales</p>
-                            <p class="text-red-600">- Sales Returns & Allowances</p>
-                            <p class="text-red-600 border-b border-gray-400 pb-1">- Sales Discounts</p>
-                            <p class="font-bold pt-1">= Net Sales</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-bold text-blue-700 mb-2">2. Cost of Goods Sold (Periodic)</h3>
-                        <p class="text-sm text-gray-600 mb-3">The logic: What we had + What we bought - What is left = What we sold.</p>
-                        <div class="bg-gray-100 p-3 rounded font-mono text-sm border-l-4 border-blue-400">
-                            <p>Beginning Inventory</p>
-                            <p>+ Net Purchases <span class="text-xs text-gray-500">(Purchases - Returns - Discounts + Freight In)</span></p>
-                            <p class="border-b border-gray-400 pb-1 font-semibold">= Goods Available for Sale (TGAS)</p>
-                            <p class="text-red-600 pt-1 border-b border-black pb-1">- Ending Inventory</p>
-                            <p class="font-bold pt-1">= Cost of Goods Sold</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-bold text-green-700 mb-2">3. The Bottom Line Steps</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-green-50 p-3 rounded">
-                                <h4 class="font-bold text-green-800">Gross Profit</h4>
-                                <p class="font-mono text-sm mt-1">Net Sales - COGS</p>
-                            </div>
-                            <div class="bg-yellow-50 p-3 rounded">
-                                <h4 class="font-bold text-yellow-800">Net Income</h4>
-                                <p class="font-mono text-sm mt-1">Gross Profit - Operating Expenses</p>
-                            </div>
-                        </div>
-                    </div>
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">3. Cost of Goods Sold (COGS)</h3>
+            <p class="text-gray-700 mb-4">
+                Cost of Goods Sold (COGS) represents the direct cost attributable to the production or purchase of the goods sold by the company. In a periodic inventory system, we calculate this by looking at the flow of goods: we start with what we had at the beginning, add what we purchased during the period, and subtract what is left in the warehouse at the end. The resulting figure tells us the cost of the inventory that is no longer with us because it has been sold to customers.
+            </p>
+            <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm max-w-md">
+                <h4 class="text-lg font-bold text-blue-700 mb-2">COGS Formula (Periodic)</h4>
+                <div class="bg-blue-50 p-3 rounded font-mono text-sm border-l-4 border-blue-400">
+                    <p>Beginning Inventory</p>
+                    <p>+ Net Purchases <span class="text-xs text-gray-500">(Purchases - Returns - Discounts + Freight In)</span></p>
+                    <p class="border-b border-gray-400 pb-1 font-semibold text-blue-800">= Goods Available for Sale (TGAS)</p>
+                    <p class="text-red-600 pt-1 border-b border-black pb-1">- Ending Inventory</p>
+                    <p class="font-bold pt-1 text-blue-900">= Cost of Goods Sold</p>
                 </div>
-            `,
-            exercises: [
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">4. Gross Profit</h3>
+            <p class="text-gray-700 mb-4">
+                Gross Profit is the first critical subtotal in a multi-step income statement, representing the profit a company makes after deducting the costs associated with making and selling its products. It is a measure of production or sourcing efficiency; if this number is too low, the business cannot cover its operating expenses. It is calculated simply by subtracting the Cost of Goods Sold from Net Sales.
+            </p>
+            <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500 max-w-md">
+                <h4 class="font-bold text-green-800">Gross Profit Equation</h4>
+                <p class="font-mono text-lg mt-1 text-green-900">Net Sales - COGS = Gross Profit</p>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">5. Operating Expenses</h3>
+            <p class="text-gray-700 mb-4">
+                Operating Expenses constitute the costs required to run the company that are not directly tied to the production of goods (which are in COGS). These are the day-to-day "overhead" costs necessary to keep the business functioning, such as rent, salaries, and utilities. In a multi-step income statement, these are typically deducted from Gross Profit to arrive at Operating Income, and they are often categorized into specific functions to help management analyze spending.
+            </p>
+        </section>
+
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">6. Selling and Marketing Expenses</h3>
+            <p class="text-gray-700 mb-4">
+                Selling expenses are the costs directly associated with the effort of securing orders and delivering products to customers. This category includes money spent on advertising, sales commissions, showroom rent, and the cost of shipping goods out to buyers (Freight-Out). Differentiating these costs helps a business understand how much it costs them to generate revenue, separate from the cost of the product itself or general administration.
+            </p>
+             <div class="bg-purple-50 p-4 rounded border border-purple-200 max-w-md">
+                <h4 class="font-bold text-purple-900">Selling Expense Examples</h4>
+                <ul class="list-disc pl-5 text-sm text-purple-900 mt-2">
+                    <li>Sales Salaries & Commissions</li>
+                    <li>Advertising & Marketing Material</li>
+                    <li>Freight-Out (Delivery Expense)</li>
+                    <li>Depreciation: Store Equipment & Delivery Trucks</li>
+                    <li>Store Rent & Utilities</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">7. General and Administrative Expenses</h3>
+            <p class="text-gray-700 mb-4">
+                General and Administrative (G&A) expenses are the costs incurred to support the overall functioning of the business, rather than being tied to a specific sale or product. These include the salaries of management and office staff, legal and accounting fees, insurance, and office supplies. These costs are often considered "fixed" or semi-fixed, meaning they tend to persist regardless of sales volume, unlike COGS or sales commissions.
+            </p>
+            <div class="bg-gray-50 p-4 rounded border border-gray-300 max-w-md">
+                <h4 class="font-bold text-gray-900">Administrative Expense Examples</h4>
+                <ul class="list-disc pl-5 text-sm text-gray-800 mt-2">
+                    <li>Office Staff & Management Salaries</li>
+                    <li>Legal & Professional Fees</li>
+                    <li>Office Supplies Expense</li>
+                    <li>Depreciation: Office Equipment & Furniture</li>
+                    <li>Office Rent & Utilities</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h3 class="text-xl font-bold text-gray-800 mb-3">8. Net Income</h3>
+            <p class="text-gray-700 mb-4">
+                Net Income, often referred to as the "bottom line," is the final profit remaining after all expenses, including operating costs, interest, and taxes, have been deducted from total revenue. It is the ultimate indicator of a company's financial health and profitability for the period. To reach this figure in a merchandising business, we take the Gross Profit and subtract total Operating Expenses (Selling + Administrative).
+            </p>
+            <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-500 max-w-md">
+                <h4 class="font-bold text-yellow-800">The Bottom Line</h4>
+                <p class="font-mono text-lg mt-1 text-yellow-900">Gross Profit - Total Operating Expenses = Net Income</p>
+            </div>
+        </section>
+    </div>
+  `,
+
+      exercises: [
   {"type": "problem", "question": "Calculate Net Sales: Gross Sales ₱200,000; Sales Returns ₱8,000; Sales Discounts ₱4,000; Freight Out ₱2,500.", "answer": "₱188,000", "explanation": "200,000 - 8,000 - 4,000 = 188,000. Freight Out is an operating expense, not deducted from sales.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Net Purchases: Purchases ₱80,000; Purchase Returns ₱5,000; Purchase Discounts ₱2,000; Freight In ₱3,000.", "answer": "₱76,000", "explanation": "80,000 - 5,000 - 2,000 + 3,000 = 76,000. Freight In is added to the cost of purchases.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Cost of Goods Available for Sale (TGAS): Beginning Inventory ₱25,000; Net Purchases ₱76,000.", "answer": "₱101,000", "explanation": "25,000 + 76,000 = 101,000.", "isCurrency": true},
@@ -718,87 +815,8 @@ export const unit2Week3Data = {
   {"type": "mcq", "question": "Income from Operations is calculated by deducting what from Gross Profit?", "options": ["Cost of Goods Sold", "Operating Expenses", "Income Taxes", "Interest"], "correctIndex": 1, "explanation": "Gross Profit - Operating Expenses = Income from Operations."},
   {"type": "mcq", "question": "The account 'Freight In' is a:", "options": ["Operating Expense", "Adjunct account to Purchases", "Contra-revenue", "Liability"], "correctIndex": 1, "explanation": "It is added to Purchases (adjunct) to determine cost."},
   {"type": "mcq", "question": "If a company has Net Sales of ₱100 and COGS of ₱70, what is the Markup on Cost?", "options": ["30%", "42.8%", "70%", "100%"], "correctIndex": 1, "explanation": "Profit is 30. Markup on Cost = 30/70 ≈ 42.8%."},
-  {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."}
-            ]
-        },
-        {
-            day: "Day 3",
-            topic: "Single and Multi-Step Income Statement",
-            content: `
-                <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-                    <p class="font-bold text-blue-900">Learning Goal</p>
-                    <p class="text-blue-800">Distinguish between Single-Step and Multi-Step Income Statements and understand the classification of Operating Expenses.</p>
-                </div>
-
-                <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
-
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">1. Single-Step vs. Multi-Step</h3>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left border border-gray-300">
-                            <thead class="bg-gray-100 uppercase text-xs">
-                                <tr>
-                                    <th class="px-4 py-3 border-r">Format</th>
-                                    <th class="px-4 py-3 border-r">Structure</th>
-                                    <th class="px-4 py-3">Best For</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b">
-                                    <td class="px-4 py-3 font-bold text-gray-900 border-r">Single-Step</td>
-                                    <td class="px-4 py-3 border-r">
-                                        Total Revenues <br>
-                                        <span class="text-red-600">- Total Expenses</span><br>
-                                        = Net Income
-                                    </td>
-                                    <td class="px-4 py-3">Service businesses or simple operations. No Gross Profit line.</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 font-bold text-gray-900 border-r">Multi-Step</td>
-                                    <td class="px-4 py-3 border-r">
-                                        Net Sales - COGS = <strong>Gross Profit</strong><br>
-                                        - Operating Expenses<br>
-                                        = Net Income
-                                    </td>
-                                    <td class="px-4 py-3">Merchandising businesses. Highlights performance of core sales vs. expenses.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">2. Classifying Operating Expenses</h3>
-                    <p class="mb-4 text-gray-700">In a Multi-Step statement, expenses are often split into two categories:</p>
-
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div class="bg-purple-50 p-4 rounded border border-purple-200">
-                            <h4 class="font-bold text-purple-900">Selling Expenses</h4>
-                            <p class="text-xs text-purple-800 mb-2 italic">Directly related to making sales.</p>
-                            <ul class="list-disc pl-5 text-sm text-purple-900">
-                                <li>Sales Salaries & Commissions</li>
-                                <li>Advertising Expense</li>
-                                <li>Freight-Out (Delivery Expense)</li>
-                                <li>Store Supplies Expense</li>
-                                <li>Depreciation: Store Equipment</li>
-                            </ul>
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded border border-gray-300">
-                            <h4 class="font-bold text-gray-900">Administrative Expenses</h4>
-                            <p class="text-xs text-gray-600 mb-2 italic">General management & office support.</p>
-                            <ul class="list-disc pl-5 text-sm text-gray-800">
-                                <li>Office Salaries</li>
-                                <li>Utilities Expense (General)</li>
-                                <li>Office Supplies Expense</li>
-                                <li>Depreciation: Office Equipment</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `,
-            exercises: [
-                {"type": "mcq", "question": "Which of the following equations represents the Single-Step Income Statement format?", "options": ["Net Sales - COGS - Expenses = Net Income", "Total Revenues - Total Expenses = Net Income", "Gross Profit - Operating Expenses = Net Income", "Sales - Selling Expenses = Net Income"], "correctIndex": 1, "explanation": "The Single-Step format lumps all revenues together and all expenses together without subtotals like Gross Profit."},
+  {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."},
+          {"type": "mcq", "question": "Which of the following equations represents the Single-Step Income Statement format?", "options": ["Net Sales - COGS - Expenses = Net Income", "Total Revenues - Total Expenses = Net Income", "Gross Profit - Operating Expenses = Net Income", "Sales - Selling Expenses = Net Income"], "correctIndex": 1, "explanation": "The Single-Step format lumps all revenues together and all expenses together without subtotals like Gross Profit."},
   {"type": "mcq", "question": "In a Multi-Step Income Statement, 'Income from Operations' is calculated by deducting:", "options": ["Operating Expenses from Gross Profit", "Cost of Goods Sold from Net Sales", "Income Tax from Net Income", "Interest Expense from Operating Income"], "correctIndex": 0, "explanation": "Income from Operations = Gross Profit - Operating Expenses."},
   {"type": "mcq", "question": "Delivery Expense (Freight Out) is classified as:", "options": ["Cost of Goods Sold", "Administrative Expense", "Selling Expense", "Other Expense"], "correctIndex": 2, "explanation": "Freight Out is a cost incurred to sell/deliver goods to customers, making it a Selling Expense."},
   {"type": "mcq", "question": "Office Utilities Expense is typically classified as:", "options": ["Selling Expense", "Administrative Expense", "Cost of Goods Sold", "Other Expense"], "correctIndex": 1, "explanation": "Utilities used for the general office are part of Administrative (General) Expenses."},
@@ -898,72 +916,177 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Gross Profit: Net Sales ₱150,000; Mark up on cost is 50%.", "answer": "₱50,000", "explanation": "Sales = Cost * 1.5. Cost = 150,000 / 1.5 = 100,000. GP = 150 - 100 = 50.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Net Income: Sales ₱200; Expenses ₱150; Dividends ₱20.", "answer": "₱50", "explanation": "200 - 150 = 50. Dividends are not an expense.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Selling & Admin: Op Income ₱20,000; Gross Profit ₱55,000.", "answer": "₱35,000", "explanation": "55,000 - 20,000 = 35,000.", "isCurrency": true}
-
             ]
         },
         {
-            day: "Day 4",
-            topic: "Balance Sheet",
-            content: `
-                <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-                    <p class="font-bold text-blue-900">Learning Goal</p>
-                    <p class="text-blue-800">Prepare a Classified Balance Sheet for a merchandising business, focusing on the placement of Merchandise Inventory.</p>
-                </div>
+    "day": "Day 3",
+    "topic": "Statement of Changes in Equity and Balance Sheet",
+    "content": `
+        <div class="bg-teal-50 p-4 rounded-lg border-l-4 border-teal-500 mb-8">
+            <p class="font-bold text-teal-900">Learning Goal</p>
+            <p class="text-teal-800">Understand the flow of financial information: how the Statement of Changes in Equity connects the Net Income from the Income Statement to the final Equity balance on the Balance Sheet.</p>
+        </div>
 
-                <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
+        <section class="mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-3">1. The Statement of Changes in Equity</h3>
+            <p class="text-gray-700 leading-relaxed mb-6">
+                The Statement of Changes in Equity tracks the movement of the owner's claim on the business assets over a specific reporting period. It acts as the vital bridge between the Income Statement and the Balance Sheet by carrying forward the results of operations.  Specifically, the <strong>Net Income</strong> (or Net Loss) calculated on the Income Statement is transferred here and added to the beginning capital balance. Any withdrawals made by the owner for personal use are then deducted from this total to arrive at the <strong>Ending Capital</strong> balance. This final ending capital figure is what ultimately appears in the Owner's Equity section of the Balance Sheet, ensuring the accounting equation remains balanced.
+            </p>
 
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">1. Merchandise Inventory in the Balance Sheet</h3>
-                    <p class="text-gray-700 mb-4">
-                        The only major difference between a service and merchandising Balance Sheet is the addition of the <strong>Merchandise Inventory</strong> account.
-                    </p>
-
-                    <div class="bg-yellow-50 p-4 rounded border-l-4 border-yellow-400 mb-6">
-                        <p class="font-bold text-yellow-900">Classification:</p>
-                        <p class="text-yellow-800">It is a <strong>Current Asset</strong> because it is expected to be sold within the operating cycle (usually one year).</p>
-                    </div>
-
-                    <h4 class="font-bold text-gray-800 mb-2">Order of Liquidity (Current Assets)</h4>
-                    <ul class="bg-gray-50 p-4 rounded border border-gray-200 list-decimal pl-6 space-y-2 text-sm font-mono text-gray-700">
-                        <li>Cash and Cash Equivalents</li>
-                        <li>Short-term Investments</li>
-                        <li>Accounts Receivable</li>
-                        <li class="bg-blue-100 font-bold p-1 rounded -ml-1 pl-1 text-blue-900">Merchandise Inventory <span class="text-xs font-normal text-blue-700">(Less liquid than AR)</span></li>
-                        <li>Prepaid Expenses (Supplies, Insurance)</li>
-                    </ul>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">2. Balance Sheet Formats</h3>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-center">
+                <svg width="600" height="350" viewBox="0 0 600 350" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0" y="0" width="600" height="350" fill="#ffffff" />
                     
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div class="border p-4 rounded">
-                            <h4 class="font-bold text-center border-b pb-2 mb-2">Report Form</h4>
-                            <div class="text-center text-sm text-gray-600 space-y-2">
-                                <div class="bg-green-100 p-1">Assets</div>
-                                <div>|</div>
-                                <div class="bg-red-100 p-1">Liabilities</div>
-                                <div>|</div>
-                                <div class="bg-blue-100 p-1">Owner's Equity</div>
-                                <p class="italic mt-2 text-xs">(Vertical listing)</p>
-                            </div>
-                        </div>
-                        <div class="border p-4 rounded">
-                            <h4 class="font-bold text-center border-b pb-2 mb-2">Account Form</h4>
-                            <div class="flex justify-between text-sm text-gray-600 gap-2">
-                                <div class="bg-green-100 p-1 w-1/2 text-center h-24 flex items-center justify-center">Assets</div>
-                                <div class="w-1/2 space-y-2">
-                                    <div class="bg-red-100 p-1 text-center h-10 flex items-center justify-center">Liabilities</div>
-                                    <div class="bg-blue-100 p-1 text-center h-12 flex items-center justify-center">Equity</div>
-                                </div>
-                            </div>
-                            <p class="italic mt-2 text-xs text-center">(Side-by-side: Assets Left, L+E Right)</p>
-                        </div>
+                    <text x="300" y="30" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#2d3748">Company Name</text>
+                    <text x="300" y="55" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#2d3748">Statement of Changes in Equity</text>
+                    <text x="300" y="75" font-family="Arial, sans-serif" font-size="12" font-style="italic" text-anchor="middle" fill="#718096">For the Year Ended December 31, 20xx</text>
+                    
+                    <rect x="50" y="90" width="500" height="220" rx="5" stroke="#cbd5e0" stroke-width="2" fill="none"/>
+                    
+                    <text x="70" y="130" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">Owner, Capital, Beginning</text>
+                    <text x="480" y="130" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#2d3748">P 100,000</text>
+                    
+                    <text x="70" y="160" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">Add: Net Income</text>
+                    <text x="90" y="180" font-family="Arial, sans-serif" font-size="10" fill="#2b6cb0">(From Income Statement)</text>
+                    <text x="480" y="160" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#2b6cb0" font-weight="bold">50,000</text>
+                    <line x1="400" y1="170" x2="490" y2="170" stroke="#718096" stroke-width="1"/>
+                    
+                    <text x="70" y="195" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">Total</text>
+                    <text x="480" y="195" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#2d3748">150,000</text>
+                    
+                    <text x="70" y="230" font-family="Arial, sans-serif" font-size="14" fill="#e53e3e">Less: Owner, Drawings</text>
+                    <text x="480" y="230" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#e53e3e">(10,000)</text>
+                    <line x1="400" y1="240" x2="490" y2="240" stroke="#718096" stroke-width="1"/>
+                    
+                    <text x="70" y="270" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2d3748">Owner, Capital, Ending</text>
+                    <text x="90" y="290" font-family="Arial, sans-serif" font-size="10" fill="#2f855a" font-weight="bold">(To Balance Sheet)</text>
+                    <text x="480" y="270" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="end" fill="#2f855a">P 140,000</text>
+                    
+                    <line x1="400" y1="275" x2="490" y2="275" stroke="#2d3748" stroke-width="1"/>
+                    <line x1="400" y1="278" x2="490" y2="278" stroke="#2d3748" stroke-width="1"/>
+                </svg>
+            </div>
+        </section>
+
+        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+            <p class="font-bold text-blue-900">Learning Goal</p>
+            <p class="text-blue-800">Prepare a Classified Balance Sheet for a merchandising business, focusing on the placement of Merchandise Inventory.</p>
+        </div>
+
+        <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">2. Merchandise Inventory in the Balance Sheet</h3>
+            <p class="text-gray-700 mb-4">
+                The only major difference between a service and merchandising Balance Sheet is the addition of the <strong>Merchandise Inventory</strong> account.
+            </p>
+
+            <div class="bg-yellow-50 p-4 rounded border-l-4 border-yellow-400 mb-6">
+                <p class="font-bold text-yellow-900">Classification:</p>
+                <p class="text-yellow-800">It is a <strong>Current Asset</strong> because it is expected to be sold within the operating cycle (usually one year).</p>
+            </div>
+
+            <h4 class="font-bold text-gray-800 mb-2">Order of Liquidity (Current Assets)</h4>
+            <ul class="bg-gray-50 p-4 rounded border border-gray-200 list-decimal pl-6 space-y-2 text-sm font-mono text-gray-700">
+                <li>Cash and Cash Equivalents</li>
+                <li>Short-term Investments</li>
+                <li>Accounts Receivable</li>
+                <li class="bg-blue-100 font-bold p-1 rounded -ml-1 pl-1 text-blue-900">Merchandise Inventory <span class="text-xs font-normal text-blue-700">(Less liquid than AR)</span></li>
+                <li>Prepaid Expenses (Supplies, Insurance)</li>
+            </ul>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">3. Balance Sheet Formats</h3>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="border p-4 rounded">
+                    <h4 class="font-bold text-center border-b pb-2 mb-2">Report Form</h4>
+                    <div class="text-center text-sm text-gray-600 space-y-2">
+                        <div class="bg-green-100 p-1">Assets</div>
+                        <div>|</div>
+                        <div class="bg-red-100 p-1">Liabilities</div>
+                        <div>|</div>
+                        <div class="bg-blue-100 p-1">Owner's Equity</div>
+                        <p class="italic mt-2 text-xs">(Vertical listing)</p>
                     </div>
                 </div>
+                <div class="border p-4 rounded">
+                    <h4 class="font-bold text-center border-b pb-2 mb-2">Account Form</h4>
+                    <div class="flex justify-between text-sm text-gray-600 gap-2">
+                        <div class="bg-green-100 p-1 w-1/2 text-center h-24 flex items-center justify-center">Assets</div>
+                        <div class="w-1/2 space-y-2">
+                            <div class="bg-red-100 p-1 text-center h-10 flex items-center justify-center">Liabilities</div>
+                            <div class="bg-blue-100 p-1 text-center h-12 flex items-center justify-center">Equity</div>
+                        </div>
+                    </div>
+                    <p class="italic mt-2 text-xs text-center">(Side-by-side: Assets Left, L+E Right)</p>
+                </div>
+            </div>
+        </div>
             `,
             exercises: [
-  {"type": "mcq", "question": "Which Balance Sheet format lists Assets on the left side and Liabilities/Equity on the right side?", "options": ["Report Format", "Account Format", "Single-Step Format", "Multi-Step Format"], "correctIndex": 1, "explanation": "The Account Format resembles a T-account with side-by-side presentation."},
+  {"type": "mcq", "question": "What is the primary purpose of the Statement of Changes in Equity?", "options": ["To show cash inflows and outflows", "To show the profitability of the company", "To explain the changes in owner's equity during a period", "To list all assets and liabilities"], "correctIndex": 2, "explanation": "It details the movements in equity accounts (capital/retained earnings) between the beginning and end of the period."},
+  {"type": "mcq", "question": "Which of the following increases Owner's Equity?", "options": ["Net Loss", "Owner's Drawings", "Net Income", "Dividends"], "correctIndex": 2, "explanation": "Net Income adds to the accumulated earnings of the business, increasing equity."},
+  {"type": "mcq", "question": "Which of the following decreases Owner's Equity?", "options": ["Additional Investments", "Net Income", "Owner's Withdrawals", "Revenue"], "correctIndex": 2, "explanation": "Withdrawals represent the owner taking assets out of the business, reducing their claim."},
+  {"type": "mcq", "question": "The starting point for the Statement of Changes in Equity is:", "options": ["Net Income", "Ending Capital", "Beginning Capital", "Total Assets"], "correctIndex": 2, "explanation": "The statement reconciles the Beginning Capital to the Ending Capital."},
+  {"type": "mcq", "question": "Net Income is transferred to the Statement of Changes in Equity from which financial statement?", "options": ["Balance Sheet", "Income Statement", "Cash Flow Statement", "Trial Balance"], "correctIndex": 1, "explanation": "The 'bottom line' of the Income Statement becomes an addition in the Equity statement."},
+  {"type": "mcq", "question": "If a business incurs a Net Loss, how is it treated in the Statement of Changes in Equity?", "options": ["Added to Beginning Capital", "Deducted from Beginning Capital", "Ignored", "Added to Drawings"], "correctIndex": 1, "explanation": "A loss reduces the owner's equity and is deducted."},
+  {"type": "mcq", "question": "The ending balance calculated in the Statement of Changes in Equity flows to the:", "options": ["Income Statement", "Statement of Cash Flows", "Balance Sheet", "Ledger"], "correctIndex": 2, "explanation": "It appears in the Owner's Equity section of the Balance Sheet."},
+  {"type": "mcq", "question": "In a sole proprietorship, 'Additional Paid-in Capital' is usually recorded as:", "options": ["Revenue", "Direct increase to Capital account", "Liability", "Gain"], "correctIndex": 1, "explanation": "Investments by the owner are credited directly to the Owner's Capital account."},
+  {"type": "mcq", "question": "Which equation represents the Statement of Changes in Equity?", "options": ["Beg Capital + Assets - Liabilities = End Capital", "Beg Capital + Net Income - Withdrawals + Investments = End Capital", "Revenue - Expenses = Net Income", "Assets = Liabilities + Equity"], "correctIndex": 1, "explanation": "This formula summarizes the movements in equity."},
+  {"type": "mcq", "question": "Dividends declared by a corporation are equivalent to what in a sole proprietorship?", "options": ["Salaries Expense", "Net Loss", "Owner's Drawings", "Investments"], "correctIndex": 2, "explanation": "Both represent the distribution of earnings to owners."},
+  {"type": "mcq", "question": "A prior period error correction resulting in a decrease in income is reported as:", "options": ["An expense in the current Income Statement", "A deduction from Beginning Equity", "A liability", "A withdrawal"], "correctIndex": 1, "explanation": "Material errors from prior periods adjust the beginning equity balance (Retained Earnings)."},
+  {"type": "mcq", "question": "Which account is NOT found in the Statement of Changes in Equity?", "options": ["Owner, Capital", "Net Income", "Cash", "Owner, Drawings"], "correctIndex": 2, "explanation": "Cash is an Asset found on the Balance Sheet and Statement of Cash Flows."},
+  {"type": "mcq", "question": "If Beginning Capital is overstated, and all other figures are correct, Ending Capital will be:", "options": ["Understated", "Overstated", "Correct", "Zero"], "correctIndex": 1, "explanation": "Since Ending Capital is derived from Beginning Capital, the error carries forward."},
+  {"type": "mcq", "question": "The issuance of new shares in a corporation affects equity by:", "options": ["Decreasing it", "Increasing it", "No effect", "Creating a liability"], "correctIndex": 1, "explanation": "Selling shares brings in assets and increases Total Equity (Share Capital)."},
+  {"type": "mcq", "question": "Owner's investments of non-cash assets (e.g., equipment) are valued at:", "options": ["Original cost to the owner", "Fair Market Value", "Book Value", "Zero"], "correctIndex": 1, "explanation": "Investments are recorded at their fair market value at the time of investment."},
+  {"type": "mcq", "question": "Which of the following does NOT affect Owner's Equity directly?", "options": ["Paying a liability", "Owner investing cash", "Earning a profit", "Owner withdrawing cash"], "correctIndex": 0, "explanation": "Paying a liability reduces Assets and Liabilities (Cash and AP) but does not change Equity."},
+  {"type": "mcq", "question": "Comprehensive Income includes:", "options": ["Net Income only", "Net Income and Other Comprehensive Income (OCI)", "Gross Profit", "Retained Earnings"], "correctIndex": 1, "explanation": "It captures all non-owner changes in equity, including OCI items."},
+  {"type": "mcq", "question": "Retained Earnings represents:", "options": ["Cash available for dividends", "Total assets", "Accumulated profits not yet distributed", "Investments by stockholders"], "correctIndex": 2, "explanation": "It is the cumulative net income less cumulative dividends."},
+  {"type": "mcq", "question": "If Net Income is $0 and there are no investments or withdrawals, Ending Capital will:", "options": ["Increase", "Decrease", "Equal Beginning Capital", "Be zero"], "correctIndex": 2, "explanation": "Without any changing factors, the balance remains static."},
+  {"type": "mcq", "question": "Treasury Stock (in a corporation) is presented as:", "options": ["An Asset", "A Liability", "A deduction from Equity", "Revenue"], "correctIndex": 2, "explanation": "It represents shares bought back by the company, reducing total equity."},
+  {"type": "mcq", "question": "The 'Statement of Retained Earnings' is a specific type of:", "options": ["Income Statement", "Balance Sheet", "Statement of Changes in Equity", "Cash Flow"], "correctIndex": 2, "explanation": "It focuses solely on the Retained Earnings component of equity."},
+  {"type": "mcq", "question": "Which transaction creates a credit entry to the Owner's Capital account?", "options": ["Net Loss", "Drawings", "Additional Investment", "Expenses"], "correctIndex": 2, "explanation": "Equity accounts have a normal credit balance; investments increase equity."},
+  {"type": "mcq", "question": "Which transaction creates a debit entry to the Retained Earnings account?", "options": ["Net Income", "Declaration of Dividends", "Issuance of Stock", "Revenue"], "correctIndex": 1, "explanation": "Dividends reduce Retained Earnings, so they are debited."},
+  {"type": "mcq", "question": "If Ending Equity is greater than Beginning Equity, and there were no investments, it implies:", "options": ["Net Loss > Drawings", "Net Income > Drawings", "Drawings > Net Income", "Liabilities increased"], "correctIndex": 1, "explanation": "Profit must have exceeded withdrawals to grow equity without new investment."},
+  {"type": "mcq", "question": "Changes in accounting estimates are handled:", "options": ["Retrospectively (adjusting beginning equity)", "Prospectively (in current and future income)", "As a liability", "As a withdrawal"], "correctIndex": 1, "explanation": "Estimates are adjusted in the current period's Income Statement, affecting current Net Income."},
+  {"type": "mcq", "question": "The format 'Statement of Changes in Partners' Equity' is used for:", "options": ["Sole Proprietorships", "Partnerships", "Corporations", "Non-profits"], "correctIndex": 1, "explanation": "It tracks the capital balances of multiple partners."},
+  {"type": "mcq", "question": "Withdrawals of merchandise by the owner for personal use should be recorded as:", "options": ["Expense", "Sales", "Drawings", "Loss"], "correctIndex": 2, "explanation": "It is a withdrawal of assets (inventory), recorded at cost."},
+  {"type": "mcq", "question": "Usually, the Statement of Changes in Equity is prepared:", "options": ["Before the Income Statement", "After the Income Statement but before the Balance Sheet", "After the Balance Sheet", "Daily"], "correctIndex": 1, "explanation": "It needs Net Income (from IS) and provides Ending Capital (to BS)."},
+  {"type": "mcq", "question": "Donated Capital is a form of:", "options": ["Revenue", "Additional Paid-in Capital", "Retained Earnings", "Liability"], "correctIndex": 1, "explanation": "It increases equity but is not earned through operations."},
+  {"type": "mcq", "question": "If Liabilities increase and Assets remain constant, Equity must:", "options": ["Increase", "Decrease", "Stay the same", "Double"], "correctIndex": 1, "explanation": "A = L + E. If L goes up and A is fixed, E must go down to balance."},
+  {"type": "problem", "question": "Calculate Ending Capital: Beg Capital ₱100,000; Net Income ₱50,000; Drawings ₱20,000.", "answer": "₱130,000", "explanation": "100,000 + 50,000 - 20,000 = 130,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Income: Beg Capital ₱50,000; End Capital ₱70,000; Drawings ₱10,000; No Investments.", "answer": "₱30,000", "explanation": "70,000 = 50,000 + NI - 10,000. NI = 30,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Owner's Drawings: Beg Capital ₱80,000; End Capital ₱95,000; Net Income ₱25,000; No Investments.", "answer": "₱10,000", "explanation": "95,000 = 80,000 + 25,000 - D. 95k = 105k - D. D = 10,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Additional Investment: Beg Capital ₱20,000; End Capital ₱60,000; Net Income ₱15,000; Drawings ₱5,000.", "answer": "₱30,000", "explanation": "60,000 = 20,000 + 15,000 - 5,000 + I. 60k = 30k + I. I = 30,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Loss: Beg Capital ₱40,000; End Capital ₱30,000; Drawings ₱5,000; No Investments.", "answer": "₱5,000", "explanation": "30,000 = 40,000 - Loss - 5,000. 30k = 35k - Loss. Loss = 5,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Change in Equity: Net Income ₱12,000; Drawings ₱15,000.", "answer": "-₱3,000", "explanation": "12,000 (Increase) - 15,000 (Decrease) = -3,000 (Decrease).", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Retained Earnings: Beg RE ₱50,000; Net Income ₱20,000; Dividends ₱10,000.", "answer": "₱60,000", "explanation": "50,000 + 20,000 - 10,000 = 60,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Dividends Declared: Beg RE ₱100,000; End RE ₱110,000; Net Income ₱40,000.", "answer": "₱30,000", "explanation": "110,000 = 100,000 + 40,000 - Div. 110k = 140k - Div. Div = 30,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Beginning Capital: End Capital ₱200,000; Net Income ₱60,000; Drawings ₱10,000.", "answer": "₱150,000", "explanation": "200,000 = Beg + 60,000 - 10,000. 200k = Beg + 50k. Beg = 150,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Equity: Share Capital ₱500,000; Retained Earnings ₱200,000; Treasury Stock ₱50,000.", "answer": "₱650,000", "explanation": "500,000 + 200,000 - 50,000 = 650,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Comprehensive Income: Net Income ₱80,000; Unrealized Gain on Investments ₱5,000.", "answer": "₱85,000", "explanation": "80,000 + 5,000 = 85,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Adjusted Beginning Equity: Reported Beg Equity ₱100,000; Correction of prior period error (overstatement of profit) ₱10,000.", "answer": "₱90,000", "explanation": "100,000 - 10,000 = 90,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Capital after Investment: Beg Cap ₱50k; Investment of Cash ₱10k; Investment of Equipment ₱15k.", "answer": "₱75,000", "explanation": "50,000 + 10,000 + 15,000 = 75,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Decrease in Equity: Net Loss ₱8,000; Drawings ₱2,000; Investment ₱5,000.", "answer": "₱5,000", "explanation": "-8,000 - 2,000 + 5,000 = -5,000 (Decrease).", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Owner's Capital End: Assets ₱150,000; Liabilities ₱60,000.", "answer": "₱90,000", "explanation": "Equity = Assets - Liabilities = 150,000 - 60,000 = 90,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Capital: Beg Cap ₱10,000; Revenues ₱50,000; Expenses ₱35,000; Drawings ₱5,000.", "answer": "₱20,000", "explanation": "Net Income = 50k - 35k = 15k. End = 10k + 15k - 5k = 20,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Prior Period Adjustment: Beg RE (Restated) ₱90,000; Beg RE (Original) ₱100,000.", "answer": "-₱10,000", "explanation": "90,000 - 100,000 = -10,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Changes in Equity: Issue of Shares ₱100k; Net Income ₱50k; Dividends ₱20k.", "answer": "₱130,000", "explanation": "100,000 + 50,000 - 20,000 = 130,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Drawings: Owner withdraws ₱1,000 cash per month for a year.", "answer": "₱12,000", "explanation": "1,000 * 12 = 12,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Equity: Beg Equity ₱0 (New Business); Owner invests ₱50,000; First year Net Loss ₱5,000.", "answer": "₱45,000", "explanation": "0 + 50,000 - 5,000 = 45,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Investment: Owner deposits personal car into business (Fair Value ₱20,000; Cost ₱30,000).", "answer": "₱20,000", "explanation": "Investments are recorded at Fair Value.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Retained Earnings Balance: Beg ₱10k; Net Income ₱5k; Dividends ₱2k; Prior Period Adjustment (Credit) ₱1k.", "answer": "₱14,000", "explanation": "10k + 1k (Adj) + 5k (NI) - 2k (Div) = 14,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Capital: Beg ₱100,000. Owner withdraws 20% of beginning capital.", "answer": "₱80,000", "explanation": "Withdrawal = 20,000. 100,000 - 20,000 = 80,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Income: Change in Equity +₱40,000; Investments ₱10,000; Drawings ₱0.", "answer": "₱30,000", "explanation": "Change (40) = Inv (10) + NI - Draw (0). NI = 30,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Drawings: Beg Cap ₱50k; End Cap ₱50k; Net Income ₱10k.", "answer": "₱10,000", "explanation": "Since Cap didn't change, Drawings must equal Net Income. 50 = 50 + 10 - D.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Total Equity: Common Stock ₱10,000; Preferred Stock ₱5,000; Retained Earnings ₱15,000.", "answer": "₱30,000", "explanation": "10,000 + 5,000 + 15,000 = 30,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Ending Capital: Beg Cap ₱200,000; Net Loss ₱10,000; Drawings ₱5,000.", "answer": "₱185,000", "explanation": "200,000 - 10,000 - 5,000 = 185,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Missing Figure (Investment): Beg ₱100; End ₱150; Net Inc ₱20; Draw ₱10.", "answer": "₱40", "explanation": "150 = 100 + 20 - 10 + I. 150 = 110 + I. I = 40.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Net Income: Sales ₱100k; COGS ₱60k; Expenses ₱20k. (Used for Equity calculation).", "answer": "₱20,000", "explanation": "100 - 60 - 20 = 20,000.", "isCurrency": true},
+  {"type": "problem", "question": "Calculate Final Equity: Beg ₱50k; Owner takes ₱5k cash and ₱2k merchandise.", "answer": "₱43,000", "explanation": "Total Drawings = 7,000. 50,000 - 7,000 = 43,000.", "isCurrency": true},
+                {"type": "mcq", "question": "Which Balance Sheet format lists Assets on the left side and Liabilities/Equity on the right side?", "options": ["Report Format", "Account Format", "Single-Step Format", "Multi-Step Format"], "correctIndex": 1, "explanation": "The Account Format resembles a T-account with side-by-side presentation."},
   {"type": "mcq", "question": "The Report Format of the Balance Sheet presents accounts in what orientation?", "options": ["Horizontally", "Vertically", "Diagonally", "Randomly"], "correctIndex": 1, "explanation": "It lists Assets at the top, followed by Liabilities, then Equity below, in a vertical layout."},
   {"type": "mcq", "question": "Which of the following is the defining characteristic of a Current Asset?", "options": ["Useful life over 1 year", "Converted to cash or used within one year or operating cycle", "Intangible nature", "Held for investment purposes"], "correctIndex": 1, "explanation": "Current assets are liquid assets expected to be realized within 12 months."},
   {"type": "mcq", "question": "Merchandise Inventory is reported on the Balance Sheet at:", "options": ["Selling Price", "Net Realizable Value or Cost (whichever is lower)", "Future Value", "Scrap Value"], "correctIndex": 1, "explanation": "Inventory is valued at the lower of cost or net realizable value (LCNRV)."},
@@ -1063,7 +1186,17 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Owner's Investment: End Cap ₱50k; Beg Cap ₱40k; NI ₱5k; Draw ₱0.", "answer": "₱5,000", "explanation": "50 = 40 + 5 + Inv. 50 = 45 + Inv. Inv = 5.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Equity: Share Capital ₱100k; Retained Earnings ₱50k.", "answer": "₱150,000", "explanation": "100,000 + 50,000 = 150,000.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Liabilities & Equity: Assets ₱77,000.", "answer": "₱77,000", "explanation": "Must equal Assets.", "isCurrency": true}
+
             ]
+        },
+        {
+            day: "Day 4",
+            topic: "Financial Statement - Practice",
+            content: `
+                
+            `,
+            exercises: [
+              ]
         }
     ]
 };
