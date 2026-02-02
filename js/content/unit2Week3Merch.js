@@ -718,8 +718,7 @@ export const unit2Week3Data = {
   {"type": "mcq", "question": "Income from Operations is calculated by deducting what from Gross Profit?", "options": ["Cost of Goods Sold", "Operating Expenses", "Income Taxes", "Interest"], "correctIndex": 1, "explanation": "Gross Profit - Operating Expenses = Income from Operations."},
   {"type": "mcq", "question": "The account 'Freight In' is a:", "options": ["Operating Expense", "Adjunct account to Purchases", "Contra-revenue", "Liability"], "correctIndex": 1, "explanation": "It is added to Purchases (adjunct) to determine cost."},
   {"type": "mcq", "question": "If a company has Net Sales of ₱100 and COGS of ₱70, what is the Markup on Cost?", "options": ["30%", "42.8%", "70%", "100%"], "correctIndex": 1, "explanation": "Profit is 30. Markup on Cost = 30/70 ≈ 42.8%."},
-  {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."},
-    ...merchTransactionPracData
+  {"type": "mcq", "question": "The multi-step income statement distinguishes between:", "options": ["Operating and Non-operating activities", "Cash and Accrual", "Assets and Liabilities", "Debit and Credit"], "correctIndex": 0, "explanation": "It separates operating revenues/expenses from non-operating items like interest."}
             ]
         },
         {
@@ -898,8 +897,7 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Operating Expenses: Total Exp ₱100k; COGS ₱60k; Interest ₱5k.", "answer": "₱35,000", "explanation": "100 - 60 - 5 = 35.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Gross Profit: Net Sales ₱150,000; Mark up on cost is 50%.", "answer": "₱50,000", "explanation": "Sales = Cost * 1.5. Cost = 150,000 / 1.5 = 100,000. GP = 150 - 100 = 50.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Net Income: Sales ₱200; Expenses ₱150; Dividends ₱20.", "answer": "₱50", "explanation": "200 - 150 = 50. Dividends are not an expense.", "isCurrency": true},
-  {"type": "problem", "question": "Calculate Total Selling & Admin: Op Income ₱20,000; Gross Profit ₱55,000.", "answer": "₱35,000", "explanation": "55,000 - 20,000 = 35,000.", "isCurrency": true},
-    ...merchTransactionPracData
+  {"type": "problem", "question": "Calculate Total Selling & Admin: Op Income ₱20,000; Gross Profit ₱55,000.", "answer": "₱35,000", "explanation": "55,000 - 20,000 = 35,000.", "isCurrency": true}
 
             ]
         },
@@ -1064,8 +1062,7 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Total Operating Cycle Assets: Cash ₱5; AR ₱5; Inv ₱5; Land ₱100.", "answer": "₱15", "explanation": "Operating cycle assets are Current Assets: 5+5+5=15.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Owner's Investment: End Cap ₱50k; Beg Cap ₱40k; NI ₱5k; Draw ₱0.", "answer": "₱5,000", "explanation": "50 = 40 + 5 + Inv. 50 = 45 + Inv. Inv = 5.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Equity: Share Capital ₱100k; Retained Earnings ₱50k.", "answer": "₱150,000", "explanation": "100,000 + 50,000 = 150,000.", "isCurrency": true},
-  {"type": "problem", "question": "Calculate Total Liabilities & Equity: Assets ₱77,000.", "answer": "₱77,000", "explanation": "Must equal Assets.", "isCurrency": true},
-    ...merchTransactionPracData
+  {"type": "problem", "question": "Calculate Total Liabilities & Equity: Assets ₱77,000.", "answer": "₱77,000", "explanation": "Must equal Assets.", "isCurrency": true}
             ]
         }
     ]
