@@ -6,7 +6,6 @@ import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js';
 import { renderQuestionImporter } from './content/toolQuestionImporter.js'; 
 import { merchTransactionPracData } from './content/questionBank/qbMerchTransactions.js';
 import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js';
-// NEW IMPORT
 import Step06FinancialStatements, { validateStep06 } from './content/accountingCycle/steps/Step06FinancialStatement.js';
 import React from 'https://esm.sh/react@18.2.0';
 import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
