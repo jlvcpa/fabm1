@@ -1,13 +1,9 @@
 // --- utils.js for Constants and Logic Helpers for Accounting Cycle ---
 // --- js/content/accountingCycle/utils.js ---
 
-
 export const APP_VERSION = "Version: 2025-12-10 17:11 PST";
-
 export const EQUITY_CAUSES = ['', 'Increase in Capital', 'Decrease in Capital', 'Increase in Drawings', 'Decrease in Drawings', 'Increase in Income', 'Decrease in Income', 'Increase in Expense', 'Decrease in Expense'];
-
 export const CANONICAL_ACCOUNT_ORDER = ["Cash", "Accounts Receivable", "Merchandise Inventory", "Supplies", "Prepaid Rent", "Equipment", "Accumulated Depreciation - Equipment", "Furniture", "Accumulated Depreciation - Furniture", "Building", "Accumulated Depreciation - Building", "Land", "Accounts Payable", "Notes Payable", "Salaries Payable", "Utilities Payable", "Interest Payable", "Unearned Revenue", "Owner, Capital", "Owner, Drawings", "Share Capital", "Retained Earnings", "Dividends", "Service Revenue", "Sales", "Sales Discounts", "Sales Returns and Allowances", "Interest Income", "Cost of Goods Sold", "Purchases", "Purchase Discounts", "Purchase Returns and Allowances", "Freight In", "Freight Out", "Rent Expense", "Salaries Expense", "Utilities Expense", "Supplies Expense", "Repairs and Maintenance Expense", "Dues and Subscriptions Expense", "Depreciation Expense", "Insurance Expense", "Advertising Expense", "Interest Expense"];
-
 export const STEPS = [
     { id: 1, title: 'Transaction Analysis', description: 'Identify impact on Assets, Liabilities, and Equity' },
     { id: 2, title: 'Journalizing', description: 'Record transactions in the General Journal' },
