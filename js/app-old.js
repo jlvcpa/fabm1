@@ -1,11 +1,12 @@
 import { loginUser } from './auth.js';
 import { courseData } from './content/syllabus.js';
 import { formatRanges } from './utils.js';
-import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; // UNCOMMENT THIS WHEN FILE EXISTS
-import { renderQuestionImporter } from './content/toolQuestionImporter.js'; // UNCOMMENT THIS WHEN FILE EXISTS
+import { renderQuizActivityCreator } from './content/quizAndActivityCreator.js'; 
+import { renderQuizzesAndActivities } from './content/quizzesAndActivities.js'; 
+import { renderQuestionImporter } from './content/toolQuestionImporter.js'; 
 import { merchTransactionPracData } from './content/questionBank/qbMerchTransactions.js';
 import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js';
+import Step06FinancialStatements, { validateStep06 } from './content/accountingCycle/steps/Step06FinancialStatements.js';
 import React from 'https://esm.sh/react@18.2.0';
 import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
 
@@ -14,7 +15,8 @@ let currentUser = null;
 let calendarAssignments = JSON.parse(localStorage.getItem('fabm2_calendar')) || {};
 let flatTopics = []; 
 let currentCalendarYear, currentCalendarMonth;
-const worksheetRoots = new Map(); // Store React roots to avoid double mounting
+const worksheetRoots = new Map();
+const fsRoots = new Map(); // Store roots for FS to avoid double mounting
 
 // --- DOM ELEMENTS ---
 const elements = {
@@ -208,7 +210,6 @@ function renderSidebar(role) {
                         dayBtn.innerHTML = `<i class="fas fa-circle text-[6px]"></i> <span>${day.day}: ${day.topic}</span>`;
                         
                         dayBtn.onclick = () => {
-                            // FIXED: Was "Content(...)", changed to "renderDayContent(...)"
                             renderDayContent(unit, week, index);
                             closeMobileSidebar();
                             highlightActiveDay(dayBtn);
@@ -351,8 +352,6 @@ function renderQuizzesActivitiesPage() {
     const content = elements.contentArea();
     content.innerHTML = '';
 
-    // UNCOMMENT AND USE THIS BLOCK WHEN quizzesAndActivities.js IS READY
-   
     if (typeof renderQuizzesAndActivities === 'function') {
         renderQuizzesAndActivities(content, currentUser);
     } else {
@@ -419,37 +418,9 @@ function renderLandingPage() {
     };
 }
 
-// --- DAY RENDERER (The Core Content Logic) ---
+// --- WRAPPERS ---
 
-function getAccountNormalSide(accountName) {
-    const acc = accountName.toLowerCase();
-    
-    // Explicitly Credit Normal Accounts (Liabilities, Equity, Revenue, Contra-Assets)
-    if (acc.includes('accumulated') || acc.includes('allowance') || 
-        acc.includes('payable') || acc.includes('revenue') || 
-        acc.includes('sales') && !acc.includes('returns') && !acc.includes('discounts') || 
-        acc.includes('capital') || acc.includes('income summary')) {
-        return 'cr';
-    }
-
-    // Explicitly Debit Normal Accounts (Assets, Expenses, Drawings, Contra-Revenue/Liab)
-    if (acc.includes('cash') || acc.includes('receivable') || acc.includes('inventory') || 
-        acc.includes('supplies') || acc.includes('prepaid') || acc.includes('equipment') || 
-        acc.includes('land') || acc.includes('building') || acc.includes('machinery') ||
-        acc.includes('expense') || acc.includes('drawings') || acc.includes('purchases') || 
-        acc.includes('freight in') || acc.includes('return') || acc.includes('discount') ||
-        acc.includes('cost')) { // Cost of Goods Sold is Debit
-        return 'dr';
-    }
-    
-    // Default to Credit if unknown (e.g. Unearned Revenue fallthrough)
-    return 'cr';
-}
-
-// --- React Wrapper Component for Worksheet ---
-// This handles the state for the worksheet so "Show Solution" can work
 function WorksheetWrapper({ ledger, adjustments }) {
-    // FIX: Initialize rows as undefined so Step05Worksheet generates default empty rows
     const [wsState, setWsState] = React.useState({ footers: {} }); 
     const [showFeedback, setShowFeedback] = React.useState(false);
 
@@ -457,14 +428,11 @@ function WorksheetWrapper({ ledger, adjustments }) {
         setWsState(prev => ({ ...prev, [field]: val }));
     };
 
-    // Calculate score in real-time to determine button visibility
     const validation = React.useMemo(() => {
         return validateStep05(ledger, adjustments, wsState);
     }, [ledger, adjustments, wsState]);
 
     const percentage = validation.maxScore > 0 ? (validation.score / validation.maxScore) : 0;
-
-    // Button Condition: Score must be at least 75% (0.75)
     const showButton = percentage >= 0.75;
 
     return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
@@ -483,6 +451,104 @@ function WorksheetWrapper({ ledger, adjustments }) {
         ) : null
     );
 }
+
+// NEW FS WRAPPER
+// ... imports remain the same
+
+// UPDATED FS WRAPPER
+function FSWrapper({ activityData }) {
+    // 1. Calculate the 'Truth' Ledger from transactions + beginning balances
+    const calculatedLedger = React.useMemo(() => {
+        const ledger = {};
+        
+        // Add beginning balances
+        if (activityData.beginningBalances && activityData.beginningBalances.balances) {
+            Object.entries(activityData.beginningBalances.balances).forEach(([acc, bal]) => {
+                ledger[acc] = { debit: bal.dr || 0, credit: bal.cr || 0 };
+            });
+        }
+
+        // Add transactions from solution rows
+        if (activityData.transactions) {
+            activityData.transactions.forEach(tx => {
+                tx.solution.forEach(line => {
+                    if (line.isExplanation || line.account === "No Entry") return;
+                    if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
+                    
+                    const dr = parseFloat(line.debit) || 0;
+                    const cr = parseFloat(line.credit) || 0;
+                    
+                    if (dr > 0) ledger[line.account].debit += dr;
+                    if (cr > 0) ledger[line.account].credit += cr;
+                });
+            });
+        }
+        return ledger;
+    }, [activityData]);
+
+    // 2. Preprocess Adjustments (THE FIX)
+    // Converts "solution array" format (Day 4) into "drAcc/crAcc" format (Step06 expectation)
+    const processedAdjustments = React.useMemo(() => {
+        if (!activityData.adjustments) return [];
+        
+        return activityData.adjustments.map(adj => {
+            // If already in simple format (legacy/Day 1), keep it
+            if (adj.drAcc && adj.crAcc) return adj;
+
+            // If in Day 4 "Transaction" format with a solution array
+            if (adj.solution && Array.isArray(adj.solution)) {
+                const drLine = adj.solution.find(l => Number(l.debit) > 0);
+                const crLine = adj.solution.find(l => Number(l.credit) > 0);
+
+                if (drLine && crLine) {
+                    return {
+                        drAcc: drLine.account,
+                        crAcc: crLine.account,
+                        amount: Number(drLine.debit)
+                    };
+                }
+            }
+            return null;
+        }).filter(Boolean); // Remove any nulls to prevent 'undefined' crashes
+    }, [activityData]);
+
+    const [fsState, setFsState] = React.useState({ is: {}, bs: {}, sce: {}, scf: {} });
+    const [showFeedback, setShowFeedback] = React.useState(false);
+
+    const handleChange = (section, val) => {
+        setFsState(prev => ({ ...prev, [section]: val }));
+    };
+
+    // Calculate score
+    const validation = React.useMemo(() => {
+        // Pass processedAdjustments instead of raw activityData.adjustments
+        return validateStep06(calculatedLedger, processedAdjustments, activityData, fsState);
+    }, [calculatedLedger, processedAdjustments, activityData, fsState]);
+
+    const percentage = validation.maxScore > 0 ? (validation.score / validation.maxScore) : 0;
+    const showButton = percentage >= 0.75;
+
+    return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
+        React.createElement(Step06FinancialStatements, {
+            ledgerData: calculatedLedger,
+            adjustments: processedAdjustments, // Pass the fixed data here
+            activityData: activityData,
+            data: fsState,
+            onChange: handleChange,
+            showFeedback: showFeedback
+        }),
+        showButton ? React.createElement('div', { className: "flex justify-center" }, 
+            React.createElement('button', {
+                className: `px-6 py-3 font-bold rounded shadow transition-colors flex items-center gap-2 ${showFeedback ? 'bg-gray-600 hover:bg-gray-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`,
+                onClick: () => setShowFeedback(!showFeedback)
+            }, showFeedback ? React.createElement('span', null, "Hide Solution") : React.createElement('span', null, "Show Solution"))
+        ) : null
+    );
+}
+
+// ... rest of app.js logic
+
+// --- DAY RENDERER (The Core Content Logic) ---
 
 function renderDayContent(unit, week, dayIndex) {
     elements.pageTitle().innerText = `${unit.title} - ${week.title}`;
@@ -516,13 +582,25 @@ function renderDayContent(unit, week, dayIndex) {
     const hasProb = exercises.some(e => e.type === 'problem');
     const hasJourn = exercises.some(e => e.type === 'journalizing');
     
-    // Detect Worksheet Activities (can be multiple)
-    // Enrich with data from qbMerchTransactions.js if needed
+    // Detect Worksheet Activities
     const worksheetActivities = exercises
         .filter(ex => ex.type === 'worksheet' || ex.type === 'accountingCycleSimulation' || ex.id?.includes('Worksheet'))
         .map(ex => {
-            // Find matching detailed data in the imported Question Bank if it exists
             if (typeof merchTransactionPracData !== 'undefined') {
+                const qbData = merchTransactionPracData.find(qb => qb.id === ex.id);
+                return qbData ? { ...ex, ...qbData } : ex;
+            }
+            return ex;
+        });
+
+    // Detect Financial Statement Activities (NEW)
+    const fsActivities = exercises
+        .filter(ex => ex.type === 'financialStatement' || ex.id?.includes('FinancialStatement'))
+        .map(ex => {
+            // Check if we need to pull data from qbMerchTransactions
+            // Usually matching by ID
+            if (typeof merchTransactionPracData !== 'undefined') {
+                // Try to find matching data based on base ID (e.g., if exercise ID is "FS_Practice_1", looks for matching practice data)
                 const qbData = merchTransactionPracData.find(qb => qb.id === ex.id);
                 return qbData ? { ...ex, ...qbData } : ex;
             }
@@ -567,7 +645,7 @@ function renderDayContent(unit, week, dayIndex) {
     tabsContainer.appendChild(tabConcepts);
 
     // Conditional Tabs
-    let tabMcq, tabProb, tabJourn, tabWorksheet;
+    let tabMcq, tabProb, tabJourn, tabWorksheet, tabFS;
 
     if (hasMcq) {
         tabMcq = createTabBtn('tab-btn-mcq', 'fa-list-ul', 'Practice - Multiple Choice', false);
@@ -581,10 +659,13 @@ function renderDayContent(unit, week, dayIndex) {
         tabJourn = createTabBtn('tab-btn-journ', 'fa-pen-fancy', 'Practice - Journalizing', false);
         tabsContainer.appendChild(tabJourn);
     }
-    // New Worksheet Tab
     if (worksheetActivities.length > 0) {
         tabWorksheet = createTabBtn('tab-btn-worksheet', 'fa-table', 'Practice - 10 Columns Worksheet', false);
         tabsContainer.appendChild(tabWorksheet);
+    }
+    if (fsActivities.length > 0) {
+        tabFS = createTabBtn('tab-btn-fs', 'fa-chart-line', 'Practice - Financial Statements', false);
+        tabsContainer.appendChild(tabFS);
     }
 
     navBar.appendChild(tabsContainer);
@@ -657,18 +738,25 @@ function renderDayContent(unit, week, dayIndex) {
         tabContentWrapper.appendChild(journDiv);
     }
 
-    // 5. Worksheet Content (Updated to support multiple worksheets and sidebar)
+    // 5. Worksheet Content
     let worksheetDiv;
-    // Map to track roots by container ID
-    // We reuse the global worksheetRoots map defined at top
-
     if (worksheetActivities.length > 0) {
         worksheetDiv = document.createElement('div');
         worksheetDiv.id = "tab-content-worksheet";
-        worksheetDiv.className = "hidden h-full"; // Full height for sidebar layout
-        // Use renderWorksheetContent helper for consistent layout
-        worksheetDiv.innerHTML = renderWorksheetContent(worksheetActivities, dayIndex);
+        worksheetDiv.className = "hidden h-full";
+        worksheetDiv.innerHTML = renderWorksheetContent(worksheetActivities, dayIndex, 'worksheet');
         tabContentWrapper.appendChild(worksheetDiv);
+    }
+
+    // 6. Financial Statement Content (NEW)
+    let fsDiv;
+    if (fsActivities.length > 0) {
+        fsDiv = document.createElement('div');
+        fsDiv.id = "tab-content-fs";
+        fsDiv.className = "hidden h-full";
+        // Using same layout helper as worksheet
+        fsDiv.innerHTML = renderWorksheetContent(fsActivities, dayIndex, 'financialStatement');
+        tabContentWrapper.appendChild(fsDiv);
     }
 
     card.appendChild(tabContentWrapper);
@@ -683,9 +771,10 @@ function renderDayContent(unit, week, dayIndex) {
         if (probDiv) probDiv.classList.add('hidden');
         if (journDiv) journDiv.classList.add('hidden');
         if (worksheetDiv) worksheetDiv.classList.add('hidden');
+        if (fsDiv) fsDiv.classList.add('hidden');
 
         // Deactivate all buttons
-        [tabConcepts, tabMcq, tabProb, tabJourn, tabWorksheet].forEach(btn => {
+        [tabConcepts, tabMcq, tabProb, tabJourn, tabWorksheet, tabFS].forEach(btn => {
             if (btn) btn.className = btn.className.replace('border-blue-600 text-blue-900 bg-blue-50', 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50');
         });
 
@@ -707,12 +796,11 @@ function renderDayContent(unit, week, dayIndex) {
             worksheetDiv.classList.remove('hidden');
             activeBtn = tabWorksheet;
             
-            // Mount React Components loop
+            // Mount Worksheet Components
             worksheetActivities.forEach((activity, i) => {
                  const mountId = `worksheet-mount-${dayIndex}-${i}`;
                  const mountEl = document.getElementById(mountId);
                  
-                 // Only mount if element exists and not already mounted
                  if (mountEl && !worksheetRoots.has(mountId)) {
                     // Logic to calculate Ledger Balances from Transactions
                     const ledger = {};
@@ -721,11 +809,8 @@ function renderDayContent(unit, week, dayIndex) {
                             tx.solution.forEach(line => {
                                 if (line.isExplanation || line.account === "No Entry") return;
                                 if (!ledger[line.account]) ledger[line.account] = { debit: 0, credit: 0 };
-                                
-                                // Handle both numeric and string amounts safely
                                 const dr = parseFloat(line.debit) || 0;
                                 const cr = parseFloat(line.credit) || 0;
-                                
                                 if (dr > 0) ledger[line.account].debit += dr;
                                 if (cr > 0) ledger[line.account].credit += cr;
                             });
@@ -742,6 +827,25 @@ function renderDayContent(unit, week, dayIndex) {
                     worksheetRoots.set(mountId, root);
                  }
             });
+        } else if (targetType === 'fs' && fsDiv) {
+            fsDiv.classList.remove('hidden');
+            activeBtn = tabFS;
+
+            // Mount FS Components
+            fsActivities.forEach((activity, i) => {
+                const mountId = `financialStatement-mount-${dayIndex}-${i}`; // Matches ID gen in renderWorksheetContent
+                const mountEl = document.getElementById(mountId);
+
+                if (mountEl && !fsRoots.has(mountId)) {
+                    const root = ReactDOM.createRoot(mountEl);
+                    root.render(
+                        React.createElement(FSWrapper, {
+                            activityData: activity
+                        })
+                    );
+                    fsRoots.set(mountId, root);
+                }
+            });
         }
 
         // Activate Button
@@ -755,6 +859,7 @@ function renderDayContent(unit, week, dayIndex) {
     if (tabProb) tabProb.onclick = () => switchTab('problem');
     if (tabJourn) tabJourn.onclick = () => switchTab('journal');
     if (tabWorksheet) tabWorksheet.onclick = () => switchTab('worksheet');
+    if (tabFS) tabFS.onclick = () => switchTab('fs');
 
     // Attach Listeners
     attachExerciseListeners();
@@ -772,17 +877,17 @@ function executeExerciseMounts(exercises) {
     });
 }
 
-// --- NEW WORKSHEET RENDERER (Supports Quick Nav) ---
-function renderWorksheetContent(activities, dayIndex) {
+// --- CONTENT RENDERER (Supports Quick Nav) ---
+// type argument determines ID generation: 'worksheet' or 'financialStatement'
+function renderWorksheetContent(activities, dayIndex, type = 'worksheet') {
     let contentHtml = '';
     let navLinksHtml = '';
-    const type = 'worksheet'; // Used for ID generation
 
     // Build Nav Links if multiple
     if (activities.length > 1) {
         activities.forEach((item, index) => {
-            const label = `Worksheet #${index + 1}`;
-            const targetId = `ws-set-${dayIndex}-${index}`;
+            const label = type === 'worksheet' ? `Worksheet #${index + 1}` : `FS Set #${index + 1}`;
+            const targetId = `${type}-set-${dayIndex}-${index}`;
             navLinksHtml += `
                 <button onclick="document.getElementById('${targetId}').scrollIntoView({behavior: 'smooth', block: 'start'})" 
                 class="w-full text-left px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-gray-100 flex items-center group">
@@ -795,14 +900,15 @@ function renderWorksheetContent(activities, dayIndex) {
 
     // Build Content
     activities.forEach((activity, i) => {
-        const setId = `ws-set-${dayIndex}-${i}`;
-        const mountId = `worksheet-mount-${dayIndex}-${i}`;
+        const setId = `${type}-set-${dayIndex}-${i}`;
+        const mountId = `${type}-mount-${dayIndex}-${i}`;
+        const defaultTitle = type === 'worksheet' ? `Worksheet ${i+1}` : `Financial Statements ${i+1}`;
         
         contentHtml += `
             <div id="${setId}" class="mb-12 border-t-4 border-blue-500 pt-6">
                 <div class="prose prose-blue max-w-none mb-4">
-                    <h3 class="text-blue-700"><i class="fas fa-file-invoice mr-2"></i>${activity.title || `Worksheet ${i+1}`}</h3>
-                    <p class="text-gray-600">${activity.instructions || 'Complete the worksheet using the data below.'}</p>
+                    <h3 class="text-blue-700"><i class="fas ${type === 'worksheet' ? 'fa-file-invoice' : 'fa-chart-pie'} mr-2"></i>${activity.title || defaultTitle}</h3>
+                    <p class="text-gray-600">${activity.instructions || 'Complete the exercise using the data below.'}</p>
                 </div>
                 <div id="${mountId}" class="w-full min-h-[500px]"></div>
             </div>
