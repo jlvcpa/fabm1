@@ -741,7 +741,7 @@ export const unit2Week3Data = {
                             <tbody>
                                 <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Cash</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">67,500</td><td class="p-1 text-right"></td></tr>
                                 <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Accounts Receivable</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">22,000</td><td class="p-1 text-right"></td></tr>
-                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Merchandise Inventory - Jan 1</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">350,000</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Merchandise Inventory - Jan 1</td><td class="p-1 border-l text-right">285,000</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">350,000</td><td class="p-1 text-right"></td></tr>
                                 <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Office Supplies</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">4,200</td><td class="p-1 text-right"></td></tr>
                                 <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Prepaid Insurance</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">5,775</td><td class="p-1 text-right"></td></tr>
                                 <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Building</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">113,000</td><td class="p-1 text-right"></td></tr>
@@ -776,19 +776,75 @@ export const unit2Week3Data = {
                 <div class="space-y-6">
                     <div class="bg-yellow-50 border border-yellow-300 rounded shadow-md">
                         <div class="bg-yellow-200 p-2 font-bold text-yellow-900 text-center text-sm">
+                            OUTPUT: Single-Step Income Statement
+                        </div>
+                        <div class="p-4 text-xs font-mono text-gray-800">
+                             <div class="font-bold text-base mb-1 bg-yellow-300 p-1">Income</div>
+                             <div class="flex justify-between font-bold"><span>Sales</span> <span>894,440.00</span></div>
+                             <div class="pl-4">Less: Sales Discounts <span class="float-right mr-32">10,200.00</span></div>
+                             <div class="pl-8">Sales Returns and Allowances <span class="float-right mr-32 border-b border-black">44,300.00</span> <span class="float-right border-b border-black">54,500.00</span></div>
+                             <div class="flex justify-between font-bold"><span>Net Sales</span> <span>839,940.00</span></div>
+                             <div class="mb-1 font-bold">Other Income</div>
+                             <div class="pl-4 flex justify-between"><span>Interest Income</span> <span class="border-b border-black">9,000.00</span></div>
+                             <div class="flex justify-between font-bold bg-yellow-300 p-1"><span>Total Income</span> <span>848,940.00</span></div>
+
+                             <div class="font-bold text-base mt-4 mb-1 bg-orange-300 p-1">Expenses</div>
+                             <div class="mb-1 font-bold bg-green-100 p-1">Cost of Goods Sold</div>
+                             <div class="pl-4 flex justify-between"><span>Beginning Inventory</span> <span class="mr-32">285,000.00</span></div>
+                             <div class="pl-4">Net Purchases</div>
+                             <div class="pl-8 flex justify-between"><span>Purchases</span> <span class="mr-48">760,000.00</span></div>
+                             <div class="pl-8">
+                                 <div class="pl-4">Less: Purchase Discounts <span class="float-right mr-64">6,000</span></div>
+                                 <div class="pl-8">Purchase Returns and Allowances <span class="float-right mr-64 border-b border-black">7,000</span> <span class="float-right mr-48 border-b border-black">13,000.00</span></div>
+                             </div>
+                             <div class="pl-8 flex justify-between"><span></span> <span class="mr-32">747,000.00</span></div>
+                             <div class="pl-4 flex justify-between"><span>Freight In</span> <span class="mr-32 border-b border-black">21,300.00</span></div>
+                             <div class="pl-4 flex justify-between font-bold"><span>Total Goods Available for Sale</span> <span class="mr-32">1,053,300.00</span></div>
+                             <div class="pl-4 flex justify-between"><span>Less: Ending Inventory</span> <span class="mr-32 border-b border-black">350,000.00</span> <span class="float-right border-b border-black">703,300.00</span></div>
+
+                             <div class="mb-1 font-bold bg-green-100 p-1 mt-2">Operating Expenses</div>
+                             <div class="pl-4 flex justify-between"><span>Salaries Expense</span> <span class="mr-32">8,400.00</span></div>
+                             <div class="pl-4 flex justify-between"><span>Supplies Expense</span> <span class="mr-32">6,400.00</span></div>
+                             <div class="pl-4 flex justify-between"><span>Insurance Expense</span> <span class="mr-32">1,925.00</span></div>
+                             <div class="pl-4 flex justify-between"><span>Advertising Expense</span> <span class="mr-32">19,500.00</span></div>
+                             <div class="pl-4 flex justify-between"><span>Maintenance Expense</span> <span class="mr-32 border-b border-black">32,700.00</span> <span class="float-right border-b border-black">68,925.00</span></div>
+                             
+                             <div class="mb-1 font-bold bg-green-100 p-1 mt-2">Non-Operating Expenses</div>
+                             <div class="pl-4 flex justify-between"><span>Interest Expense</span> <span class="mr-32 border-b border-black">2,500.00</span></div>
+
+                             <div class="flex justify-between font-bold bg-orange-300 p-1 mt-2"><span>Total Expenses</span> <span>774,725.00</span></div>
+                             
+                             <div class="flex justify-between font-bold mt-2"><span>Income Before Tax</span> <span>74,215.00</span></div>
+                             <div class="flex justify-between border-b border-black mb-1"><span>Less: Provision for Income Tax</span> <span>-</span></div>
+                             <div class="flex justify-between font-extrabold text-lg border-b-4 border-double border-black py-1">
+                                <span>NET INCOME</span> <span>74,215.00</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-300 rounded shadow-md">
+                        <div class="bg-yellow-200 p-2 font-bold text-yellow-900 text-center text-sm">
                             OUTPUT: Multi-Step Income Statement
                         </div>
                         <div class="p-4 text-xs font-mono text-gray-800">
-                            <div class="font-bold text-base mb-2">Operating Income</div>
+                            <div class="bg-yellow-200 px-2 py-1 font-bold mb-2">Operating Income</div>
                             
-                            <div class="flex justify-between font-bold"><span>Sales</span> <span>894,440.00</span></div>
-                            <div class="pl-4">Less: Sales Discounts <span class="float-right mr-32">10,200.00</span></div>
-                            <div class="pl-8">Sales Returns and Allowances <span class="float-right mr-32 border-b border-black">44,300.00</span> <span class="float-right border-b border-black">54,500.00</span></div>
-                            <div class="flex justify-between font-bold"><span>Net Sales</span> <span>839,940.00</span></div>
+                            <div class="flex justify-between mb-1">
+                                <span>Sales</span>
+                                <span>894,440.00</span>
+                            </div>
+                            <div class="mb-2">
+                                <div class="pl-4">Less: Sales Discounts <span class="float-right mr-32">10,200.00</span></div>
+                                <div class="pl-8">Sales Returns and Allowances <span class="float-right mr-32 border-b border-black">44,300.00</span> <span class="float-right border-b border-black">54,500.00</span></div>
+                            </div>
+                            <div class="flex justify-between font-bold mb-4">
+                                <span>Net Sales</span>
+                                <span>839,940.00</span>
+                            </div>
 
-                            <div class="font-bold mt-2">Cost of Goods Sold</div>
+                            <div class="mb-1 font-bold">Cost of Goods Sold</div>
                             <div class="pl-4 flex justify-between"><span>Beginning Inventory</span> <span class="mr-32">285,000.00</span></div>
-                            <div class="pl-4">Net Purchases</div>
+                            <div class="pl-4 mb-1">Net Purchases</div>
                             <div class="pl-8 flex justify-between"><span>Purchases</span> <span class="mr-48">760,000.00</span></div>
                             <div class="pl-8">
                                 <div class="pl-4">Less: Purchase Discounts <span class="float-right mr-64">6,000</span></div>
@@ -799,28 +855,53 @@ export const unit2Week3Data = {
                             <div class="pl-4 flex justify-between font-bold"><span>Total Goods Available for Sale</span> <span class="mr-32">1,053,300.00</span></div>
                             <div class="pl-4 flex justify-between"><span>Less: Ending Inventory</span> <span class="mr-32 border-b border-black">350,000.00</span> <span class="float-right border-b border-black">703,300.00</span></div>
                             
-                            <div class="flex justify-between font-bold text-lg mt-2"><span>Gross Profit</span> <span>136,640.00</span></div>
+                            <div class="flex justify-between font-bold text-lg mt-2 mb-4">
+                                <span>Gross Profit</span>
+                                <span>136,640.00</span>
+                            </div>
 
-                            <div class="font-bold mt-2">Operating Expenses</div>
+                            <div class="mb-1 font-bold">Operating Expenses</div>
                             <div class="pl-4 flex justify-between"><span>Salaries Expense</span> <span class="mr-32">8,400.00</span></div>
                             <div class="pl-4 flex justify-between"><span>Supplies Expense</span> <span class="mr-32">6,400.00</span></div>
                             <div class="pl-4 flex justify-between"><span>Insurance Expense</span> <span class="mr-32">1,925.00</span></div>
                             <div class="pl-4 flex justify-between"><span>Advertising Expense</span> <span class="mr-32">19,500.00</span></div>
                             <div class="pl-4 flex justify-between"><span>Maintenance Expense</span> <span class="mr-32 border-b border-black">32,700.00</span> <span class="float-right border-b border-black">68,925.00</span></div>
                             
-                            <div class="flex justify-between font-bold bg-yellow-200 p-1 mt-1"><span>Net Operating Income</span> <span>67,715.00</span></div>
+                            <div class="flex justify-between font-bold bg-yellow-100 p-1 mb-4">
+                                <span>Net Operating Income</span>
+                                <span>67,715.00</span>
+                            </div>
 
-                            <div class="font-bold mt-2 bg-orange-200 px-1">Non-Operating Income and Expenses</div>
+                            <div class="bg-orange-200 px-2 py-1 font-bold mb-2">Non-Operating Income and Expenses</div>
                             <div class="pl-4 flex justify-between"><span>Interest Income</span> <span class="mr-32">9,000.00</span></div>
                             <div class="pl-4 flex justify-between"><span>Interest Expense</span> <span class="mr-32 border-b border-black">(2,500.00)</span></div>
-                            <div class="flex justify-between font-bold bg-orange-100 p-1"><span>Net Non-Operating Income</span> <span>6,500.00</span></div>
+                            
+                            <div class="flex justify-between font-bold bg-orange-100 p-1 mb-2">
+                                <span>Net Non-Operating Income</span>
+                                <span>6,500.00</span>
+                            </div>
 
-                            <div class="flex justify-between font-bold mt-2"><span>Income Before Tax</span> <span>74,215.00</span></div>
+                            <div class="flex justify-between font-bold"><span>Income Before Tax</span> <span>74,215.00</span></div>
                             <div class="flex justify-between border-b border-black mb-1"><span>Less: Provision for Income Tax</span> <span>-</span></div>
                             
-                            <div class="flex justify-between font-extrabold text-lg border-b-4 border-double border-black py-1">
-                                <span>NET INCOME</span> <span>74,215.00</span>
+                            <div class="flex justify-between font-extrabold text-lg border-b-4 border-double border-black py-2">
+                                <span>NET INCOME</span>
+                                <span>74,215.00</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-300 rounded shadow-md">
+                        <div class="bg-blue-200 p-2 font-bold text-blue-900 text-center text-sm">
+                            OUTPUT: Balance Sheet (Partial)
+                        </div>
+                        <div class="p-4 text-xs font-mono text-gray-800">
+                            <div class="font-bold underline mb-1">Current Assets</div>
+                            <div class="flex justify-between"><span>Cash</span> <span>67,500.00</span></div>
+                            <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000.00</span></div>
+                            <div class="flex justify-between bg-yellow-100 p-1 font-bold"><span>Merchandise Inventory</span> <span>350,000.00</span></div>
+                            <div class="flex justify-between"><span>Office Supplies</span> <span>4,200.00</span></div>
+                            <div class="flex justify-between border-t border-black mt-1 pt-1 font-bold"><span>Total Current Assets</span> <span>449,475.00</span></div>
                         </div>
                     </div>
                 </div>
