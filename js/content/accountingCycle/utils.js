@@ -192,15 +192,16 @@ const getAccountRank = (accountName) => {
         if (n.includes('retained')) return 310;
         if (n.includes('drawings') || n.includes('withdrawal') || n.includes('dividends')) return 320;
         // User Request: Income Summary is last among equity
-        if (n.includes('income summary')) return 399; 
         return 350;
     }
 
     // RANK 400: REVENUE
     if (type === 'Revenue') {
-        if (n === 'sales' || n === 'service revenue') return 400;
+        if (n.includes('income summary')) return 399; 
+        if (n === 'sales' || n === 'sales revenue') return 400;
         if (n.includes('sales returns')) return 410;
         if (n.includes('sales discounts')) return 420;
+        if (n === 'service income' || n === 'service revenue') return 430;
         if (n.includes('interest income')) return 490; // Other income last
         return 450;
     }
