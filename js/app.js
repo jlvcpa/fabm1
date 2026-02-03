@@ -453,6 +453,9 @@ function WorksheetWrapper({ ledger, adjustments }) {
 }
 
 // NEW FS WRAPPER
+// ... imports remain the same
+
+// UPDATED FS WRAPPER
 function FSWrapper({ activityData }) {
     // 1. Calculate the 'Truth' Ledger from transactions + beginning balances
     const calculatedLedger = React.useMemo(() => {
@@ -483,6 +486,32 @@ function FSWrapper({ activityData }) {
         return ledger;
     }, [activityData]);
 
+    // 2. Preprocess Adjustments (THE FIX)
+    // Converts "solution array" format (Day 4) into "drAcc/crAcc" format (Step06 expectation)
+    const processedAdjustments = React.useMemo(() => {
+        if (!activityData.adjustments) return [];
+        
+        return activityData.adjustments.map(adj => {
+            // If already in simple format (legacy/Day 1), keep it
+            if (adj.drAcc && adj.crAcc) return adj;
+
+            // If in Day 4 "Transaction" format with a solution array
+            if (adj.solution && Array.isArray(adj.solution)) {
+                const drLine = adj.solution.find(l => Number(l.debit) > 0);
+                const crLine = adj.solution.find(l => Number(l.credit) > 0);
+
+                if (drLine && crLine) {
+                    return {
+                        drAcc: drLine.account,
+                        crAcc: crLine.account,
+                        amount: Number(drLine.debit)
+                    };
+                }
+            }
+            return null;
+        }).filter(Boolean); // Remove any nulls to prevent 'undefined' crashes
+    }, [activityData]);
+
     const [fsState, setFsState] = React.useState({ is: {}, bs: {}, sce: {}, scf: {} });
     const [showFeedback, setShowFeedback] = React.useState(false);
 
@@ -492,8 +521,9 @@ function FSWrapper({ activityData }) {
 
     // Calculate score
     const validation = React.useMemo(() => {
-        return validateStep06(calculatedLedger, activityData.adjustments || [], activityData, fsState);
-    }, [calculatedLedger, activityData, fsState]);
+        // Pass processedAdjustments instead of raw activityData.adjustments
+        return validateStep06(calculatedLedger, processedAdjustments, activityData, fsState);
+    }, [calculatedLedger, processedAdjustments, activityData, fsState]);
 
     const percentage = validation.maxScore > 0 ? (validation.score / validation.maxScore) : 0;
     const showButton = percentage >= 0.75;
@@ -501,7 +531,7 @@ function FSWrapper({ activityData }) {
     return React.createElement('div', { className: "flex flex-col gap-6 pb-12" },
         React.createElement(Step06FinancialStatements, {
             ledgerData: calculatedLedger,
-            adjustments: activityData.adjustments || [],
+            adjustments: processedAdjustments, // Pass the fixed data here
             activityData: activityData,
             data: fsState,
             onChange: handleChange,
@@ -515,6 +545,8 @@ function FSWrapper({ activityData }) {
         ) : null
     );
 }
+
+// ... rest of app.js logic
 
 // --- DAY RENDERER (The Core Content Logic) ---
 
