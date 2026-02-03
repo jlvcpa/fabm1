@@ -1,4 +1,6 @@
 // --- Step09PostClosingTB.js ---
+
+
 import React, { useState, useMemo } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Book, Check, X, Table, Trash2, Plus, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
@@ -317,10 +319,19 @@ const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSu
                         const rowsL = [];
                         const rowsR = [];
                         
-                        // Determine Year
-                        const contextYear = transactions && transactions.length > 0 
-                            ? new Date(transactions[0].date).getFullYear() 
-                            : new Date().getFullYear();
+                        // Determine Year & End of Month Date
+                        let contextYear = new Date().getFullYear();
+                        let endOfMonthDate = `${contextYear}-12-31`;
+
+                        // DYNAMIC DATE FIX: Use transactions to determine the correct month/end date
+                        if (transactions && transactions.length > 0) {
+                             const tDate = new Date(transactions[0].date);
+                             contextYear = tDate.getFullYear();
+                             const lastDay = new Date(contextYear, tDate.getMonth() + 1, 0);
+                             const m = String(lastDay.getMonth() + 1).padStart(2, '0');
+                             const d = String(lastDay.getDate()).padStart(2, '0');
+                             endOfMonthDate = `${contextYear}-${m}-${d}`;
+                        }
 
                         // Add Year Row (First Row)
                         rowsL.push({ isYear: true, displayDate: contextYear, part: '', pr: '', amount: null });
@@ -343,15 +354,17 @@ const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSu
                         }
 
                         // 3. Adjusting Entries (Step 7)
+                        // FIX: Use endOfMonthDate instead of hardcoded 12-31
                         if (adjustments) {
                             adjustments.forEach(adj => {
-                                const adjDate = `${contextYear}-12-31`;
+                                const adjDate = endOfMonthDate; 
                                 if (adj.drAcc === acc) rowsL.push({ rawDate: adjDate, part: 'Adj', pr: 'J2', amount: adj.amount });
                                 if (adj.crAcc === acc) rowsR.push({ rawDate: adjDate, part: 'Adj', pr: 'J2', amount: adj.amount });
                             });
                         }
 
                         // 4. Closing Entries (Step 8 / Computed)
+                        // FIX: Use endOfMonthDate instead of hardcoded 12-31
                         if (computedClosingEntries) {
                             computedClosingEntries.forEach(block => {
                                 if (block.rows) {
@@ -359,7 +372,7 @@ const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSu
                                         if (row.acc && row.acc.trim() === acc) {
                                             const dr = Number(row.dr) || 0;
                                             const cr = Number(row.cr) || 0;
-                                            const closDate = `${contextYear}-12-31`;
+                                            const closDate = endOfMonthDate;
                                             if (dr > 0) rowsL.push({ rawDate: closDate, part: 'Clos', pr: 'J3', amount: dr });
                                             if (cr > 0) rowsR.push({ rawDate: closDate, part: 'Clos', pr: 'J3', amount: cr });
                                         }
@@ -409,8 +422,9 @@ const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSu
                                                 dateText = formatDate(r.rawDate, isFirstDataRow || isMonthChange);
                                             }
 
+                                            // ALIGNMENT FIX: Only Year row is center; all date rows are right-aligned
                                             return html`<div key=${i} className="flex text-xs border-b border-gray-200 h-6 items-center px-1">
-                                                <div className="w-14 text-center text-gray-500 border-r mr-1 font-medium ${r.isYear ? 'font-bold text-black' : ''}">${dateText}</div>
+                                                <div className=${`w-14 border-r mr-1 font-medium ${r.isYear ? 'font-bold text-black text-center' : 'text-right pr-2 text-gray-500'}`}>${dateText}</div>
                                                 <div className="flex-1 border-r mr-1">${r.part||''}</div>
                                                 <div className="w-8 border-r text-center mr-1">${r.pr||''}</div>
                                                 <div className="w-16 text-right">${r.amount ? r.amount.toLocaleString() : ''}</div>
@@ -444,8 +458,9 @@ const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSu
                                                 dateText = formatDate(r.rawDate, isFirstDataRow || isMonthChange);
                                             }
 
+                                            // ALIGNMENT FIX: Only Year row is center; all date rows are right-aligned
                                             return html`<div key=${i} className="flex text-xs border-b border-gray-200 h-6 items-center px-1">
-                                                <div className="w-14 text-center text-gray-500 border-r mr-1 font-medium ${r.isYear ? 'font-bold text-black' : ''}">${dateText}</div>
+                                                <div className=${`w-14 border-r mr-1 font-medium ${r.isYear ? 'font-bold text-black text-center' : 'text-right pr-2 text-gray-500'}`}>${dateText}</div>
                                                 <div className="flex-1 border-r mr-1">${r.part||''}</div>
                                                 <div className="w-8 border-r text-center mr-1">${r.pr||''}</div>
                                                 <div className="w-16 text-right">${r.amount ? r.amount.toLocaleString() : ''}</div>
