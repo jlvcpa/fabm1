@@ -6,14 +6,14 @@ export const EQUITY_CAUSES = ['', 'Increase in Capital', 'Decrease in Capital', 
 export const CANONICAL_ACCOUNT_ORDER = ["Cash", "Accounts Receivable", "Merchandise Inventory", "Supplies", "Prepaid Rent", "Equipment", "Accumulated Depreciation - Equipment", "Furniture", "Accumulated Depreciation - Furniture", "Building", "Accumulated Depreciation - Building", "Land", "Accounts Payable", "Notes Payable", "Salaries Payable", "Utilities Payable", "Interest Payable", "Unearned Revenue", "Owner, Capital", "Owner, Drawings", "Share Capital", "Retained Earnings", "Dividends", "Service Revenue", "Sales", "Sales Discounts", "Sales Returns and Allowances", "Interest Income", "Cost of Goods Sold", "Purchases", "Purchase Discounts", "Purchase Returns and Allowances", "Freight In", "Freight Out", "Rent Expense", "Salaries Expense", "Utilities Expense", "Supplies Expense", "Repairs and Maintenance Expense", "Dues and Subscriptions Expense", "Depreciation Expense", "Insurance Expense", "Advertising Expense", "Interest Expense"];
 export const STEPS = [
     { id: 1, title: 'Transaction Analysis', description: 'Identify impact on Assets, Liabilities, and Equity' },
-    { id: 2, title: 'Journalizing', description: 'Record transactions in the General Journal' },
+    { id: 2, title: 'Journalizing Transactions', description: 'Record transactions in the General Journal' },
     { id: 3, title: 'Posting to Ledger', description: 'Post journal entries to T-Accounts/Ledger' },
-    { id: 4, title: 'Trial Balance', description: 'Prepare Unadjusted Trial Balance' },
-    { id: 5, title: '10-Column Worksheet', description: 'Prepare Worksheet with Adjustments' },
-    { id: 6, title: 'Financial Statements', description: 'Prepare Income Statement and Balance Sheet' },
-    { id: 7, title: 'Adjusting Entries', description: 'Journalize and Post Adjusting Entries' },
-    { id: 8, title: 'Closing Entries', description: 'Journalize and Post Closing Entries' },
-    { id: 9, title: 'Post-Closing Trial Balance', description: 'Prepare Post-Closing Trial Balance' },
+    { id: 4, title: 'Preparing the Unadjusted Trial Balance', description: 'Prepare Unadjusted Trial Balance' },
+    { id: 5, title: 'Preparing the 10-Columns Worksheet', description: 'Prepare Worksheet with Adjustments' },
+    { id: 6, title: 'Preparing the Financial Statements', description: 'Prepare Income Statement and Balance Sheet' },
+    { id: 7, title: 'Journalizing and Posting the Adjusting Entries', description: 'Journalize and Post Adjusting Entries' },
+    { id: 8, title: 'Journalizing and Posting the Closing Entries', description: 'Journalize and Post Closing Entries' },
+    { id: 9, title: 'Preparing the Post-Closing Trial Balance', description: 'Prepare Post-Closing Trial Balance' },
     { id: 10, title: 'Reversing Entries', description: 'Setup new period and Reversing Entries' },
 ];
 
