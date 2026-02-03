@@ -620,7 +620,7 @@ export const unit2Week3Data = {
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">2. Net Sales</h3>
             <p class="text-gray-700 mb-4">
-                Net Sales represents the actual revenue a company earns from its customers after all necessary deductions are made. It is the starting point of a multi-step income statement and is more accurate than "Gross Sales" because it reflects the reality that not all sold goods stay sold or are paid for at full price. To calculate it, we take the total Gross Sales and subtract any goods customers returned (Sales Returns) and any discounts we gave them for paying early (Sales Discounts).
+                Net Sales represents the actual revenue a company earns from its customers after all necessary deductions are made. It is the starting point of a multi-step income statement. To calculate it, we take the total Gross Sales and subtract any goods customers returned (Sales Returns) and any discounts we gave them for paying early (Sales Discounts).
             </p>
             <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm max-w-md">
                 <h4 class="text-lg font-bold text-purple-700 mb-2">Net Sales Computation</h4>
@@ -636,7 +636,7 @@ export const unit2Week3Data = {
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">3. Cost of Goods Sold (COGS)</h3>
             <p class="text-gray-700 mb-4">
-                Cost of Goods Sold (COGS) represents the direct cost attributable to the production or purchase of the goods sold by the company. In a periodic inventory system, we calculate this by looking at the flow of goods: we start with what we had at the beginning, add what we purchased during the period, and subtract what is left in the warehouse at the end. The resulting figure tells us the cost of the inventory that is no longer with us because it has been sold to customers.
+                Cost of Goods Sold (COGS) represents the direct cost attributable to the production or purchase of the goods sold by the company. In a periodic inventory system, we calculate this by looking at the flow of goods: we start with what we had at the beginning, add what we purchased during the period, and subtract what is left in the warehouse at the end.
             </p>
             <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm max-w-md">
                 <h4 class="text-lg font-bold text-blue-700 mb-2">COGS Formula (Periodic)</h4>
@@ -653,7 +653,7 @@ export const unit2Week3Data = {
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">4. Gross Profit</h3>
             <p class="text-gray-700 mb-4">
-                Gross Profit is the first critical subtotal in a multi-step income statement, representing the profit a company makes after deducting the costs associated with making and selling its products. It is a measure of production or sourcing efficiency; if this number is too low, the business cannot cover its operating expenses. It is calculated simply by subtracting the Cost of Goods Sold from Net Sales.
+                Gross Profit is the first critical subtotal in a multi-step income statement, representing the profit a company makes after deducting the costs associated with making and selling its products.
             </p>
             <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500 max-w-md">
                 <h4 class="font-bold text-green-800">Gross Profit Equation</h4>
@@ -664,14 +664,14 @@ export const unit2Week3Data = {
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">5. Operating Expenses</h3>
             <p class="text-gray-700 mb-4">
-                Operating Expenses constitute the costs required to run the company that are not directly tied to the production of goods (which are in COGS). These are the day-to-day "overhead" costs necessary to keep the business functioning, such as rent, salaries, and utilities. In a multi-step income statement, these are typically deducted from Gross Profit to arrive at Operating Income, and they are often categorized into specific functions to help management analyze spending.
+                Operating Expenses constitute the costs required to run the company that are not directly tied to the production of goods (which are in COGS). These are the day-to-day "overhead" costs necessary to keep the business functioning, such as rent, salaries, and utilities.
             </p>
         </section>
 
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">6. Selling and Marketing Expenses</h3>
             <p class="text-gray-700 mb-4">
-                Selling expenses are the costs directly associated with the effort of securing orders and delivering products to customers. This category includes money spent on advertising, sales commissions, showroom rent, and the cost of shipping goods out to buyers (Freight-Out). Differentiating these costs helps a business understand how much it costs them to generate revenue, separate from the cost of the product itself or general administration.
+                Selling expenses are the costs directly associated with the effort of securing orders and delivering products to customers. This category includes money spent on advertising, sales commissions, and freight-out.
             </p>
              <div class="bg-purple-50 p-4 rounded border border-purple-200 max-w-md">
                 <h4 class="font-bold text-purple-900">Selling Expense Examples</h4>
@@ -679,7 +679,6 @@ export const unit2Week3Data = {
                     <li>Sales Salaries & Commissions</li>
                     <li>Advertising & Marketing Material</li>
                     <li>Freight-Out (Delivery Expense)</li>
-                    <li>Depreciation: Store Equipment & Delivery Trucks</li>
                     <li>Store Rent & Utilities</li>
                 </ul>
             </div>
@@ -688,7 +687,7 @@ export const unit2Week3Data = {
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">7. General and Administrative Expenses</h3>
             <p class="text-gray-700 mb-4">
-                General and Administrative (G&A) expenses are the costs incurred to support the overall functioning of the business, rather than being tied to a specific sale or product. These include the salaries of management and office staff, legal and accounting fees, insurance, and office supplies. These costs are often considered "fixed" or semi-fixed, meaning they tend to persist regardless of sales volume, unlike COGS or sales commissions.
+                General and Administrative (G&A) expenses are the costs incurred to support the overall functioning of the business, rather than being tied to a specific sale or product.
             </p>
             <div class="bg-gray-50 p-4 rounded border border-gray-300 max-w-md">
                 <h4 class="font-bold text-gray-900">Administrative Expense Examples</h4>
@@ -696,7 +695,6 @@ export const unit2Week3Data = {
                     <li>Office Staff & Management Salaries</li>
                     <li>Legal & Professional Fees</li>
                     <li>Office Supplies Expense</li>
-                    <li>Depreciation: Office Equipment & Furniture</li>
                     <li>Office Rent & Utilities</li>
                 </ul>
             </div>
@@ -705,11 +703,89 @@ export const unit2Week3Data = {
         <section>
             <h3 class="text-xl font-bold text-gray-800 mb-3">8. Net Income</h3>
             <p class="text-gray-700 mb-4">
-                Net Income, often referred to as the "bottom line," is the final profit remaining after all expenses, including operating costs, interest, and taxes, have been deducted from total revenue. It is the ultimate indicator of a company's financial health and profitability for the period. To reach this figure in a merchandising business, we take the Gross Profit and subtract total Operating Expenses (Selling + Administrative).
+                Net Income, often referred to as the "bottom line," is the final profit remaining after all expenses, including operating costs, interest, and taxes, have been deducted from total revenue.
             </p>
             <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-500 max-w-md">
                 <h4 class="font-bold text-yellow-800">The Bottom Line</h4>
                 <p class="font-mono text-lg mt-1 text-yellow-900">Gross Profit - Total Operating Expenses = Net Income</p>
+            </div>
+        </section>
+
+        <section class="border-t-4 border-indigo-200 pt-8 mt-12">
+            <h3 class="text-2xl font-bold text-indigo-900 mb-4">9. Data Flow: Worksheet to Financial Statements</h3>
+            <p class="text-gray-700 mb-6">
+                The <strong>10-Column Worksheet</strong> is the blueprint for your Financial Statements. Once the worksheet is balanced, you simply "lift" the figures from the last four columns (Income Statement & Balance Sheet) to create the formal reports. Notice how the same data (Hai Company, Dec 31, 2023) translates into different formats below.
+            </p>
+
+            <div class="grid xl:grid-cols-2 gap-8">
+                <div class="bg-white border border-gray-300 rounded shadow-md overflow-hidden">
+                    <div class="bg-gray-100 p-3 border-b border-gray-300 font-bold text-gray-700 text-center">
+                        SOURCE: Worksheet (Last 4 Columns)
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs font-mono">
+                            <thead>
+                                <tr class="bg-gray-50 border-b">
+                                    <th class="p-2 text-left">Account</th>
+                                    <th class="p-2 text-center border-l bg-red-50 text-red-900" colspan="2">Income Statement</th>
+                                    <th class="p-2 text-center border-l bg-blue-50 text-blue-900" colspan="2">Balance Sheet</th>
+                                </tr>
+                                <tr class="bg-gray-50 border-b text-[10px]">
+                                    <th class="p-1"></th>
+                                    <th class="p-1 border-l text-center w-16">Debit</th>
+                                    <th class="p-1 text-center w-16">Credit</th>
+                                    <th class="p-1 border-l text-center w-16">Debit</th>
+                                    <th class="p-1 text-center w-16">Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b"><td class="p-1 pl-2">Cash</td><td class="border-l"></td><td></td><td class="border-l text-right bg-blue-50">67,500</td><td class="text-right"></td></tr>
+                                <tr class="border-b"><td class="p-1 pl-2">Merch. Inventory</td><td class="border-l"></td><td></td><td class="border-l text-right bg-blue-50">350,000</td><td class="text-right"></td></tr>
+                                <tr class="border-b"><td class="p-1 pl-2">Haya Hai, Capital</td><td class="border-l"></td><td></td><td class="border-l text-right"></td><td class="text-right bg-blue-50">472,580</td></tr>
+                                <tr class="border-b"><td class="p-1 pl-2">Sales</td><td class="border-l"></td><td class="text-right bg-red-50">894,440</td><td class="border-l"></td><td class="text-right"></td></tr>
+                                <tr class="border-b"><td class="p-1 pl-2">Sales Returns</td><td class="border-l text-right bg-red-50">44,300</td><td></td><td class="border-l"></td><td class="text-right"></td></tr>
+                                <tr class="border-b bg-gray-50 font-bold"><td class="p-1 pl-2 text-gray-500 italic">... (Expenses) ...</td><td class="border-l"></td><td></td><td class="border-l"></td><td class="text-right"></td></tr>
+                                <tr class="border-b font-bold"><td class="p-1 pl-2">Net Income</td><td class="border-l text-right text-red-600">74,215</td><td></td><td class="border-l"></td><td class="text-right text-blue-600">74,215</td></tr>
+                                <tr class="bg-gray-100 font-bold border-t-2 border-black"><td class="p-1 pl-2">TOTAL</td><td class="border-l text-right">1,266,440</td><td class="text-right">1,266,440</td><td class="border-l text-right">598,475</td><td class="text-right">598,475</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-yellow-50 border border-yellow-300 rounded shadow-md">
+                        <div class="bg-yellow-200 p-2 font-bold text-yellow-900 text-center text-sm">
+                            OUTPUT: Multi-Step Income Statement
+                        </div>
+                        <div class="p-4 text-xs font-mono text-gray-800">
+                            <div class="flex justify-between font-bold"><span>Net Sales</span> <span>839,940.00</span></div>
+                            <div class="flex justify-between text-gray-600 pl-4"><span>(Sales 894,440 - Returns 44,300 - Disc 10,200)</span></div>
+                            <div class="flex justify-between mt-2 font-bold text-red-700"><span>Less: Cost of Goods Sold</span> <span>(703,300.00)</span></div>
+                            <div class="border-b border-black mb-1"></div>
+                            <div class="flex justify-between font-bold text-lg"><span>Gross Profit</span> <span>136,640.00</span></div>
+                            <div class="flex justify-between mt-2"><span>Less: Operating Expenses</span> <span>(68,925.00)</span></div>
+                            <div class="flex justify-between pl-4 text-gray-500"><span>(Salaries, Supplies, Insurance, etc.)</span></div>
+                            <div class="flex justify-between mt-2 font-bold"><span>Net Operating Income</span> <span>67,715.00</span></div>
+                            <div class="flex justify-between"><span>Add: Other Income (Interest)</span> <span>6,500.00</span></div>
+                            <div class="border-b-4 border-double border-black mb-1"></div>
+                            <div class="flex justify-between font-bold text-lg text-green-700 bg-green-100 p-1"><span>NET INCOME</span> <span>74,215.00</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-300 rounded shadow-md">
+                        <div class="bg-blue-200 p-2 font-bold text-blue-900 text-center text-sm">
+                            OUTPUT: Balance Sheet (Partial)
+                        </div>
+                        <div class="p-4 text-xs font-mono text-gray-800">
+                            <div class="font-bold underline mb-1">Current Assets</div>
+                            <div class="flex justify-between"><span>Cash</span> <span>67,500.00</span></div>
+                            <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000.00</span></div>
+                            <div class="flex justify-between bg-yellow-100 p-1 font-bold"><span>Merchandise Inventory</span> <span>350,000.00</span></div>
+                            <div class="flex justify-between"><span>Office Supplies</span> <span>4,200.00</span></div>
+                            <div class="flex justify-between border-t border-black mt-1 pt-1 font-bold"><span>Total Current Assets</span> <span>449,475.00</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </div>
