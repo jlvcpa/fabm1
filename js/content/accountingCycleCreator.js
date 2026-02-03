@@ -56,7 +56,7 @@ export async function renderAccountingCycleCreator(container) {
                                 <select id="ac-activity-name" class="w-full p-2 border border-gray-300 rounded focus:border-indigo-500 outline-none">
                                     <option value="">-- Select Activity --</option>
                                     <option value="S2T1 Performance Task 01">S2T1 Performance Task 01</option>
-                                    <option value="S2T2 Performance Task 01">S2T2 Performance Task 01</option>
+                                    <option value="S2T1 Formative Task 01">S2T1 Formative Task 01</option>
                                 </select>
                             </div>
                         </div>
