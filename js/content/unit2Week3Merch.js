@@ -1329,136 +1329,210 @@ export const unit2Week3Data = {
         </div>
 
         <section class="border-t-4 border-indigo-200 pt-8 mt-12">
-            <h3 class="text-2xl font-bold text-indigo-900 mb-4">4. Data Flow: Worksheet to Financial Statements</h3>
-            <p class="text-gray-700 mb-6">
-                Below shows how the <strong>Net Income</strong> from the Income Statement columns flows into the Statement of Changes in Equity, and how the <strong>Ending Capital</strong> flows into the Balance Sheet.
-            </p>
+        <h3 class="text-2xl font-bold text-indigo-900 mb-4">4. Data Flow: Worksheet to Financial Statements</h3>
+        <p class="text-gray-700 mb-6">
+            Below shows how the <strong>Net Income</strong> from the Income Statement columns flows into the Statement of Changes in Equity, and how the <strong>Ending Capital</strong> flows into the Balance Sheet.
+        </p>
 
-            <div class="grid xl:grid-cols-2 gap-8 items-start">
-                
-                <div class="border border-gray-300 rounded shadow-sm overflow-hidden">
-                    <div class="bg-gray-100 p-2 font-bold text-xs text-center text-gray-600 uppercase tracking-wider">
-                        Source: 10-Column Worksheet (Hai Company)
+        <div class="grid xl:grid-cols-2 gap-8 items-start">
+            
+            <div class="border border-gray-300 rounded shadow-sm overflow-hidden">
+                <div class="bg-gray-100 p-2 font-bold text-xs text-center text-gray-600 uppercase tracking-wider">
+                    Source: 10-Column Worksheet (Hai Company)
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs font-mono border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b">
+                                <th class="p-2 text-left">Account</th>
+                                <th class="p-2 text-center border-l bg-red-50 text-red-900">Inc. Stat (Net Inc)</th>
+                                <th class="p-2 text-center border-l bg-blue-50 text-blue-900" colspan="2">Balance Sheet</th>
+                            </tr>
+                            <tr class="bg-gray-50 border-b text-[10px]">
+                                <th class="p-1"></th>
+                                <th class="p-1 border-l text-center">Result</th>
+                                <th class="p-1 border-l text-center w-16">Debit</th>
+                                <th class="p-1 text-center w-16">Credit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b"><td class="p-1 pl-2">Cash</td><td class="border-l bg-gray-50"></td><td class="border-l text-right">67,500</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Accounts Receivable</td><td class="border-l bg-gray-50"></td><td class="border-l text-right">22,000</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Merchandise Inv - Jan 1</td><td class="border-l bg-gray-50"></td><td class="border-l text-right">350,000</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Office Supplies</td><td class="border-l bg-gray-50"></td><td class="border-l text-right">4,200</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Prepaid Insurance</td><td class="border-l bg-gray-50"></td><td class="border-l text-right">5,775</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Building</td><td class="border-l bg-gray-50"></td><td class="border-l text-right">113,000</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Accumulated Depreciation</td><td class="border-l bg-gray-50"></td><td class="border-l text-right"></td><td class="text-right">22,500</td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Accounts Payable</td><td class="border-l bg-gray-50"></td><td class="border-l text-right"></td><td class="text-right">25,000</td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Accrued Expense Payable</td><td class="border-l bg-gray-50"></td><td class="border-l text-right"></td><td class="text-right">4,180</td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Hai, Capital (Beg)</td><td class="border-l bg-gray-50"></td><td class="border-l"></td><td class="text-right bg-yellow-100 font-bold">472,580</td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2">Hai, Drawings</td><td class="border-l bg-gray-50"></td><td class="border-l text-right bg-red-100 font-bold">36,000</td><td class="text-right"></td></tr>
+                            <tr class="border-b"><td class="p-1 pl-2 text-gray-500 italic">... (Other Inc/Exp Accts) ...</td><td class="border-l bg-gray-50"></td><td class="border-l"></td><td class="text-right"></td></tr>
+                            <tr class="bg-gray-100 font-bold border-t-2 border-black"><td class="p-1 pl-2">TOTAL</td><td class="border-l"></td><td class="border-l text-right">598,475</td><td class="text-right">524,260</td></tr>
+                            <tr class="bg-green-50 font-bold border-t border-black"><td class="p-1 pl-2">Net Income</td><td class="border-l text-center text-green-700">74,215</td><td class="border-l"></td><td class="text-right text-green-700">74,215</td></tr>
+                            <tr class="bg-gray-200 font-extrabold border-t-2 border-double border-black"><td class="p-1 pl-2">GRAND TOTAL</td><td class="border-l"></td><td class="border-l text-right">598,475</td><td class="text-right">598,475</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="border border-teal-300 rounded shadow-sm overflow-hidden relative">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
+                    <div class="bg-teal-50 p-2 font-bold text-xs text-center text-teal-900 uppercase tracking-wider">
+                        Output 1: Statement of Changes in Equity
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs font-mono">
-                            <thead>
-                                <tr class="bg-gray-50 border-b">
-                                    <th class="p-2 text-left">Account</th>
-                                    <th class="p-2 text-center border-l bg-red-50 text-red-900">Inc. Stat (Net Inc)</th>
-                                    <th class="p-2 text-center border-l bg-blue-50 text-blue-900" colspan="2">Balance Sheet</th>
-                                </tr>
-                                <tr class="bg-gray-50 border-b text-[10px]">
-                                    <th class="p-1"></th>
-                                    <th class="p-1 border-l text-center">Result</th>
-                                    <th class="p-1 border-l text-center w-16">Debit</th>
-                                    <th class="p-1 text-center w-16">Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b"><td class="p-1 pl-2">Hai, Capital (Beg)</td><td class="border-l bg-gray-50"></td><td class="border-l"></td><td class="text-right bg-yellow-100 font-bold">472,580</td></tr>
-                                <tr class="border-b"><td class="p-1 pl-2">Hai, Drawings</td><td class="border-l bg-gray-50"></td><td class="border-l text-right bg-red-100 font-bold">36,000</td><td class="text-right"></td></tr>
-                                <tr class="border-b"><td class="p-1 pl-2 text-gray-500 italic">... (Other Accts) ...</td><td class="border-l bg-gray-50"></td><td class="border-l"></td><td class="text-right"></td></tr>
-                                <tr class="bg-green-50 font-bold border-t-2 border-black"><td class="p-1 pl-2">Net Income</td><td class="border-l text-center text-green-700">74,215</td><td class="border-l"></td><td class="text-right text-green-700">74,215</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="p-4 text-xs font-mono text-gray-800 bg-white">
+                        <div class="font-bold text-center mb-1">Hai Company</div>
+                        <div class="text-center mb-1">Statement of Changes in Equity</div>
+                        <div class="text-center italic mb-4 text-gray-500">For the year ended December 31, 2023</div>
+
+                        <div class="flex justify-between mb-1">
+                            <span>Hai Capital, Beginning</span> 
+                            <span class="bg-yellow-100 px-1">472,580.00</span>
+                        </div>
+                        <div class="flex justify-between mb-1 text-green-700">
+                            <span>Add: Net Income during the year</span> 
+                            <span class="border-b border-gray-400 font-bold">74,215.00</span>
+                        </div>
+                        <div class="flex justify-between mb-2 font-bold">
+                            <span>Total Capital during the year</span> 
+                            <span>546,795.00</span>
+                        </div>
+                        <div class="flex justify-between mb-2 text-red-700">
+                            <span>Less: Drawings during the year</span> 
+                            <span class="bg-red-100 px-1">(36,000.00)</span>
+                        </div>
+                        <div class="border-b border-black mb-1"></div>
+                        <div class="flex justify-between font-bold text-sm bg-teal-50 p-1">
+                            <span>Hai Capital, Ending</span> 
+                            <span class="border-b-4 border-double border-black">510,795.00</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="space-y-6">
-                    <div class="border border-teal-300 rounded shadow-sm overflow-hidden relative">
-                        <div class="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
-                        <div class="bg-teal-50 p-2 font-bold text-xs text-center text-teal-900 uppercase tracking-wider">
-                            Output 1: Statement of Changes in Equity
-                        </div>
-                        <div class="p-4 text-xs font-mono text-gray-800 bg-white">
-                            <div class="font-bold text-center mb-1">Hai Company</div>
-                            <div class="text-center mb-1">Statement of Changes in Equity</div>
-                            <div class="text-center italic mb-4 text-gray-500">For the year ended December 31, 2023</div>
+                <div class="border border-blue-300 rounded shadow-sm overflow-hidden relative">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                    <div class="bg-blue-50 p-2 font-bold text-xs text-center text-blue-900 uppercase tracking-wider">
+                        Output 2: Balance Sheet (Report Form)
+                    </div>
+                    <div class="p-4 text-xs font-mono text-gray-800 bg-white">
+                        <div class="font-bold text-center mb-1">Hai Company</div>
+                        <div class="text-center mb-4">Statement of Financial Position</div>
+                        <div class="text-center italic mb-6 text-gray-500">As of December 31, 2023</div>
 
-                            <div class="flex justify-between mb-1">
-                                <span>Hai Capital, Beginning</span> 
-                                <span class="bg-yellow-100 px-1">472,580.00</span>
+                        <div class="text-center font-bold mb-2 text-lg">Assets</div>
+                        <div class="font-bold underline mb-1">Current Assets</div>
+                        <div class="pl-4">
+                            <div class="flex justify-between"><span>Cash</span> <span>67,500</span></div>
+                            <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000</span></div>
+                            <div class="flex justify-between font-bold text-blue-700 bg-blue-50"><span>Merchandise Inventory</span> <span>350,000</span></div>
+                            <div class="flex justify-between"><span>Office Supplies</span> <span>4,200</span></div>
+                            <div class="flex justify-between border-b border-black"><span>Prepaid Insurance</span> <span>5,775</span></div>
+                            <div class="flex justify-between font-bold mt-1"><span>Total Current Assets</span> <span>449,475</span></div>
+                        </div>
+                        
+                        <div class="font-bold underline mt-4 mb-1">Non-Current Assets</div>
+                        <div class="pl-4">
+                            <div class="flex justify-between"><span>Building</span> <span>113,000</span></div>
+                            <div class="flex justify-between border-b border-black"><span>Less: Accumulated Depreciation</span> <span>22,500</span></div>
+                            <div class="flex justify-between font-bold mt-1"><span>Net Book Value</span> <span>90,500</span></div>
+                        </div>
+                        
+                        <div class="flex justify-between font-extrabold text-base bg-gray-100 p-2 mt-4 border-t-2 border-black border-b-4 border-double border-black">
+                            <span>Total Assets</span> 
+                            <span>539,975</span>
+                        </div>
+
+                        <div class="text-center font-bold mt-6 mb-2 text-lg">Liabilities</div>
+                        <div class="font-bold underline mb-1">Current Liabilities</div>
+                        <div class="pl-4">
+                            <div class="flex justify-between"><span>Accounts Payable</span> <span>25,000</span></div>
+                            <div class="flex justify-between border-b border-black"><span>Accrued Expense Payable</span> <span>4,180</span></div>
+                            <div class="flex justify-between font-bold mt-1"><span>Total Current Liabilities</span> <span>29,180</span></div>
+                        </div>
+                        <div class="flex justify-between font-bold mt-2 pl-4"><span>Total Liabilities</span> <span>29,180</span></div>
+
+                        <div class="text-center font-bold mt-6 mb-2 text-lg">Owners Equity</div>
+                        <div class="pl-4">
+                            <div class="flex justify-between font-bold text-teal-700 bg-teal-50 p-1">
+                                <span>Hai Capital</span> <span>510,795.00</span>
                             </div>
-                            <div class="flex justify-between mb-1 text-green-700">
-                                <span>Add: Net Income during the year</span> 
-                                <span class="border-b border-gray-400 font-bold">74,215.00</span>
-                            </div>
-                            <div class="flex justify-between mb-2 font-bold">
-                                <span>Total Capital during the year</span> 
-                                <span>546,795.00</span>
-                            </div>
-                            <div class="flex justify-between mb-2 text-red-700">
-                                <span>Less: Drawings during the year</span> 
-                                <span class="bg-red-100 px-1">(36,000.00)</span>
-                            </div>
-                            <div class="border-b border-black mb-1"></div>
-                            <div class="flex justify-between font-bold text-sm bg-teal-50 p-1">
-                                <span>Hai Capital, Ending</span> 
-                                <span class="border-b-4 border-double border-black">510,795.00</span>
-                            </div>
+                            <div class="text-[10px] text-gray-500 text-right italic">(From SCE)</div>
+                        </div>
+
+                        <div class="flex justify-between font-extrabold text-base bg-gray-100 p-2 mt-4 border-t-2 border-black border-b-4 border-double border-black">
+                            <span>TOTAL LIABILITIES AND OWNER'S EQUITY</span> 
+                            <span>539,975.00</span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="border border-blue-300 rounded shadow-sm overflow-hidden relative">
-                        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                        <div class="bg-blue-50 p-2 font-bold text-xs text-center text-blue-900 uppercase tracking-wider">
-                            Output 2: Statement of Financial Position
-                        </div>
-                        <div class="p-4 text-xs font-mono text-gray-800 bg-white">
-                            <div class="font-bold text-center mb-1">Hai Company</div>
-                            <div class="text-center mb-4">Statement of Financial Position</div>
-                            <div class="text-center italic mb-6 text-gray-500">As of December 31, 2023</div>
+                <div class="border border-indigo-300 rounded shadow-sm overflow-hidden relative col-span-1 xl:col-span-2">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                    <div class="bg-indigo-50 p-2 font-bold text-xs text-center text-indigo-900 uppercase tracking-wider">
+                        Output 3: Balance Sheet (Account Form)
+                    </div>
+                    <div class="p-6 text-xs font-mono text-gray-800 bg-white">
+                        <div class="font-bold text-center mb-1">Hai Company</div>
+                        <div class="text-center mb-1">Statement of Financial Position</div>
+                        <div class="text-center italic mb-6 text-gray-500">As of December 31, 2023</div>
 
-                            <div class="text-center font-bold mb-2">Assets</div>
-                            <div class="font-bold underline mb-1">Current Assets</div>
-                            <div class="pl-4">
-                                <div class="flex justify-between"><span>Cash</span> <span>67,500</span></div>
-                                <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000</span></div>
-                                <div class="flex justify-between font-bold text-blue-700 bg-blue-50"><span>Merchandise Inventory - Jan 1</span> <span>350,000</span></div>
-                                <div class="flex justify-between"><span>Office Supplies</span> <span>4,200</span></div>
-                                <div class="flex justify-between border-b border-black"><span>Prepaid Insurance</span> <span>5,775</span></div>
-                                <div class="flex justify-between font-bold mt-1"><span>Total Current Assets</span> <span>449,475</span></div>
-                            </div>
-                            
-                            <div class="font-bold underline mt-4 mb-1">Non-Current Assets</div>
-                            <div class="pl-4">
-                                <div class="flex justify-between"><span>Building</span> <span>113,000</span></div>
-                                <div class="flex justify-between border-b border-black"><span>Less: Accumulated Depreciation</span> <span>22,500</span></div>
-                                <div class="flex justify-between font-bold mt-1"><span>Net Book Value</span> <span>90,500</span></div>
-                            </div>
-                            
-                            <div class="flex justify-between font-extrabold text-base bg-gray-100 p-2 mt-4 border-t-2 border-black border-b-4 border-double border-black">
-                                <span>Total Assets</span> 
-                                <span>539,975</span>
-                            </div>
-
-                            <div class="text-center font-bold mt-6 mb-2">Liabilities</div>
-                            <div class="font-bold underline mb-1">Current Liabilities</div>
-                            <div class="pl-4">
-                                <div class="flex justify-between"><span>Accounts Payable</span> <span>25,000</span></div>
-                                <div class="flex justify-between border-b border-black"><span>Accrued Expense Payable</span> <span>4,180</span></div>
-                                <div class="flex justify-between font-bold mt-1"><span>Total Current Liabilities</span> <span>29,180</span></div>
-                            </div>
-                            <div class="flex justify-between font-bold mt-2 pl-4"><span>Total Liabilities</span> <span>29,180</span></div>
-
-                            <div class="text-center font-bold mt-6 mb-2">Owners Equity</div>
-                            <div class="pl-4">
-                                <div class="flex justify-between font-bold text-teal-700 bg-teal-50 p-1">
-                                    <span>Hai Capital</span> <span>510,795.00</span>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <div class="text-center font-bold mb-2 text-lg border-b-2 border-indigo-200 pb-1">ASSETS</div>
+                                <div class="font-bold underline mb-1">Current Assets</div>
+                                <div class="pl-2">
+                                    <div class="flex justify-between"><span>Cash</span> <span>67,500</span></div>
+                                    <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000</span></div>
+                                    <div class="flex justify-between font-bold text-blue-700 bg-blue-50"><span>Merchandise Inventory</span> <span>350,000</span></div>
+                                    <div class="flex justify-between"><span>Office Supplies</span> <span>4,200</span></div>
+                                    <div class="flex justify-between border-b border-black"><span>Prepaid Insurance</span> <span>5,775</span></div>
+                                    <div class="flex justify-between font-bold mt-1"><span>Total Current Assets</span> <span>449,475</span></div>
                                 </div>
-                                <div class="text-[10px] text-gray-500 text-right italic">(From SCE)</div>
+                                
+                                <div class="font-bold underline mt-6 mb-1">Non-Current Assets</div>
+                                <div class="pl-2">
+                                    <div class="flex justify-between"><span>Building</span> <span>113,000</span></div>
+                                    <div class="flex justify-between border-b border-black"><span>Less: Accum. Depreciation</span> <span>22,500</span></div>
+                                    <div class="flex justify-between font-bold mt-1"><span>Net Book Value</span> <span>90,500</span></div>
+                                </div>
+                                
+                                <div class="mt-12 flex justify-between font-extrabold text-base bg-gray-100 p-2 border-t-2 border-black border-b-4 border-double border-black">
+                                    <span>TOTAL ASSETS</span> 
+                                    <span>539,975</span>
+                                </div>
                             </div>
 
-                            <div class="flex justify-between font-extrabold text-base bg-gray-100 p-2 mt-4 border-t-2 border-black border-b-4 border-double border-black">
-                                <span>TOTAL LIAB. & EQUITY</span> 
-                                <span>539,975.00</span>
+                            <div>
+                                <div class="text-center font-bold mb-2 text-lg border-b-2 border-indigo-200 pb-1">LIABILITIES & EQUITY</div>
+                                <div class="font-bold underline mb-1">Liabilities</div>
+                                <div class="pl-2">
+                                    <div class="flex justify-between"><span>Accounts Payable</span> <span>25,000</span></div>
+                                    <div class="flex justify-between border-b border-black"><span>Accrued Expense Payable</span> <span>4,180</span></div>
+                                    <div class="flex justify-between font-bold mt-1"><span>Total Liabilities</span> <span>29,180</span></div>
+                                </div>
+
+                                <div class="font-bold underline mt-6 mb-1">Owner's Equity</div>
+                                <div class="pl-2">
+                                    <div class="flex justify-between font-bold text-teal-700 bg-teal-50 p-1">
+                                        <span>Hai Capital, Ending</span> 
+                                        <span>510,795</span>
+                                    </div>
+                                    <div class="text-[10px] text-gray-500 text-right italic">(From SCE)</div>
+                                </div>
+
+                                <div class="mt-20 flex justify-between font-extrabold text-base bg-gray-100 p-2 border-t-2 border-black border-b-4 border-double border-black">
+                                    <span>TOTAL LIAB. & EQUITY</span> 
+                                    <span>539,975</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
             `,
             exercises: [
   {"type": "mcq", "question": "What is the primary purpose of the Statement of Changes in Equity?", "options": ["To show cash inflows and outflows", "To show the profitability of the company", "To explain the changes in owner's equity during a period", "To list all assets and liabilities"], "correctIndex": 2, "explanation": "It details the movements in equity accounts (capital/retained earnings) between the beginning and end of the period."},
