@@ -462,6 +462,7 @@ export const unit2Week3Data = {
                     </div>
                 </div>
             `,
+            
             exercises: [
     // ... your existing MCQ and Problem items ...
     {"type": "mcq", "question": "In the 'Adjusting Entry Method' for a periodic inventory system, how is Beginning Inventory removed?", "options": ["Credit Inventory in Adjustments column", "Debit Inventory in Adjustments column", "Debit Income Summary in Income Statement column", "Credit Purchases in Income Statement column"], "correctIndex": 0, "explanation": "Beginning Inventory is removed by crediting the Inventory account and debiting Income Summary in the Adjustments columns."},
@@ -1014,6 +1015,8 @@ export const unit2Week3Data = {
                 </div>
             </div>
         </section>
+    </div>
+  `,
 
       exercises: [
   {"type": "problem", "question": "Calculate Net Sales: Gross Sales ₱200,000; Sales Returns ₱8,000; Sales Discounts ₱4,000; Freight Out ₱2,500.", "answer": "₱188,000", "explanation": "200,000 - 8,000 - 4,000 = 188,000. Freight Out is an operating expense, not deducted from sales.", "isCurrency": true},
