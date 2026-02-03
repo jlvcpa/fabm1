@@ -1,3 +1,6 @@
+// --- Step06FinancialStatements.js ---
+// --- js/content/accountingCycle/steps/Step06FinancialStatements.js ---
+
 import React, { useState, useMemo, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Table, Trash2, Plus, AlertCircle, Check, X, ChevronDown, ChevronRight } from 'https://esm.sh/lucide-react@0.263.1';
