@@ -400,6 +400,7 @@ function renderQuizzesActivitiesPage() {
     }
 }
 
+// Renders Performance Tasks (Accounting Cycle)
 function renderPerformanceTasksPage() {
     elements.pageTitle().innerText = "Performance Tasks";
     const content = elements.contentArea();
@@ -409,8 +410,8 @@ function renderPerformanceTasksPage() {
         // 1. Target Container: content
         // 2. User Context: currentUser
         // 3. Runner Function: renderAccountingCycleActivity (passed as reference)
-        // 4. Filter: 'task' (ensures only relevant items show)
-        renderQuizzesAndActivities(content, currentUser, renderQuizzesAndActivities, 'Task'); 
+        // 4. Filter: 'Task' (Shows items with 'Task' in type or name, depending on your list logic)
+        renderQuizzesAndActivities(content, currentUser, renderAccountingCycleActivity, 'Task'); 
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
