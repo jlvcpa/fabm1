@@ -129,19 +129,20 @@ export const ActivityHelper = {
     }
 };
 
+// --- UTILS: ACCOUNT SORTING & CLASSIFICATION ---
+
 export const getAccountType = (acc) => {
-    // Clean the input to avoid case sensitivity issues
-    const name = acc.trim(); 
+    const name = acc.trim();
     
-    // 1. ASSETS (Specific checks + Catch-all for common assets)
+    // 1. ASSETS
     if (['Cash', 'Accounts Receivable', 'Merchandise Inventory', 'Supplies', 'Prepaid Rent', 'Equipment', 'Furniture', 'Building', 'Land'].includes(name)) return 'Asset';
     if (name.includes('Prepaid') || name.includes('Receivable') || name.includes('Accumulated Depreciation')) return 'Asset';
 
-    // 2. LIABILITIES (The "Payable" check handles Accrued Expenses Payable automatically)
+    // 2. LIABILITIES
     if (name.includes('Payable') || name.includes('Unearned')) return 'Liability';
 
-    // 3. EQUITY
-    if (name.includes('Capital') || name.includes('Drawings') || name.includes('Retained Earnings') || name.includes('Dividends')) return 'Equity';
+    // 3. EQUITY (Income Summary is strictly Equity for classification, but sorted specifically later)
+    if (name.includes('Capital') || name.includes('Drawings') || name.includes('Retained Earnings') || name.includes('Dividends') || name === 'Income Summary') return 'Equity';
 
     // 4. REVENUE
     if (name.includes('Revenue') || name === 'Sales' || name.includes('Income') || name.includes('Sales Discounts') || name.includes('Sales Returns')) return 'Revenue';
@@ -149,18 +150,89 @@ export const getAccountType = (acc) => {
     // 5. EXPENSES
     if (name.includes('Expense') || name === 'Cost of Goods Sold' || name === 'Purchases' || name.includes('Purchase Discounts') || name.includes('Purchase Returns') || name === 'Freight In' || name === 'Freight Out') return 'Expense';
 
-    // Default Fallback
-    return 'Asset';
+    return 'Asset'; // Default
 };
 
-export const sortAccounts = (accounts) => [...accounts].sort((a, b) => {
-    const indexA = CANONICAL_ACCOUNT_ORDER.indexOf(a);
-    const indexB = CANONICAL_ACCOUNT_ORDER.indexOf(b);
-    if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-});
+// Helper to assign a specific "Rank" to accounts for sorting
+const getAccountRank = (accountName) => {
+    const name = accountName.trim();
+    const type = getAccountType(name);
+    const n = name.toLowerCase();
+
+    // RANK 100: ASSETS
+    if (type === 'Asset') {
+        if (n.includes('cash')) return 100;
+        if (n.includes('receivable')) return 110;
+        if (n.includes('inventory')) return 120;
+        if (n.includes('supplies') || n.includes('prepaid')) return 130;
+        // Non-Current
+        if (n.includes('land')) return 140;
+        if (n.includes('building')) return 150;
+        if (n.includes('accumulated') && n.includes('building')) return 151;
+        if (n.includes('equipment') || n.includes('machinery') || n.includes('vehicle')) return 160;
+        if (n.includes('accumulated')) return 161; // General Accum Dep
+        return 199; // Other Assets
+    }
+
+    // RANK 200: LIABILITIES
+    if (type === 'Liability') {
+        if (n.includes('accounts payable')) return 200;
+        if (n.includes('notes payable')) return 210;
+        if (n.includes('accrued expenses payable')) return 220;
+        if (n.includes('salaries') || n.includes('wages')) return 230;
+        if (n.includes('interest')) return 240;
+        if (n.includes('unearned')) return 250;
+        if (n.includes('mortgage') || n.includes('loan')) return 260; // Non-current
+        return 299;
+    }
+
+    // RANK 300: EQUITY
+    if (type === 'Equity') {
+        if (n.includes('capital') || n.includes('share')) return 300;
+        if (n.includes('retained')) return 310;
+        if (n.includes('drawings') || n.includes('withdrawal') || n.includes('dividends')) return 320;
+        // User Request: Income Summary is last among equity
+        if (n.includes('income summary')) return 399; 
+        return 350;
+    }
+
+    // RANK 400: REVENUE
+    if (type === 'Revenue') {
+        if (n === 'sales' || n === 'service revenue') return 400;
+        if (n.includes('sales returns')) return 410;
+        if (n.includes('sales discounts')) return 420;
+        if (n.includes('interest income')) return 490; // Other income last
+        return 450;
+    }
+
+    // RANK 500: COST OF GOODS SOLD / PURCHASES (Specific Request: Before Op Expenses)
+    if (type === 'Expense') {
+        // COGS Group
+        if (n === 'cost of goods sold') return 500;
+        if (n === 'purchases') return 510;
+        if (n.includes('freight in')) return 520;
+        if (n.includes('purchase returns')) return 530;
+        if (n.includes('purchase discounts')) return 540;
+
+        // RANK 600: OPERATING EXPENSES
+        return 600; 
+    }
+
+    return 999; // Catch-all
+};
+
+export const sortAccounts = (accounts) => {
+    return [...accounts].sort((a, b) => {
+        const rankA = getAccountRank(a);
+        const rankB = getAccountRank(b);
+
+        if (rankA !== rankB) {
+            return rankA - rankB; // Sort by Rank Group
+        }
+        // If same rank group, sort alphabetically
+        return a.localeCompare(b);
+    });
+};
 
 export const generateBeginningBalances = (businessType, ownership) => {
     const balances = {};
