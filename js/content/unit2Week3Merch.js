@@ -723,15 +723,15 @@ export const unit2Week3Data = {
                         SOURCE: Worksheet (Last 4 Columns)
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-xs font-mono">
+                        <table class="w-full text-xs font-mono border-collapse">
                             <thead>
                                 <tr class="bg-gray-50 border-b">
-                                    <th class="p-2 text-left">Account</th>
+                                    <th class="p-2 text-left sticky left-0 bg-gray-50">Account</th>
                                     <th class="p-2 text-center border-l bg-red-50 text-red-900" colspan="2">Income Statement</th>
                                     <th class="p-2 text-center border-l bg-blue-50 text-blue-900" colspan="2">Balance Sheet</th>
                                 </tr>
                                 <tr class="bg-gray-50 border-b text-[10px]">
-                                    <th class="p-1"></th>
+                                    <th class="p-1 sticky left-0 bg-gray-50"></th>
                                     <th class="p-1 border-l text-center w-16">Debit</th>
                                     <th class="p-1 text-center w-16">Credit</th>
                                     <th class="p-1 border-l text-center w-16">Debit</th>
@@ -739,14 +739,35 @@ export const unit2Week3Data = {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="border-b"><td class="p-1 pl-2">Cash</td><td class="border-l"></td><td></td><td class="border-l text-right bg-blue-50">67,500</td><td class="text-right"></td></tr>
-                                <tr class="border-b"><td class="p-1 pl-2">Merch. Inventory</td><td class="border-l"></td><td></td><td class="border-l text-right bg-blue-50">350,000</td><td class="text-right"></td></tr>
-                                <tr class="border-b"><td class="p-1 pl-2">Haya Hai, Capital</td><td class="border-l"></td><td></td><td class="border-l text-right"></td><td class="text-right bg-blue-50">472,580</td></tr>
-                                <tr class="border-b"><td class="p-1 pl-2">Sales</td><td class="border-l"></td><td class="text-right bg-red-50">894,440</td><td class="border-l"></td><td class="text-right"></td></tr>
-                                <tr class="border-b"><td class="p-1 pl-2">Sales Returns</td><td class="border-l text-right bg-red-50">44,300</td><td></td><td class="border-l"></td><td class="text-right"></td></tr>
-                                <tr class="border-b bg-gray-50 font-bold"><td class="p-1 pl-2 text-gray-500 italic">... (Expenses) ...</td><td class="border-l"></td><td></td><td class="border-l"></td><td class="text-right"></td></tr>
-                                <tr class="border-b font-bold"><td class="p-1 pl-2">Net Income</td><td class="border-l text-right text-red-600">74,215</td><td></td><td class="border-l"></td><td class="text-right text-blue-600">74,215</td></tr>
-                                <tr class="bg-gray-100 font-bold border-t-2 border-black"><td class="p-1 pl-2">TOTAL</td><td class="border-l text-right">1,266,440</td><td class="text-right">1,266,440</td><td class="border-l text-right">598,475</td><td class="text-right">598,475</td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Cash</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">67,500</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Accounts Receivable</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">22,000</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Merchandise Inventory - Jan 1</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">350,000</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Office Supplies</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">4,200</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Prepaid Insurance</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">5,775</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Building</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">113,000</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Accumulated Depreciation-Building</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-blue-50">22,500</td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Accounts Payable</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-blue-50">25,000</td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Accrued Expense Payable</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-blue-50">4,180</td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Haya Hai, Capital</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-blue-50">472,580</td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Haya Hai, Drawings</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td><td class="p-1 border-l text-right bg-blue-50">36,000</td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Income Summary</td><td class="p-1 border-l text-right bg-red-50">285,000</td><td class="p-1 text-right bg-red-50">350,000</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Sales</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-red-50">894,440</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Sales Discounts</td><td class="p-1 border-l text-right bg-red-50">10,200</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Sales Returns and Allowances</td><td class="p-1 border-l text-right bg-red-50">44,300</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Purchases</td><td class="p-1 border-l text-right bg-red-50">760,000</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Purchase Discounts</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-red-50">6,000</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Purchase Returns and Allowances</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-red-50">7,000</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Freight In</td><td class="p-1 border-l text-right bg-red-50">21,300</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Salaries Expense</td><td class="p-1 border-l text-right bg-red-50">8,400</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Supplies Expense</td><td class="p-1 border-l text-right bg-red-50">6,400</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Insurance Expense</td><td class="p-1 border-l text-right bg-red-50">1,925</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Advertising Expense</td><td class="p-1 border-l text-right bg-red-50">19,500</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Maintenance Expense</td><td class="p-1 border-l text-right bg-red-50">32,700</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Interest Expense</td><td class="p-1 border-l text-right bg-red-50">2,500</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="border-b hover:bg-gray-50"><td class="p-1 pl-2 sticky left-0 bg-white">Interest Income</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right bg-red-50">9,000</td><td class="p-1 border-l text-right"></td><td class="p-1 text-right"></td></tr>
+                                <tr class="bg-gray-200 font-bold border-t border-gray-400"><td class="p-1 pl-2 sticky left-0 bg-gray-200">Total</td><td class="p-1 border-l text-right">1,192,225</td><td class="p-1 text-right">1,266,440</td><td class="p-1 border-l text-right">598,475</td><td class="p-1 text-right">524,260</td></tr>
+                                <tr class="bg-white font-bold"><td class="p-1 pl-2 sticky left-0 bg-white">Net Income</td><td class="p-1 border-l text-right text-green-700 bg-green-50">74,215</td><td class="p-1 text-right"></td><td class="p-1 border-l text-right"></td><td class="p-1 text-right text-green-700 bg-green-50">74,215</td></tr>
+                                <tr class="bg-gray-300 font-extrabold border-t-2 border-black border-double"><td class="p-1 pl-2 sticky left-0 bg-gray-300">GRAND TOTAL</td><td class="p-1 border-l text-right">1,266,440</td><td class="p-1 text-right">1,266,440</td><td class="p-1 border-l text-right">598,475</td><td class="p-1 text-right">598,475</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -758,31 +779,48 @@ export const unit2Week3Data = {
                             OUTPUT: Multi-Step Income Statement
                         </div>
                         <div class="p-4 text-xs font-mono text-gray-800">
+                            <div class="font-bold text-base mb-2">Operating Income</div>
+                            
+                            <div class="flex justify-between font-bold"><span>Sales</span> <span>894,440.00</span></div>
+                            <div class="pl-4">Less: Sales Discounts <span class="float-right mr-32">10,200.00</span></div>
+                            <div class="pl-8">Sales Returns and Allowances <span class="float-right mr-32 border-b border-black">44,300.00</span> <span class="float-right border-b border-black">54,500.00</span></div>
                             <div class="flex justify-between font-bold"><span>Net Sales</span> <span>839,940.00</span></div>
-                            <div class="flex justify-between text-gray-600 pl-4"><span>(Sales 894,440 - Returns 44,300 - Disc 10,200)</span></div>
-                            <div class="flex justify-between mt-2 font-bold text-red-700"><span>Less: Cost of Goods Sold</span> <span>(703,300.00)</span></div>
-                            <div class="border-b border-black mb-1"></div>
-                            <div class="flex justify-between font-bold text-lg"><span>Gross Profit</span> <span>136,640.00</span></div>
-                            <div class="flex justify-between mt-2"><span>Less: Operating Expenses</span> <span>(68,925.00)</span></div>
-                            <div class="flex justify-between pl-4 text-gray-500"><span>(Salaries, Supplies, Insurance, etc.)</span></div>
-                            <div class="flex justify-between mt-2 font-bold"><span>Net Operating Income</span> <span>67,715.00</span></div>
-                            <div class="flex justify-between"><span>Add: Other Income (Interest)</span> <span>6,500.00</span></div>
-                            <div class="border-b-4 border-double border-black mb-1"></div>
-                            <div class="flex justify-between font-bold text-lg text-green-700 bg-green-100 p-1"><span>NET INCOME</span> <span>74,215.00</span></div>
-                        </div>
-                    </div>
 
-                    <div class="bg-blue-50 border border-blue-300 rounded shadow-md">
-                        <div class="bg-blue-200 p-2 font-bold text-blue-900 text-center text-sm">
-                            OUTPUT: Balance Sheet (Partial)
-                        </div>
-                        <div class="p-4 text-xs font-mono text-gray-800">
-                            <div class="font-bold underline mb-1">Current Assets</div>
-                            <div class="flex justify-between"><span>Cash</span> <span>67,500.00</span></div>
-                            <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000.00</span></div>
-                            <div class="flex justify-between bg-yellow-100 p-1 font-bold"><span>Merchandise Inventory</span> <span>350,000.00</span></div>
-                            <div class="flex justify-between"><span>Office Supplies</span> <span>4,200.00</span></div>
-                            <div class="flex justify-between border-t border-black mt-1 pt-1 font-bold"><span>Total Current Assets</span> <span>449,475.00</span></div>
+                            <div class="font-bold mt-2">Cost of Goods Sold</div>
+                            <div class="pl-4 flex justify-between"><span>Beginning Inventory</span> <span class="mr-32">285,000.00</span></div>
+                            <div class="pl-4">Net Purchases</div>
+                            <div class="pl-8 flex justify-between"><span>Purchases</span> <span class="mr-48">760,000.00</span></div>
+                            <div class="pl-8">
+                                <div class="pl-4">Less: Purchase Discounts <span class="float-right mr-64">6,000</span></div>
+                                <div class="pl-8">Purchase Returns and Allowances <span class="float-right mr-64 border-b border-black">7,000</span> <span class="float-right mr-48 border-b border-black">13,000.00</span></div>
+                            </div>
+                            <div class="pl-8 flex justify-between"><span></span> <span class="mr-32">747,000.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Freight In</span> <span class="mr-32 border-b border-black">21,300.00</span></div>
+                            <div class="pl-4 flex justify-between font-bold"><span>Total Goods Available for Sale</span> <span class="mr-32">1,053,300.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Less: Ending Inventory</span> <span class="mr-32 border-b border-black">350,000.00</span> <span class="float-right border-b border-black">703,300.00</span></div>
+                            
+                            <div class="flex justify-between font-bold text-lg mt-2"><span>Gross Profit</span> <span>136,640.00</span></div>
+
+                            <div class="font-bold mt-2">Operating Expenses</div>
+                            <div class="pl-4 flex justify-between"><span>Salaries Expense</span> <span class="mr-32">8,400.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Supplies Expense</span> <span class="mr-32">6,400.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Insurance Expense</span> <span class="mr-32">1,925.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Advertising Expense</span> <span class="mr-32">19,500.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Maintenance Expense</span> <span class="mr-32 border-b border-black">32,700.00</span> <span class="float-right border-b border-black">68,925.00</span></div>
+                            
+                            <div class="flex justify-between font-bold bg-yellow-200 p-1 mt-1"><span>Net Operating Income</span> <span>67,715.00</span></div>
+
+                            <div class="font-bold mt-2 bg-orange-200 px-1">Non-Operating Income and Expenses</div>
+                            <div class="pl-4 flex justify-between"><span>Interest Income</span> <span class="mr-32">9,000.00</span></div>
+                            <div class="pl-4 flex justify-between"><span>Interest Expense</span> <span class="mr-32 border-b border-black">(2,500.00)</span></div>
+                            <div class="flex justify-between font-bold bg-orange-100 p-1"><span>Net Non-Operating Income</span> <span>6,500.00</span></div>
+
+                            <div class="flex justify-between font-bold mt-2"><span>Income Before Tax</span> <span>74,215.00</span></div>
+                            <div class="flex justify-between border-b border-black mb-1"><span>Less: Provision for Income Tax</span> <span>-</span></div>
+                            
+                            <div class="flex justify-between font-extrabold text-lg border-b-4 border-double border-black py-1">
+                                <span>NET INCOME</span> <span>74,215.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1003,103 +1041,169 @@ export const unit2Week3Data = {
             <p class="text-teal-800">Understand the flow of financial information: how the Statement of Changes in Equity connects the Net Income from the Income Statement to the final Equity balance on the Balance Sheet.</p>
         </div>
 
-        <section class="mb-8">
+        <section class="mb-12">
             <h3 class="text-xl font-bold text-gray-800 mb-3">1. The Statement of Changes in Equity</h3>
             <p class="text-gray-700 leading-relaxed mb-6">
-                The Statement of Changes in Equity tracks the movement of the owner's claim on the business assets over a specific reporting period. It acts as the vital bridge between the Income Statement and the Balance Sheet by carrying forward the results of operations.  Specifically, the <strong>Net Income</strong> (or Net Loss) calculated on the Income Statement is transferred here and added to the beginning capital balance. Any withdrawals made by the owner for personal use are then deducted from this total to arrive at the <strong>Ending Capital</strong> balance. This final ending capital figure is what ultimately appears in the Owner's Equity section of the Balance Sheet, ensuring the accounting equation remains balanced.
+                The Statement of Changes in Equity tracks the movement of the owner's claim on the business assets over a specific reporting period. It acts as the vital bridge between the Income Statement and the Balance Sheet by carrying forward the results of operations. Specifically, the <strong>Net Income</strong> (or Net Loss) calculated on the Income Statement is transferred here and added to the beginning capital balance.
             </p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h4 class="font-bold text-gray-700 mb-4 border-b pb-2">Data Flow: Worksheet to Equity Statement</h4>
+                <div class="grid xl:grid-cols-2 gap-8 items-start">
+                    
+                    <div class="border border-gray-300 rounded shadow-sm overflow-hidden">
+                        <div class="bg-gray-100 p-2 font-bold text-xs text-center text-gray-600 uppercase tracking-wider">
+                            Source: 10-Column Worksheet (Hai Company)
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs font-mono">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b">
+                                        <th class="p-2 text-left">Account</th>
+                                        <th class="p-2 text-center border-l bg-red-50 text-red-900">Inc. Stat (Net Inc)</th>
+                                        <th class="p-2 text-center border-l bg-blue-50 text-blue-900" colspan="2">Balance Sheet</th>
+                                    </tr>
+                                    <tr class="bg-gray-50 border-b text-[10px]">
+                                        <th class="p-1"></th>
+                                        <th class="p-1 border-l text-center">Result</th>
+                                        <th class="p-1 border-l text-center w-16">Debit</th>
+                                        <th class="p-1 text-center w-16">Credit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b"><td class="p-1 pl-2">Hai, Capital (Beg)</td><td class="border-l bg-gray-50"></td><td class="border-l"></td><td class="text-right bg-yellow-100 font-bold">472,580</td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2">Hai, Drawings</td><td class="border-l bg-gray-50"></td><td class="border-l text-right bg-red-100 font-bold">36,000</td><td class="text-right"></td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2 text-gray-500 italic">... (Other Accts) ...</td><td class="border-l bg-gray-50"></td><td class="border-l"></td><td class="text-right"></td></tr>
+                                    <tr class="bg-green-50 font-bold border-t-2 border-black"><td class="p-1 pl-2">Net Income</td><td class="border-l text-center text-green-700">74,215</td><td class="border-l"></td><td class="text-right text-green-700">74,215</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-center">
-                <svg width="600" height="350" viewBox="0 0 600 350" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="0" y="0" width="600" height="350" fill="#ffffff" />
-                    
-                    <text x="300" y="30" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#2d3748">Company Name</text>
-                    <text x="300" y="55" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#2d3748">Statement of Changes in Equity</text>
-                    <text x="300" y="75" font-family="Arial, sans-serif" font-size="12" font-style="italic" text-anchor="middle" fill="#718096">For the Year Ended December 31, 20xx</text>
-                    
-                    <rect x="50" y="90" width="500" height="220" rx="5" stroke="#cbd5e0" stroke-width="2" fill="none"/>
-                    
-                    <text x="70" y="130" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">Owner, Capital, Beginning</text>
-                    <text x="480" y="130" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#2d3748">P 100,000</text>
-                    
-                    <text x="70" y="160" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">Add: Net Income</text>
-                    <text x="90" y="180" font-family="Arial, sans-serif" font-size="10" fill="#2b6cb0">(From Income Statement)</text>
-                    <text x="480" y="160" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#2b6cb0" font-weight="bold">50,000</text>
-                    <line x1="400" y1="170" x2="490" y2="170" stroke="#718096" stroke-width="1"/>
-                    
-                    <text x="70" y="195" font-family="Arial, sans-serif" font-size="14" fill="#2d3748">Total</text>
-                    <text x="480" y="195" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#2d3748">150,000</text>
-                    
-                    <text x="70" y="230" font-family="Arial, sans-serif" font-size="14" fill="#e53e3e">Less: Owner, Drawings</text>
-                    <text x="480" y="230" font-family="Courier New, monospace" font-size="14" text-anchor="end" fill="#e53e3e">(10,000)</text>
-                    <line x1="400" y1="240" x2="490" y2="240" stroke="#718096" stroke-width="1"/>
-                    
-                    <text x="70" y="270" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2d3748">Owner, Capital, Ending</text>
-                    <text x="90" y="290" font-family="Arial, sans-serif" font-size="10" fill="#2f855a" font-weight="bold">(To Balance Sheet)</text>
-                    <text x="480" y="270" font-family="Courier New, monospace" font-size="14" font-weight="bold" text-anchor="end" fill="#2f855a">P 140,000</text>
-                    
-                    <line x1="400" y1="275" x2="490" y2="275" stroke="#2d3748" stroke-width="1"/>
-                    <line x1="400" y1="278" x2="490" y2="278" stroke="#2d3748" stroke-width="1"/>
-                </svg>
+                    <div class="border border-teal-300 rounded shadow-sm overflow-hidden relative">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
+                        <div class="bg-teal-50 p-2 font-bold text-xs text-center text-teal-900 uppercase tracking-wider">
+                            Output: Statement of Changes in Equity
+                        </div>
+                        <div class="p-4 text-xs font-mono text-gray-800 bg-white">
+                            <div class="font-bold text-center mb-1">Hai Company</div>
+                            <div class="text-center mb-1">Statement of Changes in Equity</div>
+                            <div class="text-center italic mb-4 text-gray-500">For the year ended December 31, 2023</div>
+
+                            <div class="flex justify-between mb-1">
+                                <span>Hai Capital, Beginning</span> 
+                                <span class="bg-yellow-100 px-1">472,580.00</span>
+                            </div>
+                            <div class="flex justify-between mb-1 text-green-700">
+                                <span>Add: Net Income</span> 
+                                <span class="border-b border-gray-400 font-bold">74,215.00</span>
+                            </div>
+                            <div class="flex justify-between mb-2 font-bold">
+                                <span>Total</span> 
+                                <span>546,795.00</span>
+                            </div>
+                            <div class="flex justify-between mb-2 text-red-700">
+                                <span>Less: Drawings</span> 
+                                <span class="bg-red-100 px-1">(36,000.00)</span>
+                            </div>
+                            <div class="border-b border-black mb-1"></div>
+                            <div class="flex justify-between font-bold text-sm bg-teal-50 p-1">
+                                <span>Hai Capital, Ending</span> 
+                                <span class="border-b-4 border-double border-black">510,795.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
-            <p class="font-bold text-blue-900">Learning Goal</p>
-            <p class="text-blue-800">Prepare a Classified Balance Sheet for a merchandising business, focusing on the placement of Merchandise Inventory.</p>
-        </div>
-
-        <h3 class="text-xl font-bold mb-4 mt-6">Topic Focus</h3>
-
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">2. Merchandise Inventory in the Balance Sheet</h3>
-            <p class="text-gray-700 mb-4">
-                The only major difference between a service and merchandising Balance Sheet is the addition of the <strong>Merchandise Inventory</strong> account.
+        <section class="mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-3">2. The Statement of Financial Position (Balance Sheet)</h3>
+            <p class="text-gray-700 leading-relaxed mb-6">
+                The Balance Sheet reports the financial condition of the company as of a specific date. For a merchandising business, the key addition is the <strong>Merchandise Inventory</strong> account in the Current Assets section. The <strong>Ending Capital</strong> figure derived from the Statement of Changes in Equity is used in the Owner's Equity section.
             </p>
 
-            <div class="bg-yellow-50 p-4 rounded border-l-4 border-yellow-400 mb-6">
-                <p class="font-bold text-yellow-900">Classification:</p>
-                <p class="text-yellow-800">It is a <strong>Current Asset</strong> because it is expected to be sold within the operating cycle (usually one year).</p>
-            </div>
-
-            <h4 class="font-bold text-gray-800 mb-2">Order of Liquidity (Current Assets)</h4>
-            <ul class="bg-gray-50 p-4 rounded border border-gray-200 list-decimal pl-6 space-y-2 text-sm font-mono text-gray-700">
-                <li>Cash and Cash Equivalents</li>
-                <li>Short-term Investments</li>
-                <li>Accounts Receivable</li>
-                <li class="bg-blue-100 font-bold p-1 rounded -ml-1 pl-1 text-blue-900">Merchandise Inventory <span class="text-xs font-normal text-blue-700">(Less liquid than AR)</span></li>
-                <li>Prepaid Expenses (Supplies, Insurance)</li>
-            </ul>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mt-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-4">3. Balance Sheet Formats</h3>
-            
-            <div class="grid md:grid-cols-2 gap-4">
-                <div class="border p-4 rounded">
-                    <h4 class="font-bold text-center border-b pb-2 mb-2">Report Form</h4>
-                    <div class="text-center text-sm text-gray-600 space-y-2">
-                        <div class="bg-green-100 p-1">Assets</div>
-                        <div>|</div>
-                        <div class="bg-red-100 p-1">Liabilities</div>
-                        <div>|</div>
-                        <div class="bg-blue-100 p-1">Owner's Equity</div>
-                        <p class="italic mt-2 text-xs">(Vertical listing)</p>
-                    </div>
-                </div>
-                <div class="border p-4 rounded">
-                    <h4 class="font-bold text-center border-b pb-2 mb-2">Account Form</h4>
-                    <div class="flex justify-between text-sm text-gray-600 gap-2">
-                        <div class="bg-green-100 p-1 w-1/2 text-center h-24 flex items-center justify-center">Assets</div>
-                        <div class="w-1/2 space-y-2">
-                            <div class="bg-red-100 p-1 text-center h-10 flex items-center justify-center">Liabilities</div>
-                            <div class="bg-blue-100 p-1 text-center h-12 flex items-center justify-center">Equity</div>
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <h4 class="font-bold text-gray-700 mb-4 border-b pb-2">Data Flow: Worksheet to Balance Sheet</h4>
+                
+                <div class="grid xl:grid-cols-2 gap-8 items-start">
+                    <div class="border border-gray-300 rounded shadow-sm overflow-hidden">
+                        <div class="bg-gray-100 p-2 font-bold text-xs text-center text-gray-600 uppercase tracking-wider">
+                            Source: Worksheet (Balance Sheet Cols)
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs font-mono">
+                                <thead>
+                                    <tr class="bg-blue-50 border-b">
+                                        <th class="p-2 text-left">Account</th>
+                                        <th class="p-2 text-center border-l w-20">Debit</th>
+                                        <th class="p-2 text-center border-l w-20">Credit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b"><td class="p-1 pl-2">Cash</td><td class="border-l text-right">67,500</td><td class="border-l"></td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2">Accts Receivable</td><td class="border-l text-right">22,000</td><td class="border-l"></td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2 font-bold text-blue-700">Merch. Inventory</td><td class="border-l text-right font-bold text-blue-700">350,000</td><td class="border-l"></td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2">Building</td><td class="border-l text-right">113,000</td><td class="border-l"></td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2">Accum. Depr.</td><td class="border-l"></td><td class="border-l text-right">22,500</td></tr>
+                                    <tr class="border-b"><td class="p-1 pl-2">Accounts Payable</td><td class="border-l"></td><td class="border-l text-right">25,000</td></tr>
+                                    </tbody>
+                            </table>
                         </div>
                     </div>
-                    <p class="italic mt-2 text-xs text-center">(Side-by-side: Assets Left, L+E Right)</p>
+
+                    <div class="border border-blue-300 rounded shadow-sm overflow-hidden relative">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                        <div class="bg-blue-50 p-2 font-bold text-xs text-center text-blue-900 uppercase tracking-wider">
+                            Output: Statement of Financial Position
+                        </div>
+                        <div class="p-4 text-xs font-mono text-gray-800 bg-white">
+                            <div class="font-bold text-center mb-1">Hai Company</div>
+                            <div class="text-center mb-4">Statement of Financial Position</div>
+
+                            <div class="font-bold underline mb-1">ASSETS</div>
+                            <div class="pl-2 mb-2">
+                                <div class="font-semibold italic">Current Assets</div>
+                                <div class="flex justify-between pl-2"><span>Cash</span> <span>67,500</span></div>
+                                <div class="flex justify-between pl-2"><span>Accounts Receivable</span> <span>22,000</span></div>
+                                <div class="flex justify-between pl-2 font-bold text-blue-700 bg-blue-50"><span>Merchandise Inventory</span> <span>350,000</span></div>
+                                <div class="flex justify-between pl-2 border-t border-gray-300 mt-1 font-bold"><span>Total Current Assets</span> <span>449,475</span></div>
+                            </div>
+                            
+                            <div class="pl-2 mb-4">
+                                <div class="font-semibold italic">Non-Current Assets</div>
+                                <div class="flex justify-between pl-2"><span>Building</span> <span>113,000</span></div>
+                                <div class="flex justify-between pl-2"><span>Less: Accum. Depr.</span> <span>(22,500)</span></div>
+                                <div class="flex justify-between pl-2 border-t border-gray-300 mt-1 font-bold"><span>Net Book Value</span> <span>90,500</span></div>
+                            </div>
+                            
+                            <div class="flex justify-between font-bold text-sm bg-gray-100 p-1 mb-4 border-y-2 border-black">
+                                <span>TOTAL ASSETS</span> <span>539,975</span>
+                            </div>
+
+                            <div class="font-bold underline mb-1">LIABILITIES & EQUITY</div>
+                            <div class="pl-2 mb-2">
+                                <div class="flex justify-between pl-2"><span>Accounts Payable</span> <span>25,000</span></div>
+                                <div class="flex justify-between pl-2"><span>Accrued Expense</span> <span>4,180</span></div>
+                                <div class="flex justify-between pl-2 border-t border-gray-300 mt-1 font-bold"><span>Total Liabilities</span> <span>29,180</span></div>
+                            </div>
+                            
+                            <div class="pl-2 mb-2">
+                                <div class="flex justify-between pl-2 bg-teal-50">
+                                    <span>Hai Capital, Ending</span> 
+                                    <span class="font-bold text-teal-700">510,795</span>
+                                </div>
+                                <div class="text-[10px] text-gray-500 text-right italic">(From SCE)</div>
+                            </div>
+
+                            <div class="flex justify-between font-bold text-sm bg-gray-100 p-1 border-y-2 border-black">
+                                <span>TOTAL LIAB. & EQUITY</span> <span>539,975</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </section>
             `,
             exercises: [
   {"type": "mcq", "question": "What is the primary purpose of the Statement of Changes in Equity?", "options": ["To show cash inflows and outflows", "To show the profitability of the company", "To explain the changes in owner's equity during a period", "To list all assets and liabilities"], "correctIndex": 2, "explanation": "It details the movements in equity accounts (capital/retained earnings) between the beginning and end of the period."},
