@@ -1,4 +1,3 @@
-// -------------------
 // --- steps.js ---
 // ------------------
 import React from 'https://esm.sh/react@18.2.0';
@@ -65,7 +64,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, onValidat
     const handleStep06Change = (section, data) => updateAnswerFns.updateAnswer(6, { ...(answers[6] || {}), [section]: data });
     const handleStep07Change = (section, data) => updateAnswerFns.updateAnswer(7, { ...(answers[7] || {}), [section]: data });
     const handleStep08Change = (section, data) => updateAnswerFns.updateAnswer(8, { ...(answers[8] || {}), [section]: data });
-    const handleStep9Change = (key, val) => updateAnswerFns.updateAnswer(9, { ...(answers[9] || {}), [key]: val });
+    const handleStep09Change = (key, val) => updateAnswerFns.updateAnswer(9, { ...(answers[9] || {}), [key]: val });
     const handleStep10Change = (adjId, val) => updateAnswerFns.updateAnswer(10, { ...(answers[10] || {}), [adjId]: val });
 
     const handleGenericChange = (k, v) => updateAnswerFns.updateAnswer(stepId, { ...(answers[stepId] || {}), [k]: v });
@@ -174,7 +173,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, onValidat
             const closingJournal = answers[8]?.journal; 
             const step9Data = { ...(answers[stepId] || {}), closingJournal };
 
-            return html`<${Step09PostClosingTB} activityData=${activityData} data=${step9Data} onChange=${handleStep9Change} showFeedback=${showFeedback} isReadOnly=${status.completed} />`;
+            return html`<${Step09PostClosingTB} activityData=${activityData} data=${step9Data} onChange=${handleStep09Change} showFeedback=${showFeedback} isReadOnly=${status.completed} />`;
         }
         if (stepId === 10) return html`<${Step10ReversingEntries} activityData=${activityData} data=${answers[stepId] || {}} onChange=${handleStep10Change} showFeedback=${showFeedback} isReadOnly=${status.completed} />`;
         
