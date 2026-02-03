@@ -210,9 +210,9 @@ const getAccountRank = (accountName) => {
         // COGS Group
         if (n === 'cost of goods sold') return 500;
         if (n === 'purchases') return 510;
-        if (n.includes('freight in')) return 520;
-        if (n.includes('purchase returns')) return 530;
-        if (n.includes('purchase discounts')) return 540;
+        if (n.includes('purchase returns')) return 520;
+        if (n.includes('purchase discounts')) return 530;
+        if (n.includes('freight in')) return 540;
 
         // RANK 600: OPERATING EXPENSES
         return 600; 
