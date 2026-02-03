@@ -1,4 +1,5 @@
-// --- Step07AdjustingEntries.js ---
+// --- Step07AdjustingEntries ---
+
 import React, { useState, useMemo } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Book, Check, X, ChevronDown, ChevronRight, Table, Trash2, Plus, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
@@ -11,18 +12,13 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
     // 1. Adapter for arguments to handle different calling signatures from App.js vs Internal
     let activityData, journalData, ledgerData;
 
-    // Check if arg1 is activityData object (contains 'transactions' or 'adjustments' as full array)
     if (arg1 && (arg1.transactions || (arg1.adjustments && !Array.isArray(arg1)))) {
         activityData = arg1;
         journalData = arg2;
         ledgerData = arg3;
     } else {
-        // Legacy/App.js signature: (adjustments, journalData, ledgerData, transactions)
-        // We construct a fallback activityData
         const transactions = arg4 || [];
         const adjustments = arg1 || [];
-        
-        // Derive validAccounts for scoring iteration
         const accs = new Set();
         transactions.forEach(t => {
             t.debits.forEach(d => accs.add(d.account));
@@ -36,8 +32,8 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
         activityData = {
             adjustments,
             transactions,
-            beginningBalances: null, // Fallback
-            config: {}, // Fallback
+            beginningBalances: null, 
+            config: {}, 
             validAccounts: Array.from(accs)
         };
         journalData = arg2;
@@ -55,8 +51,9 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
     let score = 0;
     let maxScore = 0;
     const fieldStatus = {}; 
+    const ledgerRowFeedback = {}; // Stores feedback for individual ledger rows
 
-    // Helper: Check if matching row exists in ledger
+    // Helper: Check if matching row exists in ledger (Simple check for Journal PR validation)
     const findMatchingRow = (accName, side, date, amt) => {
         if (!accName || !ledgerData[accName]) return false;
         const rows = side === 'dr' ? (ledgerData[accName].leftRows || []) : (ledgerData[accName].rightRows || []);
@@ -64,7 +61,9 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
         return rows.some(r => {
             const rAmt = Number(r.amount);
             const matchAmt = Math.abs(rAmt - amt) <= 1;
-            const matchDate = (r.date || '').trim() === date;
+            // Loose date match to allow for "31" or "Jan 31"
+            const rDate = (r.date || '').trim();
+            const matchDate = rDate === date || rDate.endsWith(date); 
             return matchAmt && matchDate;
         });
     };
@@ -98,13 +97,6 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
         if (crPrCorrect) score++;
         maxScore += 3;
 
-        // 3. Ledger Posting Score (Double counting logic as requested)
-        if (drPostedRowFound) score += 4;
-        maxScore += 4;
-
-        if (crPostedRowFound) score += 3;
-        maxScore += 3;
-        
         fieldStatus[`${adj.id}-dr-date`] = drDateCorrect;
         fieldStatus[`${adj.id}-dr-acc`] = drAccCorrect;
         fieldStatus[`${adj.id}-dr-amt`] = drAmtCorrect;
@@ -114,33 +106,147 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
         fieldStatus[`${adj.id}-cr-pr`] = crPrCorrect;
     });
 
-    // Determine New vs Historical Accounts
-    const adjAccounts = new Set();
-    adjustments.forEach(a => { adjAccounts.add(a.drAcc); adjAccounts.add(a.crAcc); });
-    const historicalAccounts = new Set(validAccounts);
-    // Accounts in adjustments that are NOT in original transactions/balances are "New"
-    // Note: validAccounts usually includes all involved accounts. We check against the original set if possible.
-    // If constructed from fallback, this distinction might be weak, but functional.
-    const newLedgerAccounts = [...adjAccounts].filter(acc => !historicalAccounts.has(acc));
-    
-    // B. New Ledger Year Entry (1 pt each)
-    // Note: In fallback mode, validAccounts derived from adj includes adj accounts, so newLedgerAccounts might be empty.
-    // We rely on 'ledgerData.addedAccounts' list if available or check manually added props.
-    // Enhanced check: Check if user added yearInput for any account
-    const allRelevantAccounts = new Set([...validAccounts, ...adjAccounts]);
-    
-    allRelevantAccounts.forEach(acc => {
-        const u = ledgerData[acc] || {};
-        // If this account has a 'yearInput' field (meaning it was treated as new by UI), validate it
-        if (u.yearInput !== undefined) {
-             if ((u.yearInput || '').trim() === year) score++;
-             maxScore += 1;
-        }
+    // B. Detailed Ledger Row Validation
+    // Prepare Expected Postings Map
+    const expectedPostings = {};
+    adjustments.forEach(adj => {
+        if (!expectedPostings[adj.drAcc]) expectedPostings[adj.drAcc] = { dr: [], cr: [] };
+        if (!expectedPostings[adj.crAcc]) expectedPostings[adj.crAcc] = { dr: [], cr: [] };
+        
+        expectedPostings[adj.drAcc].dr.push({ amount: adj.amount, date: lastDayOfMonth });
+        expectedPostings[adj.crAcc].cr.push({ amount: adj.amount, date: lastDayOfMonth });
     });
 
-    // C. Ledger Totals & Balance (3 pts each)
+    const adjAccounts = new Set();
+    adjustments.forEach(a => { adjAccounts.add(a.drAcc); adjAccounts.add(a.crAcc); });
+    const allRelevantAccounts = new Set([...validAccounts, ...adjAccounts]);
+
     allRelevantAccounts.forEach(acc => {
-        // Calculate Expected
+        const u = ledgerData[acc] || {};
+        ledgerRowFeedback[acc] = { left: [], right: [] };
+        const expDr = expectedPostings[acc]?.dr || [];
+        const expCr = expectedPostings[acc]?.cr || [];
+
+        // Determine if account is part of adjustments to calculate potential max score
+        const isAdjAccount = expectedPostings[acc] !== undefined;
+        // Count how many expected postings for this account to add to maxScore
+        const expectedCount = (isAdjAccount ? (expectedPostings[acc].dr.length + expectedPostings[acc].cr.length) : 0);
+        // Each expected posting is worth 4 points (Date, Item, PR, Amount)
+        maxScore += (expectedCount * 4);
+
+        // --- CORE VALIDATION LOGIC REFACTOR ---
+        // Instead of strict linear or find-first matching which can penalize incomplete entries,
+        // we use a 2-pass allocation:
+        // 1. Assign "Perfect Matches" (Correct Amount) to Expected Slots.
+        // 2. Assign remaining rows to remaining Expected Slots as "Attempts" (No Penalty for wrong answers, just 0 score).
+        // 3. Mark remaining rows as "Spurious" (Penalty for wrong answers).
+
+        const processSide = (userRows, expRows, sideName) => {
+            const rowStatus = new Array(userRows.length).fill(null).map(() => ({ type: 'unmatched' }));
+            const expStatus = new Array(expRows.length).fill('available'); // 'consumed'
+
+            // Pass 1: Perfect Amount Matches
+            userRows.forEach((row, rIdx) => {
+                const rAmt = Number(row.amount);
+                // We match primarily on amount to anchor the correct entry
+                if (!rAmt) return; 
+
+                const matchIdx = expRows.findIndex((exp, eIdx) => 
+                    expStatus[eIdx] === 'available' && Math.abs(exp.amount - rAmt) <= 1
+                );
+
+                if (matchIdx !== -1) {
+                    rowStatus[rIdx] = { type: 'match', expIdx: matchIdx };
+                    expStatus[matchIdx] = 'consumed';
+                }
+            });
+
+            // Pass 2: Assign remaining rows to remaining expected slots (Attempts)
+            userRows.forEach((row, rIdx) => {
+                if (rowStatus[rIdx].type !== 'unmatched') return;
+
+                const availableExpIdx = expStatus.findIndex(s => s === 'available');
+                if (availableExpIdx !== -1) {
+                    // Map this row to the expected adjustment slot
+                    rowStatus[rIdx] = { type: 'attempt', expIdx: availableExpIdx };
+                    expStatus[availableExpIdx] = 'consumed';
+                } else {
+                    // No expected slot available -> Extra row
+                    rowStatus[rIdx] = { type: 'spurious' };
+                }
+            });
+
+            // Pass 3: Scoring & Feedback
+            userRows.forEach((row, rIdx) => {
+                const status = rowStatus[rIdx];
+                const fb = { date: false, item: false, pr: false, amount: false };
+                
+                if (status.type === 'match' || status.type === 'attempt') {
+                    // This row corresponds to a REQUIRED adjustment.
+                    // DO NOT DEDUCT points for incorrect answers here. Only grant points for correct ones.
+                    
+                    const rDate = (row.date || '').trim();
+                    const rItem = (row.item || '').toLowerCase();
+                    const rPr = (row.pr || '').trim();
+                    const rAmt = Number(row.amount);
+                    const expAmt = expRows[status.expIdx].amount;
+
+                    // Date: Match lastDayOfMonth or "Jan 31"
+                    if (rDate === lastDayOfMonth || rDate.endsWith(lastDayOfMonth)) { 
+                        fb.date = true; score++; 
+                    } 
+                    // Item: Should be Adj
+                    if (rItem.includes('adj')) { 
+                        fb.item = true; score++; 
+                    } 
+                    // PR: Should be J2, GJ1, etc.
+                    if (rPr.length > 0) { 
+                        fb.pr = true; score++; 
+                    } 
+                    // Amount
+                    if (Math.abs(rAmt - expAmt) <= 1) {
+                        fb.amount = true; score++;
+                    }
+
+                    // Assign feedback object (Shows X if false, Check if true)
+                    ledgerRowFeedback[acc][sideName][rIdx] = fb;
+
+                } else {
+                    // Spurious (Extra Row)
+                    // Logic: Deduct for filled fields. Ignore totally empty fields.
+                    const isEmpty = !row.date && !row.item && !row.pr && !row.amount;
+                    if (!isEmpty) {
+                        if (row.date) score--;
+                        if (row.item) score--;
+                        if (row.pr) score--;
+                        if (row.amount) score--;
+                        
+                        // Mark all false to show Xs if content exists
+                        ledgerRowFeedback[acc][sideName][rIdx] = { date: false, item: false, pr: false, amount: false };
+                    } else {
+                        // Empty spurious row - ignore
+                        ledgerRowFeedback[acc][sideName][rIdx] = null;
+                    }
+                }
+            });
+        };
+
+        // Run Logic for Both Sides
+        processSide(u.leftRows || [], expDr, 'left');
+        processSide(u.rightRows || [], expCr, 'right');
+
+        // Validate Year Inputs (Independent)
+        if (u.yearInputLeft !== undefined) {
+            if ((u.yearInputLeft || '').trim() === year) score++;
+            maxScore++;
+        }
+        if (u.yearInputRight !== undefined) {
+            if ((u.yearInputRight || '').trim() === year) score++;
+            maxScore++;
+        }
+
+        // C. Ledger Totals & Balance (3 pts each)
+        // Calculate Expected Ending
         let bbDr = 0, bbCr = 0;
         if (config.isSubsequentYear && beginningBalances?.balances[acc]) {
             bbDr = beginningBalances.balances[acc].dr;
@@ -163,7 +269,6 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
         const expType = net >= 0 ? 'Dr' : 'Cr';
 
         // Check User Inputs
-        const u = ledgerData[acc] || {};
         const uDrTotal = Number(u.drTotal || 0);
         const uCrTotal = Number(u.crTotal || 0);
         const uBal = Number(u.balance || 0);
@@ -178,98 +283,90 @@ export const validateStep07 = (arg1, arg2, arg3, arg4) => {
 
     const letterGrade = getLetterGrade(score, maxScore);
 
-    return { score, maxScore, letterGrade, fieldStatus, lastDayOfMonth, year };
+    return { score, maxScore, letterGrade, fieldStatus, ledgerRowFeedback, lastDayOfMonth, year };
 };
 
 
 const StatusIcon = ({ isCorrect, show }) => {
     if (!show) return null;
     return isCorrect 
-        ? html`<${Check} size=${14} className="text-green-600 inline ml-1" />` 
-        : html`<${X} size=${14} className="text-red-600 inline ml-1" />`;
+        ? html`<${Check} size=${14} className="text-green-600 inline ml-1 flex-shrink-0" />` 
+        : html`<${X} size=${14} className="text-red-600 inline ml-1 flex-shrink-0" />`;
 };
 
 // --- LEFT PANEL: JOURNAL COMPONENTS ---
 
 const HistoricalJournalView = ({ transactions }) => {
-    const [expanded, setExpanded] = useState(false);
-    
     return html`
         <div className="mb-4 border rounded bg-white overflow-hidden shadow-sm flex flex-col">
-            <div className="bg-gray-100 p-2 font-bold text-gray-700 cursor-pointer flex justify-between items-center flex-shrink-0" onClick=${()=>setExpanded(!expanded)}>
+            <div className="bg-gray-100 p-2 font-bold text-gray-700 flex justify-between items-center flex-shrink-0">
                 <div className="flex items-center">
                     <${Book} size=${16} className="inline mr-2 w-4 h-4"/>
                     <span>Historical Journal Entries (Read-Only)</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-normal">
-                    ${expanded ? 'Click to Collapse' : 'Click to View'}
-                    ${expanded ? html`<${ChevronDown} size=${16} className="w-4 h-4"/>` : html`<${ChevronRight} size=${16} className="w-4 h-4"/>`}
-                </div>
             </div>
-            ${expanded && html`
-                <div className="h-64 flex flex-col overflow-hidden border-t border-gray-200">
-                    <div className="flex bg-gray-50 text-gray-700 border-b border-gray-300 font-bold text-xs text-center flex-shrink-0">
-                        <div className="w-16 border-r p-2 flex-shrink-0">Date</div>
-                        <div className="flex-1 border-r p-2 text-left">Account Titles and Explanation</div>
-                        <div className="w-16 border-r p-2 flex-shrink-0">P.R.</div>
-                        <div className="w-24 border-r p-2 text-right flex-shrink-0">Debit</div>
-                        <div className="w-24 p-2 text-right flex-shrink-0">Credit</div>
-                    </div>
-                    <div className="overflow-y-auto flex-1 bg-white">
-                        ${transactions.map((t, tIdx) => {
-                            const txnDate = new Date(t.date);
-                            const yyyy = txnDate.getFullYear();
-                            const mm = txnDate.toLocaleString('default', { month: 'short' });
-                            const dd = txnDate.getDate().toString().padStart(2, '0');
-                            const isFirst = tIdx === 0;
-                            const dateDisplay = isFirst ? `${mm} ${dd}` : dd;
+            <div className="h-64 flex flex-col overflow-hidden border-t border-gray-200">
+                <div className="flex bg-gray-50 text-gray-700 border-b border-gray-300 font-bold text-xs text-center flex-shrink-0">
+                    <div className="w-16 border-r p-2 flex-shrink-0 text-right">Date</div>
+                    <div className="flex-1 border-r p-2 text-left">Account Titles and Explanation</div>
+                    <div className="w-12 border-r p-2 flex-shrink-0">P.R.</div>
+                    <div className="w-24 border-r p-2 text-right flex-shrink-0">Debit</div>
+                    <div className="w-24 p-2 text-right flex-shrink-0">Credit</div>
+                </div>
+                <div className="overflow-y-auto flex-1 bg-white">
+                    ${transactions.map((t, tIdx) => {
+                        const txnDate = new Date(t.date);
+                        const yyyy = txnDate.getFullYear();
+                        const mm = txnDate.toLocaleString('default', { month: 'short' });
+                        const dd = txnDate.getDate().toString().padStart(2, '0');
+                        const isFirst = tIdx === 0;
+                        const dateDisplay = isFirst ? `${mm} ${dd}` : dd;
 
-                            return html`
-                                <React.Fragment key=${t.id}>
-                                    ${isFirst && html`
-                                        <div className="flex border-b border-gray-100 text-xs h-8 items-center text-gray-500">
-                                            <div className="w-16 border-r text-right pr-1 font-bold flex-shrink-0">${yyyy}</div>
-                                            <div className="flex-1 border-r"></div>
-                                            <div className="w-16 border-r flex-shrink-0"></div>
-                                            <div className="w-24 border-r flex-shrink-0"></div>
-                                            <div className="w-24 flex-shrink-0"></div>
-                                        </div>
-                                    `}
-                                    
-                                    ${t.debits.map((d, i) => html`
-                                        <div key=${`dr-${t.id}-${i}`} className="flex border-b border-gray-100 text-xs h-8 items-center hover:bg-gray-50">
-                                            <div className="w-16 border-r text-right pr-1 flex-shrink-0 text-gray-500">${i === 0 ? dateDisplay : ''}</div>
-                                            <div className="flex-1 border-r pl-1 font-medium text-gray-800 truncate" title=${d.account}>${d.account}</div>
-                                            <div className="w-16 border-r text-center flex justify-center items-center flex-shrink-0 text-gray-400">1</div>
-                                            <div className="w-24 border-r text-right pr-1 flex-shrink-0 text-gray-800">${d.amount.toLocaleString()}</div>
-                                            <div className="w-24 text-right pr-1 flex-shrink-0"></div>
-                                        </div>
-                                    `)}
-                                    
-                                    ${t.credits.map((c, i) => html`
-                                        <div key=${`cr-${t.id}-${i}`} className="flex border-b border-gray-100 text-xs h-8 items-center hover:bg-gray-50">
-                                            <div className="w-16 border-r flex-shrink-0"></div>
-                                            <div className="flex-1 border-r pl-6 text-gray-800 truncate" title=${c.account}>${c.account}</div>
-                                            <div className="w-16 border-r text-center flex justify-center items-center flex-shrink-0 text-gray-400">1</div>
-                                            <div className="w-24 border-r flex-shrink-0"></div>
-                                            <div className="w-24 text-right pr-1 flex-shrink-0 text-gray-800">${c.amount.toLocaleString()}</div>
-                                        </div>
-                                    `)}
-                                    
-                                    <div key=${'desc' + t.id} className="flex border-b border-gray-200 text-xs h-8 items-center text-gray-500 italic bg-gray-50/50">
-                                        <div className="w-16 border-r flex-shrink-0"></div>
-                                        <div className="flex-1 border-r pl-8 truncate" title=${t.description}>(${t.description})</div>
-                                        <div className="w-16 border-r flex-shrink-0"></div>
+                        return html`
+                            <React.Fragment key=${t.id}>
+                                ${isFirst && html`
+                                    <div className="flex border-b border-gray-100 text-xs h-8 items-center text-gray-500">
+                                        <div className="w-16 border-r text-right pr-2 font-bold flex-shrink-0">${yyyy}</div>
+                                        <div className="flex-1 border-r"></div>
+                                        <div className="w-12 border-r flex-shrink-0"></div>
                                         <div className="w-24 border-r flex-shrink-0"></div>
                                         <div className="w-24 flex-shrink-0"></div>
                                     </div>
-                                </React.Fragment>
-                            `;
-                        })}
-                        <div className="h-8"></div>
-                    </div>
+                                `}
+                                
+                                ${t.debits.map((d, i) => html`
+                                    <div key=${`dr-${t.id}-${i}`} className="flex border-b border-gray-100 text-xs h-8 items-center hover:bg-gray-50">
+                                        <div className="w-16 border-r text-right pr-2 flex-shrink-0 text-gray-500">${i === 0 ? dateDisplay : ''}</div>
+                                        <div className="flex-1 border-r pl-1 font-medium text-gray-800 truncate" title=${d.account}>${d.account}</div>
+                                        <div className="w-12 border-r text-center flex justify-center items-center flex-shrink-0 text-gray-400">1</div>
+                                        <div className="w-24 border-r text-right pr-1 flex-shrink-0 text-gray-800">${d.amount.toLocaleString()}</div>
+                                        <div className="w-24 text-right pr-1 flex-shrink-0"></div>
+                                    </div>
+                                `)}
+                                
+                                ${t.credits.map((c, i) => html`
+                                    <div key=${`cr-${t.id}-${i}`} className="flex border-b border-gray-100 text-xs h-8 items-center hover:bg-gray-50">
+                                        <div className="w-16 border-r flex-shrink-0"></div>
+                                        <div className="flex-1 border-r pl-6 text-gray-800 truncate" title=${c.account}>${c.account}</div>
+                                        <div className="w-12 border-r text-center flex justify-center items-center flex-shrink-0 text-gray-400">1</div>
+                                        <div className="w-24 border-r flex-shrink-0"></div>
+                                        <div className="w-24 text-right pr-1 flex-shrink-0 text-gray-800">${c.amount.toLocaleString()}</div>
+                                    </div>
+                                `)}
+                                
+                                <div key=${'desc' + t.id} className="flex border-b border-gray-200 text-xs h-8 items-center text-gray-500 italic bg-gray-50/50">
+                                    <div className="w-16 border-r flex-shrink-0"></div>
+                                    <div className="flex-1 border-r pl-8 truncate" title=${t.description}>(${t.description})</div>
+                                    <div className="w-12 border-r flex-shrink-0"></div>
+                                    <div className="w-24 border-r flex-shrink-0"></div>
+                                    <div className="w-24 flex-shrink-0"></div>
+                                </div>
+                            </React.Fragment>
+                        `;
+                    })}
+                    <div className="h-8"></div>
                 </div>
-            `}
+            </div>
         </div>
     `;
 };
@@ -308,17 +405,17 @@ const AdjustmentEntryForm = ({ adjustments, data, onChange, isReadOnly, showFeed
                             <div className="bg-blue-50 px-2 py-1 text-xs font-bold text-blue-800 border-b border-blue-200">AJE #${idx + 1}</div>
                             
                             <div className="flex bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-600 text-center">
-                                <div className="w-14 border-r p-1">Date</div>
+                                <div className="w-14 border-r p-1 text-right pr-2">Date</div>
                                 <div className="flex-1 border-r p-1">Account Title</div>
                                 <div className="w-8 border-r p-1">PR</div>
-                                <div className="w-24 border-r p-1">Debit</div>
-                                <div className="w-24 p-1">Credit</div>
+                                <div className="w-24 border-r p-1 text-right pr-2">Debit</div>
+                                <div className="w-24 p-1 text-right pr-2">Credit</div>
                             </div>
 
                             <div className="flex border-b border-gray-100 h-8">
                                 <div className="w-14 border-r relative">
-                                    <input type="text" className=${inputClass(drDateOk) + " text-center"} placeholder="dd" value=${entry.drDate || ''} onChange=${(e) => handleChange(adj.id, 'drDate', e.target.value)} disabled=${isReadOnly}/>
-                                    <div className="absolute top-0 right-0"><${StatusIcon} show=${showFeedback} isCorrect=${drDateOk}/></div>
+                                    <input type="text" className=${inputClass(drDateOk) + " text-right"} placeholder="dd" value=${entry.drDate || ''} onChange=${(e) => handleChange(adj.id, 'drDate', e.target.value)} disabled=${isReadOnly}/>
+                                    <div className="absolute top-0 left-0"><${StatusIcon} show=${showFeedback} isCorrect=${drDateOk}/></div>
                                 </div>
                                 <div className="flex-1 border-r relative">
                                     <input type="text" className=${inputClass(drAccOk)} placeholder="Debit Account" value=${entry.drAcc || ''} onChange=${(e) => handleChange(adj.id, 'drAcc', e.target.value)} disabled=${isReadOnly}/>
@@ -330,7 +427,7 @@ const AdjustmentEntryForm = ({ adjustments, data, onChange, isReadOnly, showFeed
                                 </div>
                                 <div className="w-24 border-r relative">
                                     <input type="number" className=${inputClass(drAmtOk) + " text-right"} placeholder="Debit" value=${entry.drAmt || ''} onChange=${(e) => handleChange(adj.id, 'drAmt', e.target.value)} disabled=${isReadOnly}/>
-                                    <div className="absolute top-0 right-0"><${StatusIcon} show=${showFeedback} isCorrect=${drAmtOk}/></div>
+                                    <div className="absolute top-0 left-0"><${StatusIcon} show=${showFeedback} isCorrect=${drAmtOk}/></div>
                                 </div>
                                 <div className="w-24 bg-gray-50"></div>
                             </div>
@@ -350,7 +447,7 @@ const AdjustmentEntryForm = ({ adjustments, data, onChange, isReadOnly, showFeed
                                 <div className="w-24 border-r bg-gray-50"></div>
                                 <div className="w-24 relative">
                                     <input type="number" className=${inputClass(crAmtOk) + " text-right"} placeholder="Credit" value=${entry.crAmt || ''} onChange=${(e) => handleChange(adj.id, 'crAmt', e.target.value)} disabled=${isReadOnly}/>
-                                    <div className="absolute top-0 right-0"><${StatusIcon} show=${showFeedback} isCorrect=${crAmtOk}/></div>
+                                    <div className="absolute top-0 left-0"><${StatusIcon} show=${showFeedback} isCorrect=${crAmtOk}/></div>
                                 </div>
                             </div>
 
@@ -368,7 +465,7 @@ const AdjustmentEntryForm = ({ adjustments, data, onChange, isReadOnly, showFeed
 
 // --- RIGHT PANEL: LEDGER COMPONENTS ---
 
-const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, onUpdate, isReadOnly, showFeedback, correctEndingValues, contextYear, isNewAccount }) => {
+const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, onUpdate, onDelete, isReadOnly, showFeedback, correctEndingValues, contextYear, isNewAccount, rowFeedback }) => {
     // 1. Prepare Data Rows
     const leftRows = [];
     const rightRows = [];
@@ -402,10 +499,11 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
     const displayRows = Array.from({length: displayRowsCount}).map((_, i) => i);
 
     const updateSide = (side, visualIdx, field, val) => {
-        // Visual Index 0 is Year Row
+        // Visual Index 0 is Year Row - Handle Independent Inputs
         if (visualIdx === 0) {
-            if (isNewAccount && side === 'left') { // Store year in userLedger root or special field
-                onUpdate({ ...userLedger, yearInput: val });
+            if (isNewAccount) { 
+                const key = side === 'left' ? 'yearInputLeft' : 'yearInputRight';
+                onUpdate({ ...userLedger, [key]: val });
             }
             return;
         }
@@ -441,8 +539,6 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
          const histLenLeft = leftRows.length;
          const histLenRight = rightRows.length;
          
-         // Adjusting entries step usually appends to existing. Historical rows are at top.
-         // So if dataIdx >= max(histLenLeft, histLenRight), it is safe.
          if (dataIdx < Math.max(histLenLeft, histLenRight)) return;
 
          const userIdxLeft = dataIdx - histLenLeft;
@@ -451,7 +547,6 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
          const newLeft = [...userLeft];
          const newRight = [...userRight];
 
-         // Remove if index exists in user array
          if (userIdxLeft >= 0 && userIdxLeft < newLeft.length) newLeft.splice(userIdxLeft, 1);
          if (userIdxRight >= 0 && userIdxRight < newRight.length) newRight.splice(userIdxRight, 1);
 
@@ -464,10 +559,13 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
     
     const getCellProps = (side, visualIdx) => {
         if (visualIdx === 0) {
-            // Year Row
+            // Year Row (Independent)
+            const val = side === 'left' 
+                ? (isNewAccount ? userLedger.yearInputLeft : contextYear) 
+                : (isNewAccount ? userLedger.yearInputRight : contextYear);
             return {
                 isYearRow: true,
-                date: isNewAccount ? (userLedger.yearInput || '') : contextYear, // Editable if new
+                date: val || '', 
                 item: '', pr: '', amount: '',
                 isUser: isNewAccount, 
                 isLocked: !isNewAccount
@@ -475,9 +573,10 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
         }
 
         const dataIdx = visualIdx - 1;
+        const histLen = side === 'left' ? leftRows.length : rightRows.length;
         const dataArr = side === 'left' ? finalLeft : finalRight;
         const row = dataArr[dataIdx];
-        const isUser = side === 'left' ? dataIdx >= leftRows.length : dataIdx >= rightRows.length;
+        const isUser = dataIdx >= histLen;
 
         if (!row) {
             return { isYearRow: false, date: '', item: '', pr: '', amount: '', isUser: isUser, isLocked: !isUser };
@@ -485,12 +584,20 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
 
         let displayDate = row.date || '';
         if (visualIdx === 1) {
-            // First Data Row: "Mmm dd"
+            // First Data Row
         } else {
-            // Subsequent: "dd"
             if (row.isLocked && displayDate.includes(' ')) {
                 displayDate = displayDate.split(' ')[1];
             }
+        }
+
+        // FEEDBACK LOGIC
+        // Feedback is only applied to USER rows (isUser = true)
+        let feedback = null;
+        if (isUser && showFeedback && rowFeedback) {
+            const userIdx = dataIdx - histLen;
+            const sideFeedback = side === 'left' ? rowFeedback.left : rowFeedback.right;
+            feedback = sideFeedback[userIdx];
         }
 
         return {
@@ -500,18 +607,24 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
             pr: row.pr,
             amount: row.amount,
             isUser: isUser,
-            isLocked: row.isLocked
+            isLocked: row.isLocked,
+            feedback
         };
     };
 
     return html`
         <div className="border-2 border-gray-800 bg-white shadow-md mb-6">
-            <div className="border-b-2 border-gray-800 p-2 flex justify-between bg-gray-100 relative">
+            <div className="border-b-2 border-gray-800 p-2 flex justify-between bg-gray-100 relative items-center">
                 <div className="absolute left-2 top-2"><${StatusIcon} show=${showFeedback} isCorrect=${
                     Math.abs(Number(userLedger?.balance || 0) - correctEndingValues.endBal) <= 1 &&
                     (userLedger?.balanceType === correctEndingValues.balType || correctEndingValues.endBal === 0)
                 } /></div>
                 <div className="w-full text-center mx-8 font-bold text-lg">${accName}</div>
+                ${onDelete && !isReadOnly && html`
+                    <button onClick=${onDelete} className="absolute right-2 top-2 text-red-500 hover:bg-red-100 p-1 rounded">
+                        <${Trash2} size=${16} />
+                    </button>
+                `}
             </div>
             
             <div className="flex">
@@ -526,15 +639,32 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
                     </div>
                     ${displayRows.map(i => {
                         const props = getCellProps('left', i);
-                        const isRowDisabled = props.isLocked; // Year row is editable if isNewAccount
+                        const isRowDisabled = props.isLocked; 
                         const datePlaceholder = i === 0 ? "YYYY" : (i === 1 ? "Mmm dd" : "dd");
+                        const fb = props.feedback || {};
+
+                        // Conditional checkmark/cross: Only show if it's a user row AND feedback exists (ignoring null/empty rows)
+                        // If ledgerRowFeedback was 'null' for an empty spurious row, fb is {}, so no icons shown.
+                        const showRowFeedback = showFeedback && props.isUser && Object.keys(fb).length > 0;
 
                         return html`
                             <div key=${`l-${i}`} className="flex text-xs border-b border-gray-200 h-6 relative ${!props.isUser && !props.isYearRow && props.date ? 'bg-gray-50/50 text-gray-600' : ''}">
-                                <div className="w-14 border-r relative"><input type="text" className="w-full h-full text-center px-1 outline-none bg-transparent" placeholder=${datePlaceholder} value=${props.date} onChange=${(e)=>updateSide('left', i, 'date', e.target.value)} disabled=${isRowDisabled}/></div>
-                                <div className="flex-1 border-r relative"><input type="text" className="w-full h-full text-left px-1 outline-none bg-transparent" value=${props.item||''} onChange=${(e)=>updateSide('left', i, 'item', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/></div>
-                                <div className="w-8 border-r relative"><input type="text" className="w-full h-full text-center outline-none bg-transparent" value=${props.pr||''} onChange=${(e)=>updateSide('left', i, 'pr', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/></div>
-                                <div className="w-16 relative"><input type="number" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${props.amount||''} onChange=${(e)=>updateSide('left', i, 'amount', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/></div>
+                                <div className="w-14 border-r relative">
+                                    <input type="text" className=${`w-full h-full text-right px-1 outline-none bg-transparent ${props.isYearRow ? 'font-bold text-center' : ''}`} placeholder=${datePlaceholder} value=${props.date} onChange=${(e)=>updateSide('left', i, 'date', e.target.value)} disabled=${isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 left-0"><${StatusIcon} show=${true} isCorrect=${fb.date}/></div>`}
+                                </div>
+                                <div className="flex-1 border-r relative">
+                                    <input type="text" className="w-full h-full text-left px-1 outline-none bg-transparent" value=${props.item||''} onChange=${(e)=>updateSide('left', i, 'item', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 right-0"><${StatusIcon} show=${true} isCorrect=${fb.item}/></div>`}
+                                </div>
+                                <div className="w-8 border-r relative">
+                                    <input type="text" className="w-full h-full text-center outline-none bg-transparent" value=${props.pr||''} onChange=${(e)=>updateSide('left', i, 'pr', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 right-0 pointer-events-none"><${StatusIcon} show=${true} isCorrect=${fb.pr}/></div>`}
+                                </div>
+                                <div className="w-16 relative">
+                                    <input type="number" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${props.amount||''} onChange=${(e)=>updateSide('left', i, 'amount', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 left-0"><${StatusIcon} show=${true} isCorrect=${fb.amount}/></div>`}
+                                </div>
                             </div>
                         `;
                     })}
@@ -555,16 +685,28 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
                         const props = getCellProps('right', i);
                         const isRowDisabled = props.isLocked;
                         const datePlaceholder = i === 0 ? "YYYY" : (i === 1 ? "Mmm dd" : "dd");
-                        
-                        // Check if row is deletable (user row and not year row)
                         const isDeletable = props.isUser && !isReadOnly && !props.isYearRow;
+                        const fb = props.feedback || {};
+                        const showRowFeedback = showFeedback && props.isUser && Object.keys(fb).length > 0;
 
                         return html`
                             <div key=${`r-${i}`} className="flex text-xs border-b border-gray-200 h-6 relative ${!props.isUser && !props.isYearRow && props.date ? 'bg-gray-50/50 text-gray-600' : ''}">
-                                <div className="w-14 border-r relative"><input type="text" className="w-full h-full text-center px-1 outline-none bg-transparent" placeholder=${datePlaceholder} value=${props.date} onChange=${(e)=>updateSide('right', i, 'date', e.target.value)} disabled=${isRowDisabled}/></div>
-                                <div className="flex-1 border-r relative"><input type="text" className="w-full h-full text-left px-1 outline-none bg-transparent" value=${props.item||''} onChange=${(e)=>updateSide('right', i, 'item', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/></div>
-                                <div className="w-8 border-r relative"><input type="text" className="w-full h-full text-center outline-none bg-transparent" value=${props.pr||''} onChange=${(e)=>updateSide('right', i, 'pr', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/></div>
-                                <div className="w-16 relative"><input type="number" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${props.amount||''} onChange=${(e)=>updateSide('right', i, 'amount', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/></div>
+                                <div className="w-14 border-r relative">
+                                    <input type="text" className=${`w-full h-full text-right px-1 outline-none bg-transparent ${props.isYearRow ? 'font-bold text-center' : ''}`} placeholder=${datePlaceholder} value=${props.date} onChange=${(e)=>updateSide('right', i, 'date', e.target.value)} disabled=${isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 left-0"><${StatusIcon} show=${true} isCorrect=${fb.date}/></div>`}
+                                </div>
+                                <div className="flex-1 border-r relative">
+                                    <input type="text" className="w-full h-full text-left px-1 outline-none bg-transparent" value=${props.item||''} onChange=${(e)=>updateSide('right', i, 'item', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 right-0"><${StatusIcon} show=${true} isCorrect=${fb.item}/></div>`}
+                                </div>
+                                <div className="w-8 border-r relative">
+                                    <input type="text" className="w-full h-full text-center outline-none bg-transparent" value=${props.pr||''} onChange=${(e)=>updateSide('right', i, 'pr', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 right-0 pointer-events-none"><${StatusIcon} show=${true} isCorrect=${fb.pr}/></div>`}
+                                </div>
+                                <div className="w-16 relative">
+                                    <input type="number" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${props.amount||''} onChange=${(e)=>updateSide('right', i, 'amount', e.target.value)} disabled=${props.isYearRow || isRowDisabled}/>
+                                    ${!props.isYearRow && showRowFeedback && html`<div className="absolute top-0 left-0"><${StatusIcon} show=${true} isCorrect=${fb.amount}/></div>`}
+                                </div>
                                 <div className="w-6 flex justify-center items-center">
                                     ${isDeletable && html`<button onClick=${()=>deleteCombinedRow(i)} class="text-red-400 hover:text-red-600"><${Trash2} size=${10}/></button>`}
                                 </div>
@@ -589,12 +731,11 @@ const LedgerAccountAdj = ({ accName, transactions, startingBalance, userLedger, 
 const LedgerPanel = ({ activityData, ledgerData, onChange, isReadOnly, showFeedback, validationResult }) => {
     const { validAccounts, transactions, beginningBalances, config } = activityData;
     const sortedAccounts = sortAccounts(validAccounts);
-    const { year } = validationResult || {};
+    const { year, ledgerRowFeedback } = validationResult || {};
     
     const [isAdding, setIsAdding] = useState(false);
     const [newAccName, setNewAccName] = useState('');
 
-    // Ensure addedAccounts is always an array
     const addedAccounts = useMemo(() => {
         return (ledgerData.addedAccounts || []);
     }, [ledgerData.addedAccounts]);
@@ -608,7 +749,6 @@ const LedgerPanel = ({ activityData, ledgerData, onChange, isReadOnly, showFeedb
         }
         
         const newAdded = [...addedAccounts, name];
-        // Initialize with 2 empty rows per side as requested
         const initialLedger = {
             leftRows: [{}, {}], 
             rightRows: [{}, {}]
@@ -619,6 +759,13 @@ const LedgerPanel = ({ activityData, ledgerData, onChange, isReadOnly, showFeedb
         
         setNewAccName('');
         setIsAdding(false);
+    };
+
+    const handleDeleteAccount = (accName) => {
+        if (!confirm(`Delete ledger for ${accName}?`)) return;
+        const newAdded = addedAccounts.filter(a => a !== accName);
+        onChange('addedAccounts', newAdded);
+        // We typically don't remove the data key just in case, but ui hides it
     };
 
     const allAccountsToRender = [...sortedAccounts, ...addedAccounts];
@@ -643,6 +790,7 @@ const LedgerPanel = ({ activityData, ledgerData, onChange, isReadOnly, showFeedb
             <div className="overflow-y-auto p-4 flex-1 bg-gray-50 custom-scrollbar">
                 ${allAccountsToRender.map(acc => {
                     const isNew = !validAccounts.includes(acc);
+                    const isAdded = addedAccounts.includes(acc);
                     
                     // Calculate Correct Ending Values
                     let bbDr = 0, bbCr = 0;
@@ -678,11 +826,13 @@ const LedgerPanel = ({ activityData, ledgerData, onChange, isReadOnly, showFeedb
                             startingBalance={config.isSubsequentYear && beginningBalances ? beginningBalances.balances[acc] : null}
                             userLedger=${ledgerData[acc] || {}}
                             onUpdate=${(val) => onChange(acc, val)}
+                            onDelete=${isAdded ? () => handleDeleteAccount(acc) : null}
                             isReadOnly=${isReadOnly}
                             showFeedback=${showFeedback}
                             correctEndingValues=${correctEndingValues}
                             contextYear=${year}
                             isNewAccount=${isNew}
+                            rowFeedback=${ledgerRowFeedback?.[acc]}
                         />
                     `;
                 })}
@@ -707,7 +857,6 @@ export default function Step07AdjustingEntries({ activityData, data, onChange, s
     };
 
     const handleLedgerChange = (acc, val) => {
-        // If acc is 'addedAccounts', we update that specific key in the ledger object
         onChange('ledger', { ...ledgerData, [acc]: val });
     };
 
