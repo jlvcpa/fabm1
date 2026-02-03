@@ -450,7 +450,7 @@ async function saveActivityToFirebase() {
     // Generate ID
     const cleanActName = activityName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const cleanSection = section.replace(/[^a-z0-9]/gi, '-').toLowerCase();
-    const docId = `AC_${schoolYear}_${cleanActName}_${cleanSection}`; // Added AC_ prefix to distinguish ID
+    const docId = `${schoolYear}_${cleanActName}_${cleanSection}`; // Added AC_ prefix to distinguish ID
 
     const payload = {
         id: docId,
