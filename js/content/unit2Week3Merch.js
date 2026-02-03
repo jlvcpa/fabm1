@@ -1510,8 +1510,9 @@ export const unit2Week3Data = {
                                 <div class="pl-2">
                                     <div class="flex justify-between"><span>Accounts Payable</span> <span>25,000</span></div>
                                     <div class="flex justify-between border-b border-black"><span>Accrued Expense Payable</span> <span>4,180</span></div>
-                                    <div class="flex justify-between font-bold mt-1"><span>Total Liabilities</span> <span>29,180</span></div>
+                                    <div class="flex justify-between font-bold mt-1"><span>Total Current Liabilities</span> <span>29,180</span></div>
                                 </div>
+                                <div class="flex justify-between font-bold mt-2 pl-4"><span>Total Liabilities</span> <span>29,180</span></div>
 
                                 <div class="font-bold underline mt-6 mb-1">Owner's Equity</div>
                                 <div class="pl-2">
