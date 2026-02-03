@@ -1,4 +1,5 @@
 // --- Step07AdjustingEntries ---
+// --- js/content/accountingCycle/steps/Step07AdjustingEntries.js ---
 
 import React, { useState, useMemo } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
