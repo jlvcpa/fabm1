@@ -1186,8 +1186,7 @@ export const unit2Week3Data = {
   {"type": "problem", "question": "Calculate Owner's Investment: End Cap ₱50k; Beg Cap ₱40k; NI ₱5k; Draw ₱0.", "answer": "₱5,000", "explanation": "50 = 40 + 5 + Inv. 50 = 45 + Inv. Inv = 5.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Equity: Share Capital ₱100k; Retained Earnings ₱50k.", "answer": "₱150,000", "explanation": "100,000 + 50,000 = 150,000.", "isCurrency": true},
   {"type": "problem", "question": "Calculate Total Liabilities & Equity: Assets ₱77,000.", "answer": "₱77,000", "explanation": "Must equal Assets.", "isCurrency": true}
-
-            ]
+]
         },
         {
     day: "Day 4",
