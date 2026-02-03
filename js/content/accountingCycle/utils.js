@@ -142,10 +142,10 @@ export const getAccountType = (acc) => {
     if (name.includes('Payable') || name.includes('Unearned')) return 'Liability';
 
     // 3. EQUITY (Income Summary is strictly Equity for classification, but sorted specifically later)
-    if (name.includes('Capital') || name.includes('Drawings') || name.includes('Retained Earnings') || name.includes('Dividends') || name === 'Income Summary') return 'Equity';
+    if (name.includes('Capital') || name.includes('Drawings') || name.includes('Retained Earnings') || name.includes('Dividends')) return 'Equity';
 
     // 4. REVENUE
-    if (name.includes('Revenue') || name === 'Sales' || name.includes('Income') || name.includes('Sales Discounts') || name.includes('Sales Returns')) return 'Revenue';
+    if (name === 'Income Summary'  || name.includes('Revenue') || name === 'Sales' || name.includes('Income') || name.includes('Sales Discounts') || name.includes('Sales Returns')) return 'Revenue';
 
     // 5. EXPENSES
     if (name.includes('Expense') || name === 'Cost of Goods Sold' || name === 'Purchases' || name.includes('Purchase Discounts') || name.includes('Purchase Returns') || name === 'Freight In' || name === 'Freight Out') return 'Expense';
