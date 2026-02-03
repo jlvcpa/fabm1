@@ -1,4 +1,5 @@
 // --- Step10ReversingEntries.js ---
+
 import React, { useState, useMemo } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Book, Check, X, ChevronDown, ChevronRight, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
@@ -332,9 +333,19 @@ export default function Step10ReversingEntries({ activityData, data, onChange, s
             entries.push({ id: `adj-${i}`, date: 'Dec 31', rawDate: '2023-12-31', description: adj.desc, type: 'ADJ', rows });
         });
 
-        // 3. Closing Entries
+        // 3. Closing Entries (Compound Logic for Expense)
         let totalRev = 0, totalExp = 0;
         
+        // --- FIX: Build correct list of ALL Accounts (Transactions + Adjustments) ---
+        const allAccountNames = new Set(validAccounts);
+        if (adjustments) {
+            adjustments.forEach(adj => {
+                allAccountNames.add(adj.drAcc);
+                allAccountNames.add(adj.crAcc);
+            });
+        }
+        const sortedAllAccounts = sortAccounts(Array.from(allAccountNames));
+
         const tempLedger = {};
         const getBal = (acc) => {
              if (tempLedger[acc] !== undefined) return tempLedger[acc];
@@ -349,7 +360,8 @@ export default function Step10ReversingEntries({ activityData, data, onChange, s
 
         const closingEntries = [];
         
-        validAccounts.forEach(acc => {
+        // Revenue
+        sortedAllAccounts.forEach(acc => {
             const net = getBal(acc);
             const type = getAccountType(acc);
             
@@ -364,22 +376,34 @@ export default function Step10ReversingEntries({ activityData, data, onChange, s
             }
         });
 
-        validAccounts.forEach(acc => {
+        // Expense (Compound Entry Logic)
+        const expenseRows = [];
+        sortedAllAccounts.forEach(acc => {
             const net = getBal(acc);
             const type = getAccountType(acc);
             if (type === 'Expense' && net > 0) {
                 totalExp += net;
-                closingEntries.push({ 
-                    id: `close-exp-${acc}`, date: 'Dec 31', rawDate: '2023-12-31', 
-                    description: 'To close the expense accounts.', 
-                    type: 'CLS', 
-                    rows: [{account: 'Income Summary', amount: net, type: 'dr'}, {account: acc, amount: net, type: 'cr'}] 
-                });
+                expenseRows.push({ account: acc, amount: net, type: 'cr' });
             }
         });
 
+        if (expenseRows.length > 0) {
+            // Debit Income Summary for Total Expense
+            const compoundRows = [
+                { account: 'Income Summary', amount: totalExp, type: 'dr' },
+                ...expenseRows
+            ];
+            
+            closingEntries.push({
+                id: `close-exp-compound`, date: 'Dec 31', rawDate: '2023-12-31',
+                description: 'To close the expense accounts.',
+                type: 'CLS',
+                rows: compoundRows
+            });
+        }
+
         const ni = totalRev - totalExp;
-        const capAcc = validAccounts.find(a => getAccountType(a) === 'Equity' && !a.includes('Drawing') && !a.includes('Dividends'));
+        const capAcc = sortedAllAccounts.find(a => getAccountType(a) === 'Equity' && !a.includes('Drawing') && !a.includes('Dividends'));
         
         if (ni !== 0) {
              const rows = ni >= 0 
@@ -393,7 +417,7 @@ export default function Step10ReversingEntries({ activityData, data, onChange, s
             });
         }
 
-        validAccounts.forEach(acc => {
+        sortedAllAccounts.forEach(acc => {
             const net = getBal(acc);
             if ((acc.includes('Drawing') || acc.includes('Dividends')) && net > 0) {
                 closingEntries.push({ 
@@ -419,17 +443,17 @@ export default function Step10ReversingEntries({ activityData, data, onChange, s
 
             <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
                 <div className="flex-1 lg:w-1/2 h-full min-h-0">
-                     <${HistoricalJournalView} entries=${combinedEntries} />
+                      <${HistoricalJournalView} entries=${combinedEntries} />
                 </div>
                 <div className="flex-1 lg:w-1/2 min-h-0 flex flex-col">
-                     <${ReversingEntryForm} 
+                      <${ReversingEntryForm} 
                         adjustments=${activityData.adjustments} 
                         data=${data} 
                         onChange=${onChange} 
                         showFeedback=${showFeedback} 
                         isReadOnly=${isReadOnly}
                         activityData=${activityData}
-                     />
+                      />
                 </div>
             </div>
         </div>
