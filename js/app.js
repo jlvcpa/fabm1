@@ -287,24 +287,15 @@ function renderSidebar(role) {
     };
     qaSubmenu.appendChild(formativeBtn);
 
-    // 2. Performance Tasks (New accountingCycleActivity.js)
-    // NOTE: Normally this requires an ID to render a specific activity. 
-    // Since this is a menu item, we might render a list of available Performance Tasks (similar to how Quizzes list works).
-    // I will assume accountingCycleActivity.js exports a LIST view if no ID is passed, OR we reuse QuizzesActivitiesPage to list them.
-    // For now, let's link it to a list view (reusing the logic or a new placeholder).
-    // However, per your request, I will link this button to a page that lists Performance Tasks.
-    // Since accountingCycleActivity.js typically RUND a single activity, we need a list view first. 
-    // I will use renderQuizzesAndActivities but filter for 'accounting_cycle' types if possible, or just link to the main list for now.
-    
+    // 2. Performance Tasks (Accounting Cycle)
     const perfTaskBtn = document.createElement('button');
     perfTaskBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-indigo-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-indigo-500";
     perfTaskBtn.innerHTML = '<i class="fas fa-project-diagram text-xs"></i> <span class="text-sm">Performance Tasks</span>';
     perfTaskBtn.onclick = () => {
-        // We reuse the main list renderer, but ideally pass a filter. 
-        // For simplicity in this scope, it opens the main list where Accounting Cycle tasks will also appear (since they are saved in quiz_list).
-        renderQuizzesActivitiesPage(); 
+        renderPerformanceTasksPage(); // Opens list filtered for 'accounting_cycle'
         closeMobileSidebar();
     };
+    
     qaSubmenu.appendChild(perfTaskBtn);
 
     container.appendChild(qaSubmenu);
@@ -401,16 +392,29 @@ function renderQuizzesActivitiesPage() {
 
     if (typeof renderQuizzesAndActivities === 'function') {
         // This function typically renders the LIST of available quizzes.
-        // It will now include Accounting Cycle tasks since they are in the same 'quiz_list' collection.
-        // If specific handling for AC tasks is needed (e.g. clicking one opens renderAccountingCycleActivity),
-        // that logic should be inside renderQuizzesAndActivities or handled via a callback.
-        // For this implementation, we assume renderQuizzesAndActivities handles the dispatch.
-        renderQuizzesAndActivities(content, currentUser, renderAccountingCycleActivity);
+        // It will now include summative and formative tests.
+        // Filter: 'test' (ensures only relevant items show)
+        renderQuizzesAndActivities(content, currentUser, renderAccountingCycleActivity, 'Test');
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
 }
 
+function renderPerformanceTasksPage() {
+    elements.pageTitle().innerText = "Performance Tasks";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+
+    if (typeof renderQuizzesAndActivities === 'function') {
+        // 1. Target Container: content
+        // 2. User Context: currentUser
+        // 3. Runner Function: renderAccountingCycleActivity (passed as reference)
+        // 4. Filter: 'task' (ensures only relevant items show)
+        renderQuizzesAndActivities(content, currentUser, renderAccountingCycleActivity, 'Task'); 
+    } else {
+        content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
+    }
+}
 function renderCreatorPage() {
     elements.pageTitle().innerText = "Quiz & Activity Creator";
     const content = elements.contentArea();
