@@ -1192,15 +1192,15 @@ export const unit2Week3Data = {
                                 <span class="bg-yellow-100 px-1">472,580.00</span>
                             </div>
                             <div class="flex justify-between mb-1 text-green-700">
-                                <span>Add: Net Income</span> 
+                                <span>Add: Net Income during the year</span> 
                                 <span class="border-b border-gray-400 font-bold">74,215.00</span>
                             </div>
                             <div class="flex justify-between mb-2 font-bold">
-                                <span>Total</span> 
+                                <span>Total Capital during the year</span> 
                                 <span>546,795.00</span>
                             </div>
                             <div class="flex justify-between mb-2 text-red-700">
-                                <span>Less: Drawings</span> 
+                                <span>Less: Drawings during the year</span> 
                                 <span class="bg-red-100 px-1">(36,000.00)</span>
                             </div>
                             <div class="border-b border-black mb-1"></div>
@@ -1219,39 +1219,51 @@ export const unit2Week3Data = {
                         <div class="p-4 text-xs font-mono text-gray-800 bg-white">
                             <div class="font-bold text-center mb-1">Hai Company</div>
                             <div class="text-center mb-4">Statement of Financial Position</div>
+                            <div class="text-center italic mb-6 text-gray-500">As of December 31, 2023</div>
 
-                            <div class="font-bold underline mb-1">ASSETS</div>
-                            <div class="pl-2 mb-2">
-                                <div class="font-semibold italic">Current Assets</div>
-                                <div class="flex justify-between pl-2"><span>Cash</span> <span>67,500</span></div>
-                                <div class="flex justify-between pl-2 font-bold text-blue-700"><span>Merch. Inventory</span> <span>350,000</span></div>
-                                <div class="flex justify-between pl-2 border-t border-gray-300 mt-1 font-bold"><span>Total Current Assets</span> <span>449,475</span></div>
+                            <div class="text-center font-bold mb-2">Assets</div>
+                            <div class="font-bold underline mb-1">Current Assets</div>
+                            <div class="pl-4">
+                                <div class="flex justify-between"><span>Cash</span> <span>67,500</span></div>
+                                <div class="flex justify-between"><span>Accounts Receivable</span> <span>22,000</span></div>
+                                <div class="flex justify-between font-bold text-blue-700 bg-blue-50"><span>Merchandise Inventory - Jan 1</span> <span>350,000</span></div>
+                                <div class="flex justify-between"><span>Office Supplies</span> <span>4,200</span></div>
+                                <div class="flex justify-between border-b border-black"><span>Prepaid Insurance</span> <span>5,775</span></div>
+                                <div class="flex justify-between font-bold mt-1"><span>Total Current Assets</span> <span>449,475</span></div>
                             </div>
                             
-                            <div class="pl-2 mb-4">
-                                <div class="font-semibold italic">Non-Current Assets</div>
-                                <div class="flex justify-between pl-2 border-t border-gray-300 mt-1 font-bold"><span>Net Book Value</span> <span>90,500</span></div>
+                            <div class="font-bold underline mt-4 mb-1">Non-Current Assets</div>
+                            <div class="pl-4">
+                                <div class="flex justify-between"><span>Building</span> <span>113,000</span></div>
+                                <div class="flex justify-between border-b border-black"><span>Less: Accumulated Depreciation</span> <span>22,500</span></div>
+                                <div class="flex justify-between font-bold mt-1"><span>Net Book Value</span> <span>90,500</span></div>
                             </div>
                             
-                            <div class="flex justify-between font-bold text-sm bg-gray-100 p-1 mb-4 border-y-2 border-black">
-                                <span>TOTAL ASSETS</span> <span>539,975</span>
+                            <div class="flex justify-between font-extrabold text-base bg-gray-100 p-2 mt-4 border-t-2 border-black border-b-4 border-double border-black">
+                                <span>Total Assets</span> 
+                                <span>539,975</span>
                             </div>
 
-                            <div class="font-bold underline mb-1">LIABILITIES & EQUITY</div>
-                            <div class="pl-2 mb-2">
-                                <div class="flex justify-between font-bold mt-1 pl-2"><span>Total Liabilities</span> <span>29,180</span></div>
+                            <div class="text-center font-bold mt-6 mb-2">Liabilities</div>
+                            <div class="font-bold underline mb-1">Current Liabilities</div>
+                            <div class="pl-4">
+                                <div class="flex justify-between"><span>Accounts Payable</span> <span>25,000</span></div>
+                                <div class="flex justify-between border-b border-black"><span>Accrued Expense Payable</span> <span>4,180</span></div>
+                                <div class="flex justify-between font-bold mt-1"><span>Total Current Liabilities</span> <span>29,180</span></div>
                             </div>
-                            
-                            <div class="pl-2 mb-2">
-                                <div class="flex justify-between pl-2 bg-teal-50">
-                                    <span>Hai Capital, Ending</span> 
-                                    <span class="font-bold text-teal-700">510,795</span>
+                            <div class="flex justify-between font-bold mt-2 pl-4"><span>Total Liabilities</span> <span>29,180</span></div>
+
+                            <div class="text-center font-bold mt-6 mb-2">Owners Equity</div>
+                            <div class="pl-4">
+                                <div class="flex justify-between font-bold text-teal-700 bg-teal-50 p-1">
+                                    <span>Hai Capital</span> <span>510,795.00</span>
                                 </div>
                                 <div class="text-[10px] text-gray-500 text-right italic">(From SCE)</div>
                             </div>
 
-                            <div class="flex justify-between font-bold text-sm bg-gray-100 p-1 border-y-2 border-black">
-                                <span>TOTAL LIAB. & EQUITY</span> <span>539,975</span>
+                            <div class="flex justify-between font-extrabold text-base bg-gray-100 p-2 mt-4 border-t-2 border-black border-b-4 border-double border-black">
+                                <span>TOTAL LIAB. & EQUITY</span> 
+                                <span>539,975.00</span>
                             </div>
                         </div>
                     </div>
