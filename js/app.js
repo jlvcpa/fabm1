@@ -410,7 +410,7 @@ function renderPerformanceTasksPage() {
         // 2. User Context: currentUser
         // 3. Runner Function: renderAccountingCycleActivity (passed as reference)
         // 4. Filter: 'task' (ensures only relevant items show)
-        renderQuizzesAndActivities(content, currentUser, renderAccountingCycleActivity, 'Task'); 
+        renderQuizzesAndActivities(content, currentUser, renderQuizzesAndActivities, 'Task'); 
     } else {
         content.innerHTML = `<div class="p-8 text-center text-gray-500">Module not loaded properly.</div>`;
     }
