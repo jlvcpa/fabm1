@@ -3,7 +3,7 @@
 import React from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Book, Check, X, Printer, ChevronDown, ChevronRight, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
-import { ActivityHelper } from '../utils.js';
+import { ActivityHelper } from './utils.js';
 
 // --- EXPLICIT IMPORTS ---
 import Step01Analysis from './steps/Step01Analysis.js';
