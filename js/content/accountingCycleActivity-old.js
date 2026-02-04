@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare } from 'https://esm.sh/lucide-react@0.263.1';
+import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from 'https://esm.sh/lucide-react@0.263.1';
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
 // --- Import Data & Utils ---
@@ -104,7 +104,6 @@ const adaptStaticDataToSimulator = (questionData) => {
 };
 
 // --- FIX 2: DATA NORMALIZATION HELPER ---
-// This function converts "flat" keys like "stepStatus.1" into nested objects { stepStatus: { "1": ... } }
 const normalizeFirebaseData = (data) => {
     if (!data) return { answers: {}, stepStatus: {}, scores: {} };
 
@@ -112,14 +111,12 @@ const normalizeFirebaseData = (data) => {
         answers: data.answers || {},
         stepStatus: data.stepStatus || {},
         scores: data.scores || {},
-        ...data // Keep other fields like studentName, questionId
+        ...data 
     };
 
-    // Scan for flat keys and nest them
     Object.keys(data).forEach(key => {
         if (key.includes('.')) {
             const [parent, child] = key.split('.');
-            // Only process known parents to avoid accidental parsing of unrelated fields
             if (['answers', 'stepStatus', 'scores'].includes(parent)) {
                 if (!normalized[parent]) normalized[parent] = {};
                 normalized[parent][child] = data[key];
@@ -137,6 +134,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [studentProgress, setStudentProgress] = useState({ answers: {}, stepStatus: {}, scores: {} });
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
+    
+    // NEW: State for the visual timer
+    const [timeLeft, setTimeLeft] = useState(null);
 
     // Initial Load & Realtime Sync
     useEffect(() => {
@@ -149,8 +149,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const rawData = docSnap.data();
-                    
-                    // --- APPLY FIX 2 HERE ---
                     const data = normalizeFirebaseData(rawData);
                     
                     setStudentProgress(prev => ({
@@ -199,20 +197,69 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
 
-    // --- AUTO-SUBMIT TIMER ---
+    // --- NEW LOGIC: Time & Sequence Checks ---
+    
+    // 1. Time Restriction Check
+    const now = new Date();
+    const startTime = new Date(activeTaskConfig.dateTimeStart);
+    const isEarly = now < startTime;
+
+    // 2. Sequential Step Check
+    let isLockedBySequence = false;
+    if (stepNum > 1) {
+        const prevStepNum = stepNum - 1;
+        const prevStatus = studentProgress.stepStatus[prevStepNum] || {};
+        if (!prevStatus.completed) {
+            isLockedBySequence = true;
+        }
+    }
+
+    // --- COMBINED TIMER & AUTO-SUBMIT ---
     useEffect(() => {
-        if (!activeTaskConfig || isSubmitted) return;
-        const interval = setInterval(() => {
-            const now = new Date();
+        // If submitted, clear timer state and do nothing
+        if (isSubmitted) {
+            setTimeLeft(null);
+            return;
+        }
+        
+        // If config missing, do nothing
+        if (!activeTaskConfig) return;
+
+        const updateTimer = () => {
+            const currentTime = new Date();
+            const start = new Date(activeTaskConfig.dateTimeStart);
             const expire = new Date(activeTaskConfig.dateTimeExpire);
-            if (now > expire) {
-                clearInterval(interval);
-                handleActionClick(stepNum, true); 
-                alert("Time Expired! Your answer has been automatically submitted.");
+
+            // If not started yet
+            if (currentTime < start) {
+                setTimeLeft("Not Started");
+                return;
             }
-        }, 5000); 
+
+            const diff = expire - currentTime;
+
+            // If expired
+            if (diff <= 0) {
+                setTimeLeft("00:00:00");
+                clearInterval(interval);
+                handleActionClick(stepNum, true); // Trigger Submit
+                alert("Time Expired! Your answer has been automatically submitted.");
+                return;
+            }
+
+            // Update Format (HH:MM:SS)
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        };
+
+        // Run immediately then every second
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000); 
+        
         return () => clearInterval(interval);
-    }, [activeTaskConfig, isSubmitted, stepNum]);
+    }, [activeTaskConfig, isSubmitted, stepNum]); // We removed isEarly to let timer handle "Not Started" text
 
     const pickRandomQuestion = () => {
         const randomIndex = Math.floor(Math.random() * merchTransactionsExamData.length);
@@ -225,13 +272,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         if (!resultDocId) return;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         try { 
-            // NOTE: Keep your save logic as is (dot notation). 
-            // Our new 'normalizeFirebaseData' function will handle reading it back correctly.
             await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); 
         } catch (e) { console.error("Save error", e); }
     };
 
-    // --- VALIDATION & SUBMIT LOGIC ---
     const handleActionClick = async (stepNum, isFinalSubmit = false) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
@@ -285,7 +329,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) return html`<div className="p-8 text-center text-red-500">Error: No tasks defined.</div>`;
 
-    // Status & UI State
     const scoreData = studentProgress.scores[stepNum];
     const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
     
@@ -310,8 +353,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         step: { id: stepNum, title: activeTaskConfig.stepName, description: activeTaskConfig.instructions },
         activityData: activityData,
         answers: studentProgress.answers,
-        stepStatus: studentProgress.stepStatus, // Pass the whole object!
-        isReadOnly: isSubmitted, 
+        stepStatus: studentProgress.stepStatus, 
+        isReadOnly: isSubmitted || isEarly, // Lock if submitted OR early
+        isLockedBySequence: isLockedBySequence, // Pass Sequence Lock
         isPerformanceTask: true, 
         showFeedback: isSubmitted, 
         updateAnswerFns: {
@@ -366,6 +410,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
                             <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
                             <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
+                            
+                            ${timeLeft && !isSubmitted && html`
+                                <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
+                                    <${Timer} size=${14}/> Remaining: ${timeLeft}
+                                </span>
+                            `}
                         </div>
                     </div>
                     
