@@ -92,7 +92,6 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
 
                 ${/* 3. WORKSPACE */''}
                 <div className="bg-white rounded shadow-sm border border-gray-200 relative">
-                    ${/* Overlay to dim content if locked by time */ }
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-30 z-10 pointer-events-none"></div>`}
 
                     <${StepComponent} 
