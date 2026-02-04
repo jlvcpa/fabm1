@@ -2,7 +2,7 @@
 
 import React from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
-import { Book, Check, X, Printer, ChevronDown, ChevronRight, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
+import { Check, Printer } from 'https://esm.sh/lucide-react@0.263.1';
 import { ActivityHelper } from './utils.js';
 
 // --- EXPLICIT IMPORTS ---
@@ -19,7 +19,6 @@ import Step10ReversingEntries from './steps/Step10ReversingEntries.js';
 
 const html = htm.bind(React.createElement);
 
-// --- COMPONENT MAPPING ---
 const STEP_COMPONENTS = {
     1: Step01Analysis,
     2: Step02Journalizing,
@@ -33,32 +32,29 @@ const STEP_COMPONENTS = {
     10: Step10ReversingEntries
 };
 
-export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPrevStepCompleted, isPerformanceTask }) => {
+export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPerformanceTask }) => {
     const StepComponent = step.component || STEP_COMPONENTS[step.id];
 
     if (!StepComponent) {
         return html`<div className="p-4 text-red-500">Error: Component for Step ${step.id} not found.</div>`;
     }
     
-    // --- PERFORMANCE TASK MODE ---
+    // --- PERFORMANCE TASK MODE (Single Scrollable Flow) ---
     if (isPerformanceTask) {
         return html`
-            <div className="h-full flex flex-col p-4">
-                ${/* 1. INSTRUCTIONS & RUBRIC CONTAINER (Fixed Height or Auto) */''}
-                <div className="flex-none mb-4 space-y-4">
-                    ${/* Instructions */''}
-                    <div className="p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
-                         dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}>
-                    </div>
-
-                    ${/* Rubric (Moved Here as requested) */''}
-                    <div className="border rounded-lg overflow-hidden shadow-sm">
-                         <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
-                    </div>
+            <div className="h-full overflow-y-auto p-4 custom-scrollbar">
+                ${/* 1. INSTRUCTIONS */''}
+                <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
+                     dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}>
                 </div>
 
-                ${/* 2. THE STEP COMPONENT (Scrollable Workspace) */''}
-                <div className="flex-1 overflow-y-auto min-h-0 border-t border-gray-200 pt-4">
+                ${/* 2. RUBRIC */''}
+                <div className="mb-6 border rounded-lg overflow-hidden shadow-sm bg-white">
+                     <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
+                </div>
+
+                ${/* 3. WORKSPACE (Flows naturally in the scroll container) */''}
+                <div className="bg-white rounded shadow-sm border border-gray-200">
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []} 
@@ -96,11 +92,9 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                     </button>
                 </div>
             </div>
-            
             ${isExpanded && html`
                 <div className="p-4">
                     <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}></div>
-                    
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []}
@@ -115,10 +109,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                         showFeedback=${status.completed}
                         isReadOnly=${status.completed}
                     />
-
-                    <div className="mt-8">
-                         <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
-                    </div>
+                    <div className="mt-8"><div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div></div>
                 </div>
             `}
         </div>
