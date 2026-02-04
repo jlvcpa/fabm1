@@ -33,10 +33,12 @@ const STEP_COMPONENTS = {
 };
 
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPerformanceTask }) => {
-    const StepComponent = step.component || STEP_COMPONENTS[step.id];
+    // Ensure step.id is a number for mapping
+    const stepId = Number(step.id);
+    const StepComponent = step.component || STEP_COMPONENTS[stepId];
 
     if (!StepComponent) {
-        return html`<div className="p-4 text-red-500">Error: Component for Step ${step.id} not found.</div>`;
+        return html`<div className="p-4 text-red-500">Error: Component for Step ${stepId} not found.</div>`;
     }
     
     // --- PERFORMANCE TASK MODE (Single Scrollable Flow) ---
@@ -45,29 +47,45 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
             <div className="h-full overflow-y-auto p-4 custom-scrollbar">
                 ${/* 1. INSTRUCTIONS */''}
                 <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
-                     dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}>
+                     dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(stepId, step.title) }}>
                 </div>
 
                 ${/* 2. RUBRIC */''}
                 <div className="mb-6 border rounded-lg overflow-hidden shadow-sm bg-white">
-                     <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
+                     <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(stepId, step.title) }}></div>
                 </div>
 
-                ${/* 3. WORKSPACE (Flows naturally in the scroll container) */''}
+                ${/* 3. WORKSPACE */''}
                 <div className="bg-white rounded shadow-sm border border-gray-200">
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []} 
-                        data=${answers[step.id] || {}}
+                        data=${answers[stepId] || {}}
                         onChange=${(id, key, val) => {
-                            if (step.id === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
-                            else if (step.id === 4 || step.id === 9) updateAnswerFns.updateTrialBalanceAnswer(step.id, id, key, val);
-                            else if (step.id === 5 || step.id === 6) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: val }); 
-                            else if (step.id === 7 || step.id === 10) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: key }); 
-                            else updateAnswerFns.updateAnswer(step.id, id); 
+                            // --- FIX: Handle Data Update Logic based on Step ID ---
+                            if (stepId === 1) {
+                                updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
+                            } 
+                            // FIX for Step 2 & 3: They pass (txnId, rows) -> received here as (id, key)
+                            else if (stepId === 2 || stepId === 3) {
+                                // For Step 2, 'id' is transaction ID, 'key' is the array of rows
+                                updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
+                            }
+                            else if (stepId === 4 || stepId === 9) {
+                                updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
+                            }
+                            else if (stepId === 5 || stepId === 6) {
+                                updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val }); 
+                            }
+                            else if (stepId === 7 || stepId === 10) {
+                                updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key }); 
+                            }
+                            else {
+                                updateAnswerFns.updateAnswer(stepId, id); 
+                            }
                         }}
-                        showFeedback=${stepStatus[step.id]?.completed || false}
-                        isReadOnly=${stepStatus[step.id]?.completed || false}
+                        showFeedback=${stepStatus[stepId]?.completed || false}
+                        isReadOnly=${stepStatus[stepId]?.completed || false}
                     />
                 </div>
             </div>
@@ -76,15 +94,15 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
 
     // --- STANDARD MODE (Legacy) ---
     const isExpanded = isCurrentActiveTask; 
-    const status = stepStatus[step.id] || {};
+    const status = stepStatus[stepId] || {};
     
     return html`
-        <div id=${`task-${step.id}`} className="mb-8 border rounded-lg shadow-sm bg-white overflow-hidden">
+        <div id=${`task-${stepId}`} className="mb-8 border rounded-lg shadow-sm bg-white overflow-hidden">
             <div className="bg-gray-50 p-4 border-b flex justify-between items-center cursor-pointer">
-                <h3 className="font-bold text-lg text-gray-800">Task #${step.id}: Step ${step.id.toString().padStart(2,'0')} - ${step.title}</h3>
+                <h3 className="font-bold text-lg text-gray-800">Task #${stepId}: Step ${stepId.toString().padStart(2,'0')} - ${step.title}</h3>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">Attempts: ${status.attempts || 0}</span>
-                    <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-bold flex items-center gap-2" onClick=${onValidate(step.id)}>
+                    <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-bold flex items-center gap-2" onClick=${onValidate(stepId)}>
                          <${Check} size=${16}/> Validate
                     </button>
                     <button className="bg-gray-200 text-gray-700 p-1 rounded hover:bg-gray-300">
@@ -94,22 +112,23 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
             </div>
             ${isExpanded && html`
                 <div className="p-4">
-                    <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}></div>
+                    <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(stepId, step.title) }}></div>
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []}
-                        data=${answers[step.id] || {}}
+                        data=${answers[stepId] || {}}
                         onChange=${(id, key, val) => {
-                             if (step.id === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
-                             else if (step.id === 4 || step.id === 9) updateAnswerFns.updateTrialBalanceAnswer(step.id, id, key, val);
-                             else if (step.id === 5 || step.id === 6) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: val });
-                             else if (step.id === 7 || step.id === 10) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: key });
-                             else updateAnswerFns.updateAnswer(step.id, id);
+                             if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
+                             else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
+                             else if (stepId === 4 || stepId === 9) updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
+                             else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val });
+                             else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
+                             else updateAnswerFns.updateAnswer(stepId, id);
                         }}
                         showFeedback=${status.completed}
                         isReadOnly=${status.completed}
                     />
-                    <div className="mt-8"><div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div></div>
+                    <div className="mt-8"><div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(stepId, step.title) }}></div></div>
                 </div>
             `}
         </div>
