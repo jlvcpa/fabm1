@@ -59,7 +59,7 @@ export async function renderQuizzesAndActivities(containerElement, user, customR
     await loadStudentActivities(user, customRunner, filterType);
 }
 
-async function loadStudentActivities(user) {
+async function loadStudentActivities(user, customRunner, filterType) {
     const listContainer = document.getElementById('qa-list-container');
     
     try {
