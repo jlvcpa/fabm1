@@ -36,19 +36,16 @@ const generateResultDocId = (user) => {
     return `${cn}-${id}-${last} ${first}`;
 };
 
-// --- HELPER 2: Robust Step Number Parser (FIX FOR STUCK SCREEN) ---
+// --- HELPER 2: Robust Step Number Parser (Prevents Status Overrides) ---
 const getStepNumber = (taskConfig, index) => {
     if (!taskConfig) return 1;
-    
-    // Strategy 1: Look for "Step X" or "StepX" in the name
+    // 1. Try to find "Step X" in the name
     const nameMatch = taskConfig.stepName.match(/Step\s*0?(\d+)/i);
     if (nameMatch) return parseInt(nameMatch[1]);
-
-    // Strategy 2: Use taskId if it's a number
+    // 2. Try taskId
     const idNum = parseInt(taskConfig.taskId);
     if (!isNaN(idNum)) return idNum;
-
-    // Strategy 3: Fallback to array index (1-based)
+    // 3. Fallback to array index
     return index + 1;
 };
 
@@ -116,7 +113,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
 
-    // Initial Load & Realtime Sync
+    // Initial Load
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
@@ -128,9 +125,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     setStudentProgress(prev => ({
-                        answers: { ...prev.answers, ...(data.answers || {}) },
-                        stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
-                        scores: { ...prev.scores, ...(data.scores || {}) }
+                        answers: { ...prev.answers, ...data.answers },
+                        stepStatus: { ...prev.stepStatus, ...data.stepStatus },
+                        scores: { ...prev.scores, ...data.scores }
                     }));
                     let qId = data.questionId;
                     if (!qId) { qId = pickRandomQuestion(); setDoc(resultRef, { questionId: qId }, { merge: true }); }
@@ -138,13 +135,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 } else {
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
-                    setDoc(resultRef, { 
-                        studentName: `${user.LastName}, ${user.FirstName}`, 
-                        studentId: user.Idnumber, 
-                        section: activityDoc.section, 
-                        questionId: qId, 
-                        startedAt: new Date().toISOString() 
-                    });
+                    setDoc(resultRef, { studentName: `${user.LastName}, ${user.FirstName}`, studentId: user.Idnumber, section: activityDoc.section, questionId: qId, startedAt: new Date().toISOString() });
                 }
                 setLoading(false);
             });
@@ -164,7 +155,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     }, [questionId, activityDoc]);
 
-    // --- FIX: DETERMINE STEP NUMBER ---
+    // --- FIX: ROBUST TASK/STEP IDENTIFICATION ---
+    // Using String() ensures we match "1" vs 1 correctly
     const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
     const activeTaskConfig = activeTaskIndex >= 0 ? activityDoc.tasks[activeTaskIndex] : null;
     const stepNum = getStepNumber(activeTaskConfig, activeTaskIndex);
@@ -205,7 +197,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
         
-        // Validation Routing
         if (stepNum === 1) result = validateStep01(activityData.transactions, currentAns);
         else if (stepNum === 2) result = validateStep02(activityData.transactions, currentAns);
         else if (stepNum === 3) result = validateStep03(activityData, currentAns);
@@ -218,6 +209,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         else if (stepNum === 10) result = validateStep10(currentAns, activityData);
 
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
+        
         const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
         let newStatus = {};
 
@@ -313,10 +305,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
                 <div className="flex gap-2">
                     ${activityDoc.tasks.map(t => {
+                        // FIX: Ensure correct active state matching
+                        const isActive = String(t.taskId) === String(currentTaskId);
+                        
+                        // Calculate step number for status check
                         const idx = activityDoc.tasks.indexOf(t);
                         const sNum = getStepNumber(t, idx);
                         const isDone = studentProgress.stepStatus[sNum]?.completed;
-                        const isActive = String(t.taskId) === String(currentTaskId);
+
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
@@ -366,6 +362,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
                      <div className="h-full overflow-y-auto custom-scrollbar">
+                        ${/* FIX: KEY PROP ADDED HERE forces React to unmount old step and mount new step */ }
                         <${TaskSection} key=${stepNum} ...${stepProps} />
                     </div>
                 </div>
