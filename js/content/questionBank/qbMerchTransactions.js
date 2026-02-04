@@ -211,6 +211,7 @@ export const merchTransactionsExamData = [
   {
     "type": "accountingCycleSimulation",
     "id": "AC-SET2-FIFO",
+    "inventorySystem": "Periodic FIFO",
     "topic": "Steps of the Accounting Cycle",
     "title": "Accounting Cycle Activity - Periodic FIFO",
     "instructions": "Complete the steps of the accounting cycle using the following transactions. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
@@ -244,6 +245,7 @@ export const merchTransactionsExamData = [
   {
     "type": "accountingCycleSimulation",
     "id": "AC-SET3-FIFO",
+    "inventorySystem": "Periodic FIFO",
     "topic": "Steps of the Accounting Cycle",
     "title": "Accounting Cycle Activity - Periodic FIFO",
     "instructions": "Complete the steps of the accounting cycle using the following transactions. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
@@ -277,6 +279,7 @@ export const merchTransactionsExamData = [
   {
     "type": "accountingCycleSimulation",
     "id": "AC-SET4-FIFO",
+    "inventorySystem": "Periodic FIFO",
     "topic": "Steps of the Accounting Cycle",
     "title": "Accounting Cycle Activity - Periodic FIFO",
     "instructions": "Complete the steps of the accounting cycle using the following transactions. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
@@ -310,6 +313,7 @@ export const merchTransactionsExamData = [
   {
     "type": "accountingCycleSimulation",
     "id": "AC-SET5-FIFO",
+    "inventorySystem": "Periodic FIFO",
     "topic": "Steps of the Accounting Cycle",
     "title": "Accounting Cycle Activity - Periodic FIFO",
     "instructions": "Complete the steps of the accounting cycle using the following transactions. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
@@ -343,6 +347,7 @@ export const merchTransactionsExamData = [
   {
     "type": "accountingCycleSimulation",
     "id": "AC-SET6-FIFO",
+    "inventorySystem": "Periodic FIFO",
     "topic": "Steps of the Accounting Cycle",
     "title": "Accounting Cycle Activity - Periodic FIFO",
     "instructions": "Complete the steps of the accounting cycle using the following transactions. Ensure you properly extend balances to the Income Statement and Balance Sheet columns.",
