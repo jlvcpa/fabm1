@@ -68,7 +68,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
 
                 ${/* 3. WORKSPACE */''}
                 <div className="bg-white rounded shadow-sm border border-gray-200 relative">
-                    ${/* Overlay for ReadOnly mode if you want to make it look "disabled" */ }
+                  //  ${/* Overlay for ReadOnly mode if you want to make it look "disabled" */ }
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-30 z-10 pointer-events-none"></div>`}
                     
                     <${StepComponent} 
