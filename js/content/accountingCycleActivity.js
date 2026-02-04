@@ -1,5 +1,3 @@
-// --- js/content/accountingCycleActivity.js ---
-
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
@@ -248,16 +246,16 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         return merchTransactionsExamData[randomIndex].id;
     };
 
-    const handleSaveStep = async (stepNum, newData) => {
-        setStudentProgress(prev => ({ ...prev, answers: { ...prev.answers, [stepNum]: newData } }));
-        const resultDocId = generateResultDocId(user);
-        if (!resultDocId) return;
-        const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
-        try { 
-            await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); 
-        } catch (e) { console.error("Save error", e); }
+    // --- FIX: LOCAL STATE UPDATE ONLY ---
+    const handleSaveStep = (stepNum, newData) => {
+        setStudentProgress(prev => ({ 
+            ...prev, 
+            answers: { ...prev.answers, [stepNum]: newData } 
+        }));
+        // NO Firebase Write here to save costs and enforce validate/submit behavior
     };
 
+    // --- FIX: VALIDATE & SAVE TO FIREBASE ---
     const handleActionClick = async (stepNum, isFinalSubmit = false) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
@@ -302,9 +300,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         if (!resultDocId) return;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
+        // SAVE EVERYTHING TO FIREBASE HERE (Answers + Status + Score)
         await setDoc(resultRef, {
+            [`answers.${stepNum}`]: currentAns, // Saved on Validate/Submit
             [`stepStatus.${stepNum}`]: newStatus,
-            [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore }
+            [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore },
+            lastUpdated: new Date().toISOString()
         }, { merge: true });
     };
 
@@ -319,13 +320,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     let btnAction = () => handleActionClick(stepNum, false);
     let btnIcon = CheckSquare;
 
-    // --- FIX: UPDATED BUTTON LOGIC ---
+    // --- BUTTON LOGIC WITH LOCKING ---
     if (isSubmitted) {
         btnLabel = "Step Submitted";
         btnColor = "bg-gray-400 cursor-not-allowed";
         btnAction = () => {};
         btnIcon = CheckCircle;
-    } else if (isLocked) { // <--- DISABLE BUTTON IF LOCKED
+    } else if (isLocked) { 
         btnLabel = "Task Locked";
         btnColor = "bg-gray-300 cursor-not-allowed text-gray-500";
         btnAction = () => {};
