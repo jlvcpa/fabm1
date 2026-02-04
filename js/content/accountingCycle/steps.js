@@ -5,7 +5,7 @@ import htm from 'https://esm.sh/htm';
 import { Book, Check, X, Printer, ChevronDown, ChevronRight, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
 import { ActivityHelper } from './utils.js';
 
-// --- EXPLICIT IMPORTS (Required to fix 'require is not defined') ---
+// --- EXPLICIT IMPORTS ---
 import Step01Analysis from './steps/Step01Analysis.js';
 import Step02Journalizing from './steps/Step02Journalizing.js';
 import Step03Posting from './steps/Step03Posting.js';
@@ -34,17 +34,22 @@ const STEP_COMPONENTS = {
 };
 
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPrevStepCompleted, isPerformanceTask }) => {
-    // Look up component from map
     const StepComponent = step.component || STEP_COMPONENTS[step.id];
 
     if (!StepComponent) {
         return html`<div className="p-4 text-red-500">Error: Component for Step ${step.id} not found.</div>`;
     }
     
-    // In Performance Task mode, we hide the internal instructions/rubrics
+    // --- PERFORMANCE TASK MODE (Clean Layout with Instructions & Rubric) ---
     if (isPerformanceTask) {
         return html`
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col p-4">
+                ${/* 1. INSTRUCTIONS (Restored) */''}
+                <div className="mb-6 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
+                     dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}>
+                </div>
+
+                ${/* 2. THE STEP COMPONENT */''}
                 <${StepComponent} 
                     activityData=${activityData}
                     transactions=${activityData?.transactions || []} 
@@ -60,6 +65,11 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                     showFeedback=${stepStatus[step.id]?.completed || false}
                     isReadOnly=${stepStatus[step.id]?.completed || false}
                 />
+
+                ${/* 3. RUBRIC (Restored) */''}
+                <div className="mt-8 pt-4 border-t border-gray-200">
+                     <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
+                </div>
             </div>
         `;
     }
