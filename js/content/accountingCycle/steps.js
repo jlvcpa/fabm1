@@ -2,22 +2,47 @@
 
 import React from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
-// ADD: Lock and Clock to imports
 import { Check, Printer, Lock, Clock } from 'https://esm.sh/lucide-react@0.263.1';
 import { ActivityHelper } from './utils.js';
 
-// ... (Imports and STEP_COMPONENTS remain same) ...
+// --- EXPLICIT IMPORTS ---
+import Step01Analysis from './steps/Step01Analysis.js';
+import Step02Journalizing from './steps/Step02Journalizing.js';
+import Step03Posting from './steps/Step03Posting.js';
+import Step04TrialBalance from './steps/Step04TrialBalance.js';
+import Step05Worksheet from './steps/Step05Worksheet.js';
+import Step06FinancialStatements from './steps/Step06FinancialStatements.js';
+import Step07AdjustingEntries from './steps/Step07AdjustingEntries.js';
+import Step08ClosingEntries from './steps/Step08ClosingEntries.js';
+import Step09PostClosingTB from './steps/Step09PostClosingTB.js';
+import Step10ReversingEntries from './steps/Step10ReversingEntries.js';
+
+const html = htm.bind(React.createElement);
+
+const STEP_COMPONENTS = {
+    1: Step01Analysis,
+    2: Step02Journalizing,
+    3: Step03Posting,
+    4: Step04TrialBalance,
+    5: Step05Worksheet,
+    6: Step06FinancialStatements,
+    7: Step07AdjustingEntries,
+    8: Step08ClosingEntries,
+    9: Step09PostClosingTB,
+    10: Step10ReversingEntries
+};
 
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPerformanceTask, isLockedBySequence, isReadOnly }) => {
-    // Ensure step.id is a number
+    // FIX: Force ID to be a number to ensure consistent lookup in objects
     const stepId = Number(step.id);
+    
     const StepComponent = step.component || STEP_COMPONENTS[stepId];
 
     if (!StepComponent) {
         return html`<div className="p-4 text-red-500">Error: Component for Step ${stepId} not found.</div>`;
     }
     
-    // --- NEW: SEQUENTIAL LOCK UI ---
+    // --- SECURITY: SEQUENTIAL LOCK SCREEN ---
     if (isLockedBySequence) {
         return html`
             <div className="flex flex-col items-center justify-center h-full min-h-[300px] p-8 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg text-gray-500">
@@ -33,16 +58,15 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
         `;
     }
 
+    // FIX: Use stepId for status lookup
     const currentStatus = stepStatus[stepId] || {};
-    // Note: We use the isReadOnly passed from parent (which now includes isEarly logic)
-    // But we still check status for the visual feedback flag
     const isCompleted = currentStatus.completed === true;
 
-    // --- NEW: EARLY START WARNING (Optional Banner) ---
-    // If it is ReadOnly but NOT completed, it means it is Early (or manually locked)
+    // --- SECURITY: EARLY START WARNING ---
+    // If it is ReadOnly (due to time) but NOT completed (submitted), show warning
     const showEarlyWarning = isReadOnly && !isCompleted;
 
-    // --- PERFORMANCE TASK MODE ---
+    // --- PERFORMANCE TASK MODE (Single Scrollable Flow) ---
     if (isPerformanceTask) {
         return html`
             <div className="h-full overflow-y-auto p-4 custom-scrollbar">
@@ -68,8 +92,9 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
 
                 ${/* 3. WORKSPACE */''}
                 <div className="bg-white rounded shadow-sm border border-gray-200 relative">
+                    ${/* Overlay to dim content if locked by time */ }
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-30 z-10 pointer-events-none"></div>`}
-                    
+
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []} 
@@ -91,6 +116,47 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
     }
 
     // --- STANDARD MODE (Legacy) ---
-    // ... (Implement similar check for isLockedBySequence here if needed) ...
-    return html`...`; // Keeping this brief as Performance Mode seems to be the focus
+    const isExpanded = isCurrentActiveTask; 
+    
+    return html`
+        <div id=${`task-${stepId}`} className="mb-8 border rounded-lg shadow-sm bg-white overflow-hidden">
+            <div className="bg-gray-50 p-4 border-b flex justify-between items-center cursor-pointer">
+                <h3 className="font-bold text-lg text-gray-800">Task #${stepId}: Step ${stepId.toString().padStart(2,'0')} - ${step.title}</h3>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">Attempts: ${currentStatus.attempts || 0}</span>
+                    ${!isReadOnly && html`
+                        <button className="bg-blue-600 text-white px-4 py-1 rounded text-sm font-bold flex items-center gap-2" onClick=${onValidate(stepId)}>
+                             <${Check} size=${16}/> Validate
+                        </button>
+                    `}
+                    <button className="bg-gray-200 text-gray-700 p-1 rounded hover:bg-gray-300">
+                        <${Printer} size=${18}/>
+                    </button>
+                </div>
+            </div>
+            ${isExpanded && html`
+                <div className="p-4 relative">
+                    ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-50 z-20 flex items-center justify-center font-bold text-gray-500">Task Locked</div>`}
+                    
+                    <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(stepId, step.title) }}></div>
+                    <${StepComponent} 
+                        activityData=${activityData}
+                        transactions=${activityData?.transactions || []}
+                        data=${answers[stepId] || {}}
+                        onChange=${(id, key, val) => {
+                             if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
+                             else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
+                             else if (stepId === 4 || stepId === 9) updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
+                             else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val });
+                             else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
+                             else updateAnswerFns.updateAnswer(stepId, id);
+                        }}
+                        showFeedback=${isCompleted}
+                        isReadOnly=${isReadOnly}
+                    />
+                    <div className="mt-8"><div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(stepId, step.title) }}></div></div>
+                </div>
+            `}
+        </div>
+    `;
 };
