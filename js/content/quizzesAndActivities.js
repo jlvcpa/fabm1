@@ -21,8 +21,12 @@ const db = getFirestore(app);
 let quizTimerInterval = null;
 let currentAntiCheat = null;
 
-export async function renderQuizzesAndActivities(containerElement, user, customRunner = null, filterType = null) { 
+// --- MAIN ENTRY POINT ---
+export async function renderQuizzesAndActivities(containerElement, user, customRunner = null, filterType = null) {
+    // 1. Assign the container explicitly to avoid reference errors
     const contentArea = containerElement;
+
+    // 2. Render the sidebar layout
     contentArea.innerHTML = `
         <div class="flex h-full relative overflow-hidden bg-gray-50">
             <div id="qa-sidebar" class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 transition-transform absolute md:relative transform -translate-x-full md:translate-x-0">
@@ -48,26 +52,23 @@ export async function renderQuizzesAndActivities(containerElement, user, customR
         </div>
     `;
 
+    // 3. Attach Sidebar Event Listeners
     const sidebar = document.getElementById('qa-sidebar');
-    document.getElementById('qa-toggle-sidebar').addEventListener('click', () => {
-        sidebar.classList.remove('-translate-x-full');
-    });
-    document.getElementById('qa-close-sidebar').addEventListener('click', () => {
-        sidebar.classList.add('-translate-x-full');
-    });
+    const toggleBtn = document.getElementById('qa-toggle-sidebar');
+    const closeBtn = document.getElementById('qa-close-sidebar');
 
+    if (toggleBtn) toggleBtn.addEventListener('click', () => sidebar.classList.remove('-translate-x-full'));
+    if (closeBtn) closeBtn.addEventListener('click', () => sidebar.classList.add('-translate-x-full'));
+
+    // 4. Load Data
     await loadStudentActivities(user, customRunner, filterType);
 }
 
 async function loadStudentActivities(user, customRunner, filterType) {
-    // 1. Define the container explicitly
     const listContainer = document.getElementById('qa-list-container');
     
-    // Safety check: If the container doesn't exist in the DOM, stop immediately.
-    if (!listContainer) {
-        console.error("Error: qa-list-container not found in DOM.");
-        return;
-    }
+    // Safety check
+    if (!listContainer) return;
 
     try {
         const q = query(collection(db, "quiz_list"), orderBy("dateTimeCreated", "desc"));
@@ -81,30 +82,33 @@ async function loadStudentActivities(user, customRunner, filterType) {
         }
 
         const now = new Date();
+        let hasItems = false;
 
         snapshot.forEach(docSnap => {
             const data = docSnap.data();
             data.id = docSnap.id; 
             
-            // Filter by Section
-            if (user.role === 'student' && data.section !== user.Section) {
-                return; 
-            }
+            // Filter by Section (for students)
+            if (user.role === 'student' && data.section !== user.Section) return;
             
             // --- FILTER LOGIC ---
             // Check if this is a Performance Task (Accounting Cycle)
+            // It is a task if it has a 'tasks' array OR type is 'accounting_cycle' OR title contains 'Task'
             const isPerformanceTask = (data.tasks && Array.isArray(data.tasks)) || 
                                       data.type === 'accounting_cycle' || 
-                                      data.activityname.includes('Task');
+                                      (data.activityname && data.activityname.includes('Task'));
 
-            if (filterType === 'accounting_cycle' || filterType === 'Task') {
-                if (!isPerformanceTask) return; // Skip if not a task
+            // Apply filter based on menu selection
+            if (filterType === 'Task' || filterType === 'accounting_cycle') {
+                if (!isPerformanceTask) return; 
             } 
             else if (filterType === 'standard') {
-                if (isPerformanceTask) return; // Skip if it IS a task
+                // If it is a performance task, HIDE it from the standard menu
+                if (isPerformanceTask) return;
             }
             // --------------------
 
+            hasItems = true;
             const start = new Date(data.dateTimeStart);
             const expire = new Date(data.dateTimeExpire);
             const isExpired = now > expire;
@@ -139,61 +143,60 @@ async function loadStudentActivities(user, customRunner, filterType) {
                         currentAntiCheat = null;
                     }
                     
-                    // PASS CUSTOM RUNNER TO RENDERER
+                    // PASS EVERYTHING TO THE RUNNER
                     renderQuizRunner(data, user, customRunner);
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
             };
 
-            // This is the line that was failing. 
-            // Since we added the safety check at the top, this should now work.
             listContainer.appendChild(card);
         });
         
-        if (listContainer.innerHTML === '') {
-             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities available for your section.</p>';
+        if (!hasItems) {
+             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No available activities for this category.</p>';
         }
 
     } catch (e) {
         console.error("Error loading activities:", e);
-        if (listContainer) {
-            listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
-        }
+        if (listContainer) listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
     }
 }
 
 async function renderQuizRunner(data, user, customRunner = null) {
     const container = document.getElementById('qa-runner-container');
     
-    // --- NEW GUARD CLAUSE ---
-    // If a custom runner (like accountingCycleActivity) is provided, use it and STOP.
-    if (customRunner && typeof customRunner === 'function') {
-        console.log("Delegating to custom Activity Runner...");
+    // --- SMART ROUTING LOGIC ---
+    // 1. Check if it's an Accounting Cycle Task
+    // Logic: Has 'tasks' array AND customRunner is available
+    const isAccountingCycle = data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0;
+
+    if (isAccountingCycle && customRunner && typeof customRunner === 'function') {
+        console.log("Routing to Accounting Cycle Activity Runner...");
         
-        // Clear container first to be safe
+        // Clean up standard runner artifacts if any
         container.innerHTML = '';
         
-        // Define the "Go Back" callback
         const goBack = () => {
-             // Re-render the list view when backing out
              document.getElementById('qa-toggle-sidebar').click(); 
         };
 
-        // Call your React Runner
+        // HAND OFF CONTROL
         customRunner(container, data, user, goBack);
-        return; // <--- CRITICAL: Stops execution of standard quiz logic
-    }  
+        return; // STOP HERE! Do not run standard logic.
+    }
     
+    // ----------------------------------------------------
+    // START OF STANDARD QUIZ LOGIC (For Old Activities)
+    // ----------------------------------------------------
+    
+    // Permission Check
     if (user.role !== 'teacher' && data.students && !data.students.includes(user.Idnumber)) {
         container.innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
                 <i class="fas fa-user-slash text-6xl mb-6"></i>
                 <h2 class="text-3xl font-bold">Access Denied</h2>
                 <p class="text-gray-500 mt-2 text-lg">You are not included in the list of students for this activity.</p>
-                <p class="text-gray-800 mt-4 font-bold">You are marked as ABSENT.</p>
-                <p class="text-gray-500 text-sm mt-2">Please contact your teacher if you believe this is an error.</p>
-            </div>
-        `;
+            </div>`;
         return;
     }
 
@@ -206,9 +209,7 @@ async function renderQuizRunner(data, user, customRunner = null) {
             await renderQuizResultPreview(data, user, resultDoc.data());
             return;
         }
-    } catch (e) {
-        console.error("Error checking submission:", e);
-    }
+    } catch (e) { console.error(e); }
 
     const now = new Date();
     const expireTime = new Date(data.dateTimeExpire);
@@ -219,12 +220,8 @@ async function renderQuizRunner(data, user, customRunner = null) {
                 <i class="fas fa-calendar-times text-6xl mb-6 text-red-400"></i>
                 <h2 class="text-3xl font-bold text-gray-700">Activity Expired</h2>
                 <p class="mt-2 text-lg">The due date for this activity has passed.</p>
-                <p class="text-sm mt-4 text-gray-400 font-bold">No submission recorded.</p>
-                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-6 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
-                    Back to List
-                </button>
-            </div>
-        `;
+                <button onclick="document.getElementById('qa-toggle-sidebar').click()" class="mt-6 px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">Back to List</button>
+            </div>`;
         return;
     }
 
@@ -232,17 +229,14 @@ async function renderQuizRunner(data, user, customRunner = null) {
     
     const generatedContent = await generateQuizContent(data);
 
+    // Standard Anti-Cheat HTML
     const antiCheatHtml = `
         <div id="black-curtain" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background-color:black; z-index:9999;"></div>
         <div id="cheat-lockout" class="hidden fixed inset-0 bg-gray-900 z-[100] flex items-center justify-center text-white p-6 text-center">
             <div class="max-w-md w-full">
-                <div class="text-6xl mb-4">⚠️</div>
                 <h1 class="text-3xl font-bold mb-4 text-red-500">Activity Paused</h1>
                 <p class="text-lg mb-6">Focus lost. Navigation away is monitored.</p>
-                <p class="text-sm text-red-300 italic mb-4">Warning: Resuming may penalize your progress.</p>
-                <button id="btn-unlock" onclick="window.handleUnlockClick()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xl shadow-lg transition-transform transform active:scale-95">
-                    Resume Activity (3)
-                </button>
+                <button id="btn-unlock" onclick="window.handleUnlockClick()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-xl shadow-lg">Resume Activity</button>
             </div>
         </div>
     `;
@@ -257,7 +251,6 @@ async function renderQuizRunner(data, user, customRunner = null) {
                     <span id="quiz-timer" class="font-mono text-lg font-bold">--:--:--</span>
                  </div>
             </div>
-            
             <form id="quiz-form" class="flex-1 flex flex-col overflow-y-auto relative scrollbar-thin">
                 ${generatedContent.html}
             </form>
