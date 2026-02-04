@@ -26,56 +26,10 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- LOGIC ENGINE: Calculates the Answer Key for Step 1 ---
-const deriveAnalysis = (debits, credits) => {
-    let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
-    
-    // Analyze Debits
-    debits.forEach(d => {
-        const type = getAccountType(d.account);
-        if (type === 'Asset') analysis.assets = 'Increase';
-        else if (type === 'Liability') analysis.liabilities = 'Decrease';
-        else if (type === 'Equity') {
-            analysis.equity = 'Decrease';
-            if(d.account.includes('Drawings') || d.account.includes('Withdrawal')) {
-                analysis.cause = 'Increase in Drawings';
-            } else {
-                analysis.cause = 'Decrease in Capital';
-            }
-        }
-        else if (type === 'Expense') {
-            analysis.equity = 'Decrease';
-            analysis.cause = 'Increase in Expense';
-        }
-    });
-
-    // Analyze Credits
-    credits.forEach(c => {
-        const type = getAccountType(c.account);
-        if (type === 'Asset') {
-            analysis.assets = (analysis.assets === 'Increase') ? 'No Effect' : 'Decrease';
-        }
-        else if (type === 'Liability') {
-            analysis.liabilities = (analysis.liabilities === 'Decrease') ? 'No Effect' : 'Increase';
-        }
-        else if (type === 'Equity') {
-            analysis.equity = (analysis.equity === 'Decrease') ? 'No Effect' : 'Increase';
-            if(c.account.includes('Capital')) analysis.cause = 'Increase in Capital';
-        }
-        else if (type === 'Revenue') {
-            analysis.equity = (analysis.equity === 'Decrease') ? 'No Effect' : 'Increase';
-            analysis.cause = 'Increase in Income';
-        }
-    });
-
-    return analysis;
-};
-
 // --- HELPER: ADAPTER ---
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
     
-    // 1. Normalize Transactions
     const normalizedTransactions = transactions.map((t, idx) => {
         const debits = [];
         const credits = [];
@@ -84,16 +38,13 @@ const adaptStaticDataToSimulator = (questionData) => {
             if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
         });
 
-        // CRITICAL FIX: Calculate the Analysis Answer Key here
-        const analysis = deriveAnalysis(debits, credits);
-
         return {
             id: idx + 1,
             date: t.date,
             description: t.description,
             debits,
             credits,
-            analysis // Passed to Step01Analysis for grading
+            analysis: {} // <-- Leave this empty! Step01Analysis now calculates it on its own.
         };
     });
 
