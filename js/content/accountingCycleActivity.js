@@ -411,7 +411,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
                             <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
                             
-                            ${/* --- NEW: TIMER DISPLAY --- */ }
                             ${timeLeft && !isSubmitted && html`
                                 <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
                                     <${Timer} size=${14}/> Remaining: ${timeLeft}
