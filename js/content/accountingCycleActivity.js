@@ -1,15 +1,13 @@
 // --- js/content/accountingCycleActivity.js ---
 
-import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18.2.0';
+import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, BookOpen } from 'https://esm.sh/lucide-react@0.263.1';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
-// --- Import Question Bank Data ---
+// --- Import Data & Utils ---
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
-
-// --- Import Cycle Steps & Logic ---
 import { getAccountType, sortAccounts } from './accountingCycle/utils.js';
 import { TaskSection } from './accountingCycle/steps.js';
 
@@ -28,7 +26,52 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- HELPER: MAP STATIC DATA TO SIMULATOR FORMAT ---
+// --- LOGIC ENGINE: Calculates the Answer Key for Step 1 ---
+const deriveAnalysis = (debits, credits) => {
+    let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
+    
+    // Analyze Debits
+    debits.forEach(d => {
+        const type = getAccountType(d.account);
+        if (type === 'Asset') analysis.assets = 'Increase';
+        else if (type === 'Liability') analysis.liabilities = 'Decrease';
+        else if (type === 'Equity') {
+            analysis.equity = 'Decrease';
+            if(d.account.includes('Drawings') || d.account.includes('Withdrawal')) {
+                analysis.cause = 'Increase in Drawings';
+            } else {
+                analysis.cause = 'Decrease in Capital';
+            }
+        }
+        else if (type === 'Expense') {
+            analysis.equity = 'Decrease';
+            analysis.cause = 'Increase in Expense';
+        }
+    });
+
+    // Analyze Credits
+    credits.forEach(c => {
+        const type = getAccountType(c.account);
+        if (type === 'Asset') {
+            analysis.assets = (analysis.assets === 'Increase') ? 'No Effect' : 'Decrease';
+        }
+        else if (type === 'Liability') {
+            analysis.liabilities = (analysis.liabilities === 'Decrease') ? 'No Effect' : 'Increase';
+        }
+        else if (type === 'Equity') {
+            analysis.equity = (analysis.equity === 'Decrease') ? 'No Effect' : 'Increase';
+            if(c.account.includes('Capital')) analysis.cause = 'Increase in Capital';
+        }
+        else if (type === 'Revenue') {
+            analysis.equity = (analysis.equity === 'Decrease') ? 'No Effect' : 'Increase';
+            analysis.cause = 'Increase in Income';
+        }
+    });
+
+    return analysis;
+};
+
+// --- HELPER: ADAPTER ---
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
     
@@ -40,13 +83,17 @@ const adaptStaticDataToSimulator = (questionData) => {
             if (line.debit) debits.push({ account: line.account, amount: Number(line.debit) });
             if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
         });
+
+        // CRITICAL FIX: Calculate the Analysis Answer Key here
+        const analysis = deriveAnalysis(debits, credits);
+
         return {
             id: idx + 1,
             date: t.date,
             description: t.description,
             debits,
             credits,
-            analysis: {} 
+            analysis // Passed to Step01Analysis for grading
         };
     });
 
@@ -108,9 +155,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
 
-    // 1. Initialize: Load or Assign Question & Fetch Progress
+    // 1. Initialize
     useEffect(() => {
-        if(!activityDoc) return; // Safety check
+        if(!activityDoc) return;
 
         const init = async () => {
             const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
@@ -120,12 +167,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // We only load initial state from Firebase ONCE to avoid overwriting local optimistic updates
-                    // But for simplicity in this architecture, we sync. 
-                    // NOTE: To prevent stutter, handleSaveStep updates local state immediately.
+                    // Merge remote data
                     setStudentProgress(prev => ({
-                        ...prev, // Keep local state priority if needed, but here we merge
-                        answers: data.answers || {},
+                        answers: { ...prev.answers, ...data.answers },
                         stepStatus: data.stepStatus || {},
                         scores: data.scores || {}
                     }));
@@ -155,16 +199,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         init();
     }, [activityDoc, user]);
 
-    // 2. Hydrate Simulator Data
+    // 2. Hydrate
     useEffect(() => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
                 const adaptedData = adaptStaticDataToSimulator(rawQ);
                 setActivityData(adaptedData);
-                
-                // Set initial task if none selected. 
-                // SAFETY: Check if tasks exist.
                 if (!currentTaskId && activityDoc.tasks && activityDoc.tasks.length > 0) {
                     setCurrentTaskId(activityDoc.tasks[0].taskId);
                 }
@@ -178,13 +219,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     };
 
     // --- SAVE HANDLER (OPTIMISTIC) ---
-    const handleSaveStep = async (taskId, newData) => {
-        // 1. Identify the Step Number (1-10) from the Task Config
-        const taskConfig = activityDoc.tasks.find(t => t.taskId === taskId);
-        if (!taskConfig) return;
-        const stepNum = parseInt(taskConfig.stepName.split(' ')[1]);
-
-        // 2. OPTIMISTIC UPDATE: Update UI immediately
+    // stepNum is the actual accounting step (1-10)
+    const handleSaveStep = async (stepNum, newData) => {
+        // 1. OPTIMISTIC UPDATE: Fixes Dropdown Lag
         setStudentProgress(prev => ({
             ...prev,
             answers: {
@@ -193,28 +230,26 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             }
         }));
 
-        // 3. Save to Firebase (Background)
+        // 2. BACKGROUND SAVE
         const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
 
-        const updatePayload = {
-            [`answers.${stepNum}`]: newData,
-            lastUpdated: new Date().toISOString()
-        };
-
         try {
-            await setDoc(resultRef, updatePayload, { merge: true });
+            await setDoc(resultRef, {
+                [`answers.${stepNum}`]: newData,
+                lastUpdated: new Date().toISOString()
+            }, { merge: true });
         } catch (e) {
             console.error("Save error", e);
         }
     };
 
-    // --- VALIDATION HANDLER (Fixes the Blue Button) ---
+    // --- VALIDATION HANDLER ---
     const handleStepValidation = async (stepNum) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
         
-        // Run specific validator based on Step Number
+        // This runs the logic inside Step01Analysis.js, but now using the corrected activityData
         if (stepNum === 1) result = validateStep01(activityData.transactions, currentAns);
         else if (stepNum === 2) result = validateStep02(activityData.transactions, currentAns);
         else if (stepNum === 3) result = validateStep03(activityData, currentAns);
@@ -228,20 +263,20 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
         
-        // Update Local State (Optimistic)
         const newStatus = { 
             completed: isCorrect, 
             correct: isCorrect, 
             attempts: (studentProgress.stepStatus[stepNum]?.attempts || 3) - 1 
         };
 
+        // Optimistic Status Update
         setStudentProgress(prev => ({
             ...prev,
             stepStatus: { ...prev.stepStatus, [stepNum]: newStatus },
             scores: { ...prev.scores, [stepNum]: { score: result.score, maxScore: result.maxScore } }
         }));
 
-        // Save to Firebase
+        // Firebase Status Save
         const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
@@ -256,15 +291,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
 
-    // --- RENDER CURRENT TASK ---
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) {
         return html`<div className="p-8 text-center text-red-500">Error: No tasks defined for this activity.</div>`;
     }
 
     const activeTaskConfig = activityDoc.tasks.find(t => t.taskId === currentTaskId);
-    const stepNum = parseInt(activeTaskConfig.stepName.split(' ')[1]);
+    const stepNum = activeTaskConfig ? parseInt(activeTaskConfig.stepName.split(' ')[1]) : 1;
     
-    // Status Checks
     const now = new Date();
     const start = new Date(activeTaskConfig.dateTimeStart);
     const expire = new Date(activeTaskConfig.dateTimeExpire);
@@ -277,7 +310,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         step: { id: stepNum, title: activeTaskConfig.stepName, description: activeTaskConfig.instructions },
         activityData: activityData,
         answers: studentProgress.answers,
-        // Ensure stepStatus exists to prevent crash in TaskSection
         stepStatus: { 
             ...studentProgress.stepStatus, 
             [stepNum]: studentProgress.stepStatus[stepNum] || { completed: false, attempts: 3, correct: false } 
@@ -289,21 +321,27 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         onValidate: () => () => handleStepValidation(stepNum), 
         
         updateAnswerFns: {
-            // FIX: updateAnswer maps back to handleSaveStep which expects (taskId, newData)
-            // But TaskSection passes (stepId, data). stepId == stepNum.
-            // We need to pass currentTaskId because that's what handleSaveStep expects for config lookup.
-            updateAnswer: (id, val) => handleSaveStep(currentTaskId, val),
+            updateAnswer: (id, val) => handleSaveStep(stepNum, val),
+            
+            // CRITICAL FIX FOR DROPDOWNS:
             updateNestedAnswer: (id, key, subKey, val) => {
-                const current = studentProgress.answers[stepNum] || {};
-                const nested = current[key] || {};
-                const newData = { ...current, [key]: { ...nested, [subKey]: val } };
-                handleSaveStep(currentTaskId, newData);
+                const currentStepData = studentProgress.answers[stepNum] || {};
+                const currentRowData = currentStepData[key] || {};
+                
+                // Merge new value into row
+                const newData = { 
+                    ...currentStepData, 
+                    [key]: { ...currentRowData, [subKey]: val } 
+                };
+                
+                handleSaveStep(stepNum, newData);
             },
+            
             updateTrialBalanceAnswer: (stepId, acc, side, val) => {
                 const current = studentProgress.answers[stepNum] || {};
                 const accData = current[acc] || {};
                 const newData = { ...current, [acc]: { ...accData, [side]: val } };
-                handleSaveStep(currentTaskId, newData);
+                handleSaveStep(stepNum, newData);
             }
         }
     };
