@@ -4,22 +4,69 @@
 import React from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Check, X } from 'https://esm.sh/lucide-react@0.263.1';
-import { EQUITY_CAUSES, getLetterGrade } from '../utils.js'; // Added getLetterGrade import
+import { EQUITY_CAUSES, getLetterGrade, getAccountType } from '../utils.js'; // Ensure getAccountType is imported
 
 const html = htm.bind(React.createElement);
 
-// --- HELPER: DRY Validation Logic ---
-const checkRow = (transaction, answer = {}) => {
-    const isAssetCorrect = answer.A === transaction.analysis.assets;
-    const isLiabCorrect = answer.L === transaction.analysis.liabilities;
-    const isEquityCorrect = answer.E === transaction.analysis.equity;
+// --- 1. INTERNAL LOGIC ENGINE (Moved here) ---
+// Calculates the correct "Increase/Decrease" based on Debits/Credits
+const deriveCorrectAnalysis = (transaction) => {
+    let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
     
-    // Normalize Cause: treat undefined/null as empty string
-    const targetCause = transaction.analysis.cause || '';
+    // Analyze Debits
+    transaction.debits.forEach(d => {
+        const type = getAccountType(d.account);
+        if (type === 'Asset') analysis.assets = 'Increase';
+        else if (type === 'Liability') analysis.liabilities = 'Decrease';
+        else if (type === 'Equity') {
+            analysis.equity = 'Decrease';
+            if(d.account.includes('Drawings') || d.account.includes('Withdrawal')) {
+                analysis.cause = 'Increase in Drawings';
+            } else {
+                analysis.cause = 'Decrease in Capital';
+            }
+        }
+        else if (type === 'Expense') {
+            analysis.equity = 'Decrease';
+            analysis.cause = 'Increase in Expense';
+        }
+    });
+
+    // Analyze Credits
+    transaction.credits.forEach(c => {
+        const type = getAccountType(c.account);
+        if (type === 'Asset') {
+            analysis.assets = (analysis.assets === 'Increase') ? 'No Effect' : 'Decrease';
+        }
+        else if (type === 'Liability') {
+            analysis.liabilities = (analysis.liabilities === 'Decrease') ? 'No Effect' : 'Increase';
+        }
+        else if (type === 'Equity') {
+            analysis.equity = (analysis.equity === 'Decrease') ? 'No Effect' : 'Increase';
+            if(c.account.includes('Capital')) analysis.cause = 'Increase in Capital';
+        }
+        else if (type === 'Revenue') {
+            analysis.equity = (analysis.equity === 'Decrease') ? 'No Effect' : 'Increase';
+            analysis.cause = 'Increase in Income';
+        }
+    });
+
+    return analysis;
+};
+
+// --- 2. VALIDATION HELPER ---
+const checkRow = (transaction, answer = {}) => {
+    // Calculate the correct answer NOW, inside the step
+    const correctAnswer = deriveCorrectAnalysis(transaction);
+
+    const isAssetCorrect = answer.A === correctAnswer.assets;
+    const isLiabCorrect = answer.L === correctAnswer.liabilities;
+    const isEquityCorrect = answer.E === correctAnswer.equity;
+    
+    const targetCause = correctAnswer.cause || '';
     const userCause = answer.Cause || '';
     const isCauseCorrect = targetCause === userCause;
 
-    // Calculate Score for this row (4 points possible)
     let score = 0;
     if (isAssetCorrect) score++;
     if (isLiabCorrect) score++;
@@ -37,7 +84,7 @@ const checkRow = (transaction, answer = {}) => {
     };
 };
 
-// --- EXPORTED VALIDATION FUNCTION (For App.js) ---
+// --- 3. EXPORTED VALIDATOR (Used by Parent) ---
 export const validateStep01 = (transactions, allAnswers) => {
     let totalScore = 0;
     let totalMax = 0;
@@ -51,7 +98,7 @@ export const validateStep01 = (transactions, allAnswers) => {
     });
 
     return {
-        isCorrect: perfectRows === transactions.length, // Must be 100% perfect to auto-advance
+        isCorrect: perfectRows === transactions.length,
         score: totalScore,
         maxScore: totalMax,
         letterGrade: getLetterGrade(totalScore, totalMax)
@@ -68,7 +115,7 @@ const StatusIcon = ({ correct, show }) => {
 
 // --- MAIN COMPONENT ---
 export default function Step01Analysis({ transactions = [], data, onChange, showFeedback, isReadOnly }) {
-    if (!transactions || transactions.length === 0) return html`<div className="p-4 bg-red-50 text-red-600 rounded border border-red-200">No transactions generated. Please go back and regenerate the activity.</div>`;
+    if (!transactions || transactions.length === 0) return html`<div className="p-4 bg-red-50 text-red-600 rounded border border-red-200">No transactions generated.</div>`;
     
     // Calculate result for display
     const result = validateStep01(transactions, data);
@@ -104,7 +151,6 @@ export default function Step01Analysis({ transactions = [], data, onChange, show
                                     <td className="border p-2 text-center whitespace-nowrap">${t.date}</td>
                                     <td className="border p-2">${t.description}</td>
                                     
-                                    ${/* Assets Column */''}
                                     <td className="border p-2">
                                         <div className="flex items-center">
                                             <select className=${`w-full bg-white border rounded p-1 ${showFeedback && !status.isAssetCorrect ? 'border-red-300 bg-red-50' : ''}`} 
@@ -117,7 +163,6 @@ export default function Step01Analysis({ transactions = [], data, onChange, show
                                         </div>
                                     </td>
 
-                                    ${/* Liabilities Column */''}
                                     <td className="border p-2">
                                         <div className="flex items-center">
                                             <select className=${`w-full bg-white border rounded p-1 ${showFeedback && !status.isLiabCorrect ? 'border-red-300 bg-red-50' : ''}`} 
@@ -130,7 +175,6 @@ export default function Step01Analysis({ transactions = [], data, onChange, show
                                         </div>
                                     </td>
 
-                                    ${/* Equity Column */''}
                                     <td className="border p-2">
                                         <div className="flex items-center">
                                             <select className=${`w-full bg-white border rounded p-1 ${showFeedback && !status.isEquityCorrect ? 'border-red-300 bg-red-50' : ''}`} 
@@ -143,7 +187,6 @@ export default function Step01Analysis({ transactions = [], data, onChange, show
                                         </div>
                                     </td>
 
-                                    ${/* Cause Column */''}
                                     <td className="border p-2">
                                         <div className="flex items-center">
                                             <select className=${`w-full bg-white border rounded p-1 ${showFeedback && !status.isCauseCorrect ? 'border-red-300 bg-red-50' : ''}`} 
