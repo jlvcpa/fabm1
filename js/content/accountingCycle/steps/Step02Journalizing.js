@@ -353,7 +353,6 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     return html`
                         <div key=${t.id} className="border-b border-gray-300 text-sm">
                             <div className="bg-gray-50 px-2 py-1 text-xs font-bold text-gray-700 border-b border-gray-200 block no-print">${t.date}. ${t.description}</div>
-                            ${/* --- FIX IS HERE: Changed key={idx} to key={row.id} --- */ }
                             ${rows.map((row, idx) => html`<${JournalRow} key=${row.id} row=${row} idx=${idx} tIdx=${tIdx} updateRow=${updateRow} deleteRow=${deleteRow} showFeedback=${showFeedback} isReadOnly=${isReadOnly} t=${t} />`)}
                             <div className="bg-gray-50 p-1 flex justify-center border-t no-print">${!isReadOnly && html`<button onClick=${addRow} className="text-xs border border-dashed border-gray-400 rounded px-2 py-1 text-gray-600 hover:bg-white hover:text-blue-600 flex items-center gap-1 transition-colors"><${Plus} size=${12}/> Add Row</button>`}</div>
                         </div>
