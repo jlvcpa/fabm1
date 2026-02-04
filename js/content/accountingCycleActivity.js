@@ -4,12 +4,10 @@ import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from 'https://esm.sh/lucide-react@0.263.1';
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
-// --- Import Data & Utils ---
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
 import { getAccountType, sortAccounts, getLetterGrade } from './accountingCycle/utils.js';
 import { TaskSection } from './accountingCycle/steps.js';
 
-// --- Import Validators ---
 import { validateStep01 } from './accountingCycle/steps/Step01Analysis.js';
 import { validateStep02 } from './accountingCycle/steps/Step02Journalizing.js';
 import { validateStep03 } from './accountingCycle/steps/Step03Posting.js';
@@ -44,7 +42,6 @@ const getStepNumber = (taskConfig, index) => {
     return index + 1;
 };
 
-// --- LOGIC ENGINE ---
 const deriveAnalysis = (debits, credits) => {
     let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
     debits.forEach(d => {
@@ -73,25 +70,31 @@ const deriveAnalysis = (debits, credits) => {
 
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
-    // FIX: Initialize Set here to capture accounts from all solution lines
+    // CRITICAL FIX: Initialize Set here to capture accounts from ALL solution lines
     const validAccounts = new Set(); 
 
     const normalizedTransactions = transactions.map((t, idx) => {
         const debits = []; const credits = [];
-        t.solution.forEach(line => {
-            // FIX: Capture Account Names directly from Solution
-            if (line.account && !line.isExplanation) validAccounts.add(line.account);
-
-            if (line.debit) debits.push({ account: line.account, amount: Number(line.debit) });
-            if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
-        });
+        
+        // Populate validAccounts from transaction solutions
+        if (t.solution) {
+            t.solution.forEach(line => {
+                if (line.account && !line.isExplanation) {
+                    validAccounts.add(line.account);
+                }
+                
+                if (line.debit) debits.push({ account: line.account, amount: Number(line.debit) });
+                if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
+            });
+        }
+        
         const analysis = deriveAnalysis(debits, credits);
         return { id: idx + 1, date: t.date, description: t.description, debits, credits, analysis };
     });
 
     const ledger = {}; 
     const addToLedger = (acc, dr, cr) => { 
-        validAccounts.add(acc); // Ensure ledger build also adds to set
+        validAccounts.add(acc); // Fail-safe: Ensure accounts used in ledger are also in the list
         if (!ledger[acc]) ledger[acc] = { debit: 0, credit: 0 }; 
         ledger[acc].debit += dr; 
         ledger[acc].credit += cr; 
@@ -103,7 +106,7 @@ const adaptStaticDataToSimulator = (questionData) => {
         const crLine = a.solution.find(s => s.credit);
         const amt = drLine ? Number(drLine.debit) : 0;
         
-        // FIX: Capture accounts from adjustments
+        // Populate validAccounts from adjustments
         if (drLine) validAccounts.add(drLine.account); 
         if (crLine) validAccounts.add(crLine.account);
         
@@ -113,7 +116,7 @@ const adaptStaticDataToSimulator = (questionData) => {
     return {
         config: { 
             businessType: 'Merchandising', 
-            // FIX: Use inventorySystem from JSON or default
+            // FIX: Ensure inventorySystem is passed from JSON or defaults
             inventorySystem: questionData.inventorySystem || 'Periodic', 
             isSubsequentYear: false, 
             deferredExpenseMethod: 'Asset', 
@@ -150,7 +153,6 @@ const normalizeFirebaseData = (data) => {
     return normalized;
 };
 
-// --- RUNNER ---
 const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [loading, setLoading] = useState(true);
     const [activityData, setActivityData] = useState(null);
@@ -217,7 +219,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
 
-    // --- LOCK CHECKS ---
     const now = new Date();
     const startTime = new Date(activeTaskConfig.dateTimeStart);
     const isEarly = now < startTime;
@@ -233,7 +234,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     const isLocked = isEarly || isLockedBySequence;
 
-    // --- TIMER ---
     useEffect(() => {
         if (isSubmitted) { setTimeLeft(null); return; }
         if (!activeTaskConfig) return;
@@ -273,7 +273,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         return merchTransactionsExamData[randomIndex].id;
     };
 
-    // --- LOCAL STATE UPDATE ONLY ---
     const handleSaveStep = (stepNum, newData) => {
         setStudentProgress(prev => ({ 
             ...prev, 
@@ -281,7 +280,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }));
     };
 
-    // --- VALIDATE & SAVE TO FIREBASE ---
     const handleActionClick = async (stepNum, isFinalSubmit = false) => {
         if (isLocked && !isFinalSubmit) {
             console.warn("Attempted to validate a locked task.");
