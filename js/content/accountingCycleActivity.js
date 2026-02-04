@@ -362,7 +362,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
                      <div className="h-full overflow-y-auto custom-scrollbar">
-                        ${/* FIX: KEY PROP ADDED HERE forces React to unmount old step and mount new step */ }
                         <${TaskSection} key=${stepNum} ...${stepProps} />
                     </div>
                 </div>
