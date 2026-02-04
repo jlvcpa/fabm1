@@ -26,6 +26,16 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
+// --- HELPER: Generate Consistent Document ID ---
+const generateResultDocId = (user) => {
+    // Trim strings to prevent mismatch due to accidental spaces
+    const cn = String(user.CN || '').trim();
+    const id = String(user.Idnumber || '').trim();
+    const last = String(user.LastName || '').trim();
+    const first = String(user.FirstName || '').trim();
+    return `${cn}-${id}-${last} ${first}`;
+};
+
 // --- LOGIC ENGINE ---
 const deriveAnalysis = (debits, credits) => {
     let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
@@ -93,7 +103,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
-            const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+            const resultDocId = generateResultDocId(user);
             const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
@@ -158,7 +168,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     const handleSaveStep = async (stepNum, newData) => {
         setStudentProgress(prev => ({ ...prev, answers: { ...prev.answers, [stepNum]: newData } }));
-        const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+        const resultDocId = generateResultDocId(user);
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         try { await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); } catch (e) { console.error("Save error", e); }
     };
@@ -212,7 +222,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }));
 
         // Database Save
-        const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+        const resultDocId = generateResultDocId(user);
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
         await setDoc(resultRef, {
