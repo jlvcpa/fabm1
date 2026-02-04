@@ -33,14 +33,19 @@ const STEP_COMPONENTS = {
 };
 
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPerformanceTask }) => {
-    // Ensure step.id is a number for mapping
+    // FIX: Force ID to be a number to ensure consistent lookup in objects
     const stepId = Number(step.id);
+    
     const StepComponent = step.component || STEP_COMPONENTS[stepId];
 
     if (!StepComponent) {
         return html`<div className="p-4 text-red-500">Error: Component for Step ${stepId} not found.</div>`;
     }
     
+    // FIX: Use stepId for status lookup to ensure locking works
+    const status = stepStatus[stepId] || {};
+    const isLocked = status.completed === true;
+
     // --- PERFORMANCE TASK MODE (Single Scrollable Flow) ---
     if (isPerformanceTask) {
         return html`
@@ -55,37 +60,22 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                      <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(stepId, step.title) }}></div>
                 </div>
 
-                ${/* 3. WORKSPACE */''}
+                ${/* 3. WORKSPACE (Flows naturally in the scroll container) */''}
                 <div className="bg-white rounded shadow-sm border border-gray-200">
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []} 
                         data=${answers[stepId] || {}}
                         onChange=${(id, key, val) => {
-                            // --- FIX: Handle Data Update Logic based on Step ID ---
-                            if (stepId === 1) {
-                                updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
-                            } 
-                            // FIX for Step 2 & 3: They pass (txnId, rows) -> received here as (id, key)
-                            else if (stepId === 2 || stepId === 3) {
-                                // For Step 2, 'id' is transaction ID, 'key' is the array of rows
-                                updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
-                            }
-                            else if (stepId === 4 || stepId === 9) {
-                                updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
-                            }
-                            else if (stepId === 5 || stepId === 6) {
-                                updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val }); 
-                            }
-                            else if (stepId === 7 || stepId === 10) {
-                                updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key }); 
-                            }
-                            else {
-                                updateAnswerFns.updateAnswer(stepId, id); 
-                            }
+                            if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
+                            else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
+                            else if (stepId === 4 || stepId === 9) updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
+                            else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val }); 
+                            else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key }); 
+                            else updateAnswerFns.updateAnswer(stepId, id); 
                         }}
-                        showFeedback=${stepStatus[stepId]?.completed || false}
-                        isReadOnly=${stepStatus[stepId]?.completed || false}
+                        showFeedback=${isLocked}
+                        isReadOnly=${isLocked}
                     />
                 </div>
             </div>
@@ -94,7 +84,6 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
 
     // --- STANDARD MODE (Legacy) ---
     const isExpanded = isCurrentActiveTask; 
-    const status = stepStatus[stepId] || {};
     
     return html`
         <div id=${`task-${stepId}`} className="mb-8 border rounded-lg shadow-sm bg-white overflow-hidden">
@@ -125,8 +114,8 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                              else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
                              else updateAnswerFns.updateAnswer(stepId, id);
                         }}
-                        showFeedback=${status.completed}
-                        isReadOnly=${status.completed}
+                        showFeedback=${isLocked}
+                        isReadOnly=${isLocked}
                     />
                     <div className="mt-8"><div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(stepId, step.title) }}></div></div>
                 </div>
