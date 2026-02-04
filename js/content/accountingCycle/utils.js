@@ -36,11 +36,11 @@ export const ActivityHelper = {
     getCustomPrintFooterHTML: () => `<div id="print-footer" class="hidden print:block fixed bottom-0 left-0 right-0 z-50 bg-white border-t-8 border-indigo-600"></div>`,
     
     // --- UPDATED INSTRUCTIONS GENERATOR ---
+    // Added inventorySystem as the last argument
     getInstructionsHTML: (stepId, taskTitle, validAccounts = [], isSubsequentYear = false, beginningBalances = null, deferredExpenseMethod = 'Asset', deferredIncomeMethod = 'Liability', inventorySystem = 'Periodic') => {
         let instructionsHTML = "";
         let accountsList = "";
         
-        // Logic for the extra bullet point
         const showDeferredNote = (deferredExpenseMethod === 'Expense' || deferredIncomeMethod === 'Income');
         const deferredLine = showDeferredNote ? "<li>Expense or Income method is to be used in accounting for Deferred Items.</li>" : "";
 
