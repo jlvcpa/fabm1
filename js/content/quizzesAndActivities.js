@@ -60,13 +60,21 @@ export async function renderQuizzesAndActivities(containerElement, user, customR
 }
 
 async function loadStudentActivities(user, customRunner, filterType) {
+    // 1. Define the container explicitly
     const listContainer = document.getElementById('qa-list-container');
     
+    // Safety check: If the container doesn't exist in the DOM, stop immediately.
+    if (!listContainer) {
+        console.error("Error: qa-list-container not found in DOM.");
+        return;
+    }
+
     try {
         const q = query(collection(db, "quiz_list"), orderBy("dateTimeCreated", "desc"));
         const snapshot = await getDocs(q);
 
         listContainer.innerHTML = '';
+        
         if(snapshot.empty) {
             listContainer.innerHTML = '<p class="text-center text-gray-400 mt-4 text-sm">No activities found.</p>';
             return;
@@ -78,25 +86,25 @@ async function loadStudentActivities(user, customRunner, filterType) {
             const data = docSnap.data();
             data.id = docSnap.id; 
             
+            // Filter by Section
             if (user.role === 'student' && data.section !== user.Section) {
                 return; 
             }
+            
+            // --- FILTER LOGIC ---
+            // Check if this is a Performance Task (Accounting Cycle)
+            const isPerformanceTask = (data.tasks && Array.isArray(data.tasks)) || 
+                                      data.type === 'accounting_cycle' || 
+                                      data.activityname.includes('Task');
 
             if (filterType === 'accounting_cycle' || filterType === 'Task') {
-                // Only show Performance Tasks (Acct Cycle)
-                // Check if it has 'tasks' array OR title contains 'Task' OR type is 'accounting_cycle'
-                const isTask = (data.tasks && Array.isArray(data.tasks)) || 
-                               data.type === 'accounting_cycle' || 
-                               data.activityname.includes('Task');
-                if (!isTask) return; // Skip if not a task
+                if (!isPerformanceTask) return; // Skip if not a task
             } 
             else if (filterType === 'standard') {
-                // Only show Standard Quizzes
-                const isTask = (data.tasks && Array.isArray(data.tasks)) || 
-                               data.type === 'accounting_cycle' || 
-                               data.activityname.includes('Task');
-                if (isTask) return; // Skip if it IS a task
-                
+                if (isPerformanceTask) return; // Skip if it IS a task
+            }
+            // --------------------
+
             const start = new Date(data.dateTimeStart);
             const expire = new Date(data.dateTimeExpire);
             const isExpired = now > expire;
@@ -126,14 +134,19 @@ async function loadStudentActivities(user, customRunner, filterType) {
                     alert(`This activity starts on ${start.toLocaleString()}`);
                 } else {
                     if(quizTimerInterval) clearInterval(quizTimerInterval); 
-                    if(currentAntiCheat) currentAntiCheat.stopMonitoring();
-                    currentAntiCheat = null; // Ensure clean state
+                    if(currentAntiCheat) {
+                        currentAntiCheat.stopMonitoring();
+                        currentAntiCheat = null;
                     }
                     
+                    // PASS CUSTOM RUNNER TO RENDERER
                     renderQuizRunner(data, user, customRunner);
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
             };
+
+            // This is the line that was failing. 
+            // Since we added the safety check at the top, this should now work.
             listContainer.appendChild(card);
         });
         
@@ -143,7 +156,9 @@ async function loadStudentActivities(user, customRunner, filterType) {
 
     } catch (e) {
         console.error("Error loading activities:", e);
-        listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
+        if (listContainer) {
+            listContainer.innerHTML = '<p class="text-center text-red-400 mt-4 text-sm">Error loading data.</p>';
+        }
     }
 }
 
