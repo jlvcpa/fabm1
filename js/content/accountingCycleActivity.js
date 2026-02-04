@@ -26,7 +26,6 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- HELPER 1: Generate Consistent Document ID ---
 const generateResultDocId = (user) => {
     const cn = String(user.CN || '').trim();
     const id = String(user.Idnumber || '').trim();
@@ -36,23 +35,18 @@ const generateResultDocId = (user) => {
     return `${cn}-${id}-${last} ${first}`;
 };
 
-// --- FIX: Improved Step Number Logic ---
+// --- FIX 1: Robust Step Number Logic ---
 const getStepNumber = (taskConfig, index) => {
-    if (!taskConfig) return index + 1; // Default to index-based if config missing
-    
-    // Strategy 1: Check taskId directly if it's a clear number (1, 2, 10)
+    if (!taskConfig) return index + 1;
     if (taskConfig.taskId) {
         const idNum = parseInt(taskConfig.taskId);
         if (!isNaN(idNum) && idNum > 0 && idNum <= 10) return idNum;
     }
-
-    // Strategy 2: Look for "Step X" in the name
     const nameMatch = taskConfig.stepName ? taskConfig.stepName.match(/Step\s*0?(\d+)/i) : null;
     if (nameMatch) return parseInt(nameMatch[1]);
-
-    // Strategy 3: Fallback to array index (1-based)
     return index + 1;
 };
+
 // --- LOGIC ENGINE ---
 const deriveAnalysis = (debits, credits) => {
     let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
@@ -109,6 +103,33 @@ const adaptStaticDataToSimulator = (questionData) => {
     };
 };
 
+// --- FIX 2: DATA NORMALIZATION HELPER ---
+// This function converts "flat" keys like "stepStatus.1" into nested objects { stepStatus: { "1": ... } }
+const normalizeFirebaseData = (data) => {
+    if (!data) return { answers: {}, stepStatus: {}, scores: {} };
+
+    const normalized = {
+        answers: data.answers || {},
+        stepStatus: data.stepStatus || {},
+        scores: data.scores || {},
+        ...data // Keep other fields like studentName, questionId
+    };
+
+    // Scan for flat keys and nest them
+    Object.keys(data).forEach(key => {
+        if (key.includes('.')) {
+            const [parent, child] = key.split('.');
+            // Only process known parents to avoid accidental parsing of unrelated fields
+            if (['answers', 'stepStatus', 'scores'].includes(parent)) {
+                if (!normalized[parent]) normalized[parent] = {};
+                normalized[parent][child] = data[key];
+            }
+        }
+    });
+
+    return normalized;
+};
+
 // --- RUNNER ---
 const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [loading, setLoading] = useState(true);
@@ -117,7 +138,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
 
-    // Initial Load
+    // Initial Load & Realtime Sync
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
@@ -127,19 +148,30 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    const data = docSnap.data();
+                    const rawData = docSnap.data();
+                    
+                    // --- APPLY FIX 2 HERE ---
+                    const data = normalizeFirebaseData(rawData);
+                    
                     setStudentProgress(prev => ({
-                        answers: { ...prev.answers, ...data.answers },
-                        stepStatus: { ...prev.stepStatus, ...data.stepStatus },
-                        scores: { ...prev.scores, ...data.scores }
+                        answers: { ...prev.answers, ...(data.answers || {}) },
+                        stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
+                        scores: { ...prev.scores, ...(data.scores || {}) }
                     }));
+                    
                     let qId = data.questionId;
                     if (!qId) { qId = pickRandomQuestion(); setDoc(resultRef, { questionId: qId }, { merge: true }); }
                     setQuestionId(qId);
                 } else {
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
-                    setDoc(resultRef, { studentName: `${user.LastName}, ${user.FirstName}`, studentId: user.Idnumber, section: activityDoc.section, questionId: qId, startedAt: new Date().toISOString() });
+                    setDoc(resultRef, { 
+                        studentName: `${user.LastName}, ${user.FirstName}`, 
+                        studentId: user.Idnumber, 
+                        section: activityDoc.section, 
+                        questionId: qId, 
+                        startedAt: new Date().toISOString() 
+                    });
                 }
                 setLoading(false);
             });
@@ -159,13 +191,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     }, [questionId, activityDoc]);
 
-    // --- FIX: ROBUST TASK/STEP IDENTIFICATION ---
-    // Using String() ensures we match "1" vs 1 correctly
     const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
-    
-    // Fallback: If currentTaskId is invalid, default to the first task (index 0)
     const validIndex = activeTaskIndex >= 0 ? activeTaskIndex : 0;
-    
     const activeTaskConfig = activityDoc.tasks ? activityDoc.tasks[validIndex] : null;
     const stepNum = getStepNumber(activeTaskConfig, validIndex);
 
@@ -197,7 +224,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const resultDocId = generateResultDocId(user);
         if (!resultDocId) return;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
-        try { await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); } catch (e) { console.error("Save error", e); }
+        try { 
+            // NOTE: Keep your save logic as is (dot notation). 
+            // Our new 'normalizeFirebaseData' function will handle reading it back correctly.
+            await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); 
+        } catch (e) { console.error("Save error", e); }
     };
 
     // --- VALIDATION & SUBMIT LOGIC ---
@@ -217,7 +248,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         else if (stepNum === 10) result = validateStep10(currentAns, activityData);
 
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
-        
         const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
         let newStatus = {};
 
@@ -280,7 +310,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         step: { id: stepNum, title: activeTaskConfig.stepName, description: activeTaskConfig.instructions },
         activityData: activityData,
         answers: studentProgress.answers,
-        stepStatus: { ...studentProgress.stepStatus, [stepNum]: { completed: isSubmitted, attempts: attemptsLeft } },
+        stepStatus: studentProgress.stepStatus, // Pass the whole object!
         isReadOnly: isSubmitted, 
         isPerformanceTask: true, 
         showFeedback: isSubmitted, 
@@ -313,14 +343,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
                 <div className="flex gap-2">
                     ${activityDoc.tasks.map(t => {
-                        // FIX: Ensure correct active state matching
-                        const isActive = String(t.taskId) === String(currentTaskId);
-                        
-                        // Calculate step number for status check
                         const idx = activityDoc.tasks.indexOf(t);
                         const sNum = getStepNumber(t, idx);
                         const isDone = studentProgress.stepStatus[sNum]?.completed;
-
+                        const isActive = String(t.taskId) === String(currentTaskId);
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
