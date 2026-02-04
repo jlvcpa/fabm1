@@ -36,19 +36,23 @@ const generateResultDocId = (user) => {
     return `${cn}-${id}-${last} ${first}`;
 };
 
-// --- HELPER 2: Robust Step Number Parser (Prevents Status Overrides) ---
+// --- FIX: Improved Step Number Logic ---
 const getStepNumber = (taskConfig, index) => {
-    if (!taskConfig) return 1;
-    // 1. Try to find "Step X" in the name
-    const nameMatch = taskConfig.stepName.match(/Step\s*0?(\d+)/i);
+    if (!taskConfig) return index + 1; // Default to index-based if config missing
+    
+    // Strategy 1: Check taskId directly if it's a clear number (1, 2, 10)
+    if (taskConfig.taskId) {
+        const idNum = parseInt(taskConfig.taskId);
+        if (!isNaN(idNum) && idNum > 0 && idNum <= 10) return idNum;
+    }
+
+    // Strategy 2: Look for "Step X" in the name
+    const nameMatch = taskConfig.stepName ? taskConfig.stepName.match(/Step\s*0?(\d+)/i) : null;
     if (nameMatch) return parseInt(nameMatch[1]);
-    // 2. Try taskId
-    const idNum = parseInt(taskConfig.taskId);
-    if (!isNaN(idNum)) return idNum;
-    // 3. Fallback to array index
+
+    // Strategy 3: Fallback to array index (1-based)
     return index + 1;
 };
-
 // --- LOGIC ENGINE ---
 const deriveAnalysis = (debits, credits) => {
     let analysis = { assets: 'No Effect', liabilities: 'No Effect', equity: 'No Effect', cause: '' };
@@ -158,8 +162,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     // --- FIX: ROBUST TASK/STEP IDENTIFICATION ---
     // Using String() ensures we match "1" vs 1 correctly
     const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
-    const activeTaskConfig = activeTaskIndex >= 0 ? activityDoc.tasks[activeTaskIndex] : null;
-    const stepNum = getStepNumber(activeTaskConfig, activeTaskIndex);
+    
+    // Fallback: If currentTaskId is invalid, default to the first task (index 0)
+    const validIndex = activeTaskIndex >= 0 ? activeTaskIndex : 0;
+    
+    const activeTaskConfig = activityDoc.tasks ? activityDoc.tasks[validIndex] : null;
+    const stepNum = getStepNumber(activeTaskConfig, validIndex);
 
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
