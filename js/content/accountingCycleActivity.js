@@ -35,7 +35,6 @@ const generateResultDocId = (user) => {
     return `${cn}-${id}-${last} ${first}`;
 };
 
-// --- FIX 1: Robust Step Number Logic ---
 const getStepNumber = (taskConfig, index) => {
     if (!taskConfig) return index + 1;
     if (taskConfig.taskId) {
@@ -103,7 +102,6 @@ const adaptStaticDataToSimulator = (questionData) => {
     };
 };
 
-// --- FIX 2: DATA NORMALIZATION HELPER ---
 const normalizeFirebaseData = (data) => {
     if (!data) return { answers: {}, stepStatus: {}, scores: {} };
 
@@ -134,11 +132,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [studentProgress, setStudentProgress] = useState({ answers: {}, stepStatus: {}, scores: {} });
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
-    
-    // NEW: State for the visual timer
     const [timeLeft, setTimeLeft] = useState(null);
 
-    // Initial Load & Realtime Sync
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
@@ -197,14 +192,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
 
-    // --- NEW LOGIC: Time & Sequence Checks ---
-    
-    // 1. Time Restriction Check
+    // --- LOCK CHECKS ---
     const now = new Date();
     const startTime = new Date(activeTaskConfig.dateTimeStart);
     const isEarly = now < startTime;
 
-    // 2. Sequential Step Check
     let isLockedBySequence = false;
     if (stepNum > 1) {
         const prevStepNum = stepNum - 1;
@@ -214,15 +206,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     }
 
-    // --- COMBINED TIMER & AUTO-SUBMIT ---
+    const isLocked = isEarly || isLockedBySequence;
+
+    // --- TIMER ---
     useEffect(() => {
-        // If submitted, clear timer state and do nothing
-        if (isSubmitted) {
-            setTimeLeft(null);
-            return;
-        }
-        
-        // If config missing, do nothing
+        if (isSubmitted) { setTimeLeft(null); return; }
         if (!activeTaskConfig) return;
 
         const updateTimer = () => {
@@ -230,36 +218,30 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const start = new Date(activeTaskConfig.dateTimeStart);
             const expire = new Date(activeTaskConfig.dateTimeExpire);
 
-            // If not started yet
             if (currentTime < start) {
                 setTimeLeft("Not Started");
                 return;
             }
 
             const diff = expire - currentTime;
-
-            // If expired
             if (diff <= 0) {
                 setTimeLeft("00:00:00");
                 clearInterval(interval);
-                handleActionClick(stepNum, true); // Trigger Submit
+                handleActionClick(stepNum, true); 
                 alert("Time Expired! Your answer has been automatically submitted.");
                 return;
             }
 
-            // Update Format (HH:MM:SS)
             const h = Math.floor(diff / 3600000);
             const m = Math.floor((diff % 3600000) / 60000);
             const s = Math.floor((diff % 60000) / 1000);
             setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
         };
 
-        // Run immediately then every second
         updateTimer();
         const interval = setInterval(updateTimer, 1000); 
-        
         return () => clearInterval(interval);
-    }, [activeTaskConfig, isSubmitted, stepNum]); // We removed isEarly to let timer handle "Not Started" text
+    }, [activeTaskConfig, isSubmitted, stepNum]);
 
     const pickRandomQuestion = () => {
         const randomIndex = Math.floor(Math.random() * merchTransactionsExamData.length);
@@ -337,11 +319,17 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     let btnAction = () => handleActionClick(stepNum, false);
     let btnIcon = CheckSquare;
 
+    // --- FIX: UPDATED BUTTON LOGIC ---
     if (isSubmitted) {
         btnLabel = "Step Submitted";
         btnColor = "bg-gray-400 cursor-not-allowed";
         btnAction = () => {};
         btnIcon = CheckCircle;
+    } else if (isLocked) { // <--- DISABLE BUTTON IF LOCKED
+        btnLabel = "Task Locked";
+        btnColor = "bg-gray-300 cursor-not-allowed text-gray-500";
+        btnAction = () => {};
+        btnIcon = Lock;
     } else if (attemptsLeft <= 0) {
         btnLabel = "Submit Step";
         btnColor = "bg-green-600 hover:bg-green-700";
@@ -354,8 +342,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         activityData: activityData,
         answers: studentProgress.answers,
         stepStatus: studentProgress.stepStatus, 
-        isReadOnly: isSubmitted || isEarly, // Lock if submitted OR early
-        isLockedBySequence: isLockedBySequence, // Pass Sequence Lock
+        isReadOnly: isSubmitted || isEarly, 
+        isLockedBySequence: isLockedBySequence, 
         isPerformanceTask: true, 
         showFeedback: isSubmitted, 
         updateAnswerFns: {
@@ -420,7 +408,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                     
                     <div className="flex items-center gap-6">
-                        ${/* SCORE DISPLAY */''}
                         ${isSubmitted && scoreData && html`
                             <div className="text-right">
                                 <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
@@ -432,10 +419,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         `}
                         
                         <div className="flex flex-col items-end">
-                            <button onClick=${btnAction} disabled=${isSubmitted} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
+                            <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
                                 <${btnIcon} size=${18}/> ${btnLabel}
                             </button>
-                            ${!isSubmitted && html`
+                            ${!isSubmitted && !isLocked && html`
                                 <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide">
                                     Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
                                 </span>
