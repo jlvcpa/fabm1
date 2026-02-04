@@ -8,7 +8,7 @@ import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/f
 
 // --- Import Data & Utils ---
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
-import { getAccountType, sortAccounts } from './accountingCycle/utils.js';
+import { sortAccounts } from './accountingCycle/utils.js';
 import { TaskSection } from './accountingCycle/steps.js';
 
 // --- Import Validators ---
@@ -26,7 +26,7 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- HELPER: ADAPTER ---
+// --- HELPER: MAP STATIC DATA TO SIMULATOR FORMAT ---
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
     
@@ -38,17 +38,18 @@ const adaptStaticDataToSimulator = (questionData) => {
             if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
         });
 
+        // NOTE: Step 1 Analysis is now calculated internally by Step01Analysis.js
+        // We pass an empty object here as the component handles the logic.
         return {
             id: idx + 1,
             date: t.date,
             description: t.description,
             debits,
             credits,
-            analysis: {} // <-- Leave this empty! Step01Analysis now calculates it on its own.
+            analysis: {} 
         };
     });
 
-    // 2. Build the "Answer Key" Ledger
     const ledger = {};
     const validAccounts = new Set();
 
@@ -64,7 +65,6 @@ const adaptStaticDataToSimulator = (questionData) => {
         t.credits.forEach(c => addToLedger(c.account, 0, c.amount));
     });
 
-    // 3. Process Adjustments
     const normalizedAdjustments = adjustments.map((a, idx) => {
         const drLine = a.solution.find(s => s.debit);
         const crLine = a.solution.find(s => s.credit);
@@ -118,11 +118,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Merge remote data
                     setStudentProgress(prev => ({
+                        // Merge to avoid clobbering local state during rapid updates, 
+                        // but ensure status/scores are synced
                         answers: { ...prev.answers, ...data.answers },
-                        stepStatus: data.stepStatus || {},
-                        scores: data.scores || {}
+                        stepStatus: { ...prev.stepStatus, ...data.stepStatus },
+                        scores: { ...prev.scores, ...data.scores }
                     }));
                     
                     let qId = data.questionId;
@@ -170,9 +171,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     };
 
     // --- SAVE HANDLER (OPTIMISTIC) ---
-    // stepNum is the actual accounting step (1-10)
     const handleSaveStep = async (stepNum, newData) => {
-        // 1. OPTIMISTIC UPDATE: Fixes Dropdown Lag
         setStudentProgress(prev => ({
             ...prev,
             answers: {
@@ -181,7 +180,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             }
         }));
 
-        // 2. BACKGROUND SAVE
         const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
 
@@ -195,12 +193,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     };
 
-    // --- VALIDATION HANDLER ---
+    // --- VALIDATION HANDLER (UPDATED LOGIC) ---
     const handleStepValidation = async (stepNum) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
         
-        // This runs the logic inside Step01Analysis.js, but now using the corrected activityData
         if (stepNum === 1) result = validateStep01(activityData.transactions, currentAns);
         else if (stepNum === 2) result = validateStep02(activityData.transactions, currentAns);
         else if (stepNum === 3) result = validateStep03(activityData, currentAns);
@@ -214,20 +211,29 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
         
+        // 1. Calculate Remaining Attempts
+        // Use nullish coalescing (?? 3) to default to 3 if undefined
+        const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
+        const attemptsLeft = currentAttempts - 1;
+        
+        // 2. Determine Completion (Correct OR Out of Attempts)
+        const isExhausted = attemptsLeft <= 0;
+        const isCompleted = isCorrect || isExhausted;
+
         const newStatus = { 
-            completed: isCorrect, 
+            completed: isCompleted, 
             correct: isCorrect, 
-            attempts: (studentProgress.stepStatus[stepNum]?.attempts || 3) - 1 
+            attempts: attemptsLeft < 0 ? 0 : attemptsLeft 
         };
 
-        // Optimistic Status Update
+        // 3. Optimistic Update
         setStudentProgress(prev => ({
             ...prev,
             stepStatus: { ...prev.stepStatus, [stepNum]: newStatus },
             scores: { ...prev.scores, [stepNum]: { score: result.score, maxScore: result.maxScore } }
         }));
 
-        // Firebase Status Save
+        // 4. Firebase Save
         const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
@@ -236,8 +242,15 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore }
         }, { merge: true });
 
-        if(isCorrect) alert("Validation Passed! Great job.");
-        else alert(`Validation Complete. Score: ${result.score}/${result.maxScore}`);
+        // 5. User Feedback (No Score Reveal on Fail)
+        if(isCorrect) {
+            alert("Validation Passed! Step Completed.");
+        } else if (isExhausted) {
+            alert(`No attempts remaining. Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
+        } else {
+            // DO NOT show score here, just attempts left
+            alert(`Incorrect. You have ${attemptsLeft} attempt(s) remaining.`);
+        }
     };
 
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
@@ -249,12 +262,16 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const activeTaskConfig = activityDoc.tasks.find(t => t.taskId === currentTaskId);
     const stepNum = activeTaskConfig ? parseInt(activeTaskConfig.stepName.split(' ')[1]) : 1;
     
+    // Status Checks
     const now = new Date();
     const start = new Date(activeTaskConfig.dateTimeStart);
     const expire = new Date(activeTaskConfig.dateTimeExpire);
     const isLocked = now < start;
     const isExpired = now > expire;
-    const isSubmitted = studentProgress.stepStatus[stepNum]?.completed;
+    
+    // Check submission status
+    const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
+    const isSubmitted = currentStepStatus.completed;
     
     // Step Props construction
     const stepProps = {
@@ -263,28 +280,30 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         answers: studentProgress.answers,
         stepStatus: { 
             ...studentProgress.stepStatus, 
-            [stepNum]: studentProgress.stepStatus[stepNum] || { completed: false, attempts: 3, correct: false } 
+            [stepNum]: currentStepStatus 
         },
+        
+        // LOCK UI IF SUBMITTED
+        isReadOnly: isSubmitted, // <--- Key Fix for "preview only"
+        
+        // SHOW FEEDBACK ONLY IF SUBMITTED
+        showFeedback: isSubmitted, // <--- Key Fix for "no score during validation"
+
         isCurrentActiveTask: true,
         isPrevStepCompleted: true, 
         
-        // ENABLE VALIDATE BUTTON
         onValidate: () => () => handleStepValidation(stepNum), 
         
         updateAnswerFns: {
             updateAnswer: (id, val) => handleSaveStep(stepNum, val),
             
-            // CRITICAL FIX FOR DROPDOWNS:
             updateNestedAnswer: (id, key, subKey, val) => {
                 const currentStepData = studentProgress.answers[stepNum] || {};
                 const currentRowData = currentStepData[key] || {};
-                
-                // Merge new value into row
                 const newData = { 
                     ...currentStepData, 
                     [key]: { ...currentRowData, [subKey]: val } 
                 };
-                
                 handleSaveStep(stepNum, newData);
             },
             
@@ -331,6 +350,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
                             <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
                             <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
+                            ${!isSubmitted && !isLocked && !isExpired && html`
+                                <span className="flex items-center gap-1 font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                    Attempts Left: ${currentStepStatus.attempts ?? 3}
+                                </span>
+                            `}
                         </div>
                     </div>
                     
