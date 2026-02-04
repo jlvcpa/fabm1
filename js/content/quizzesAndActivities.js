@@ -22,7 +22,7 @@ let quizTimerInterval = null;
 let currentAntiCheat = null;
 
 export async function renderQuizzesAndActivities(containerElement, user, customRunner = null, filterType = null) { 
-    
+    const contentArea = containerElement;
     contentArea.innerHTML = `
         <div class="flex h-full relative overflow-hidden bg-gray-50">
             <div id="qa-sidebar" class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 transition-transform absolute md:relative transform -translate-x-full md:translate-x-0">
