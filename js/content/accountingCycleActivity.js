@@ -356,7 +356,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
                      <div className="h-full overflow-y-auto custom-scrollbar">
-                        ${/* FIX: key={stepNum} forces React to destroy the old step and build the new one when you switch tasks */ }
                         <${TaskSection} key=${stepNum} ...${stepProps} />
                     </div>
                 </div>
