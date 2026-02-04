@@ -90,7 +90,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
 
-    // Initial Load
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
@@ -119,7 +118,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         init();
     }, [activityDoc, user]);
 
-    // Hydrate Data
     useEffect(() => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
@@ -136,25 +134,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
 
-    // --- TIMER & AUTO-SUBMIT LOGIC ---
-    useEffect(() => {
-        if (!activeTaskConfig || isSubmitted) return;
-
-        const interval = setInterval(() => {
-            const now = new Date();
-            const expire = new Date(activeTaskConfig.dateTimeExpire);
-            
-            if (now > expire) {
-                clearInterval(interval);
-                handleActionClick(stepNum, true); // Force Final Submit
-                alert("Time Expired! Your answer has been automatically submitted.");
-            }
-        }, 5000); // Check every 5 seconds
-
-        return () => clearInterval(interval);
-    }, [activeTaskConfig, isSubmitted, stepNum]);
-
-
     const pickRandomQuestion = () => {
         const randomIndex = Math.floor(Math.random() * merchTransactionsExamData.length);
         return merchTransactionsExamData[randomIndex].id;
@@ -167,6 +146,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         try { await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); } catch (e) { console.error("Save error", e); }
     };
 
+    // --- VALIDATION & SUBMIT LOGIC ---
     const handleActionClick = async (stepNum, isFinalSubmit = false) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
@@ -183,30 +163,46 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         else if (stepNum === 10) result = validateStep10(currentAns, activityData);
 
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
+        
+        // --- FIXED ATTEMPTS LOGIC ---
+        // 1. Get current attempts (default 3 if undefined)
+        // We use state directly to avoid stale closures
         const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
         
         let newStatus = {};
 
         if (isFinalSubmit || isCorrect) {
-            newStatus = { completed: true, correct: isCorrect, attempts: currentAttempts };
-            if(!isFinalSubmit) alert("Validation Passed! Step Completed.");
+            // Case A: Correct Answer OR Force Submit (Timeout/3rd strike)
+            newStatus = { 
+                completed: true, 
+                correct: isCorrect, 
+                attempts: currentAttempts // Freeze attempts
+            };
+            if(!isFinalSubmit && isCorrect) alert("Validation Passed! Step Completed.");
+            else if(!isCorrect && isFinalSubmit) alert(`Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
         } else {
+            // Case B: Incorrect Answer AND has attempts left
             const attemptsLeft = Math.max(0, currentAttempts - 1);
+            
             if (attemptsLeft === 0) {
+                // Exhausted attempts -> Trigger Submit State
                 newStatus = { completed: true, correct: false, attempts: 0 };
                 alert(`No attempts remaining. Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
             } else {
+                // Just decrement
                 newStatus = { completed: false, correct: false, attempts: attemptsLeft };
                 alert(`Incorrect. You have ${attemptsLeft} attempt(s) remaining.`);
             }
         }
 
+        // Optimistic Update
         setStudentProgress(prev => ({
             ...prev,
             stepStatus: { ...prev.stepStatus, [stepNum]: newStatus },
             scores: { ...prev.scores, [stepNum]: { score: result.score, maxScore: result.maxScore } }
         }));
 
+        // Database Save
         const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
@@ -216,19 +212,32 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }, { merge: true });
     };
 
+    // --- AUTO-SUBMIT TIMER ---
+    useEffect(() => {
+        if (!activeTaskConfig || isSubmitted) return;
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const expire = new Date(activeTaskConfig.dateTimeExpire);
+            
+            if (now > expire) {
+                clearInterval(interval);
+                handleActionClick(stepNum, true); // Force Final Submit
+                alert("Time Expired! Your answer has been automatically submitted.");
+            }
+        }, 5000); 
+
+        return () => clearInterval(interval);
+    }, [activeTaskConfig, isSubmitted, stepNum]);
+
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) return html`<div className="p-8 text-center text-red-500">Error: No tasks defined.</div>`;
 
     
-    const now = new Date();
-    const start = new Date(activeTaskConfig.dateTimeStart);
-    const expire = new Date(activeTaskConfig.dateTimeExpire);
-    const isLocked = now < start;
-    const isExpired = now > expire;
-    
     // Status Logic
     const scoreData = studentProgress.scores[stepNum];
-    const attemptsLeft = currentStepStatus.attempts ?? 3;
+    // Ensure we read attempts from the freshest state available
+    const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
     
     // UI State for Buttons
     let btnLabel = "Validate Answer";
@@ -238,11 +247,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     if (isSubmitted) {
         btnLabel = "Step Submitted";
-        btnColor = "bg-green-700 cursor-not-allowed";
+        btnColor = "bg-gray-400 cursor-not-allowed";
         btnAction = () => {};
         btnIcon = CheckCircle;
     } else if (attemptsLeft <= 0) {
-        // Technically this state forces auto-submit, but if we land here:
+        // Fallback catch if state is desynced but attempts are 0
         btnLabel = "Submit Step";
         btnColor = "bg-green-600 hover:bg-green-700";
         btnAction = () => handleActionClick(stepNum, true); 
@@ -253,7 +262,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         step: { id: stepNum, title: activeTaskConfig.stepName, description: activeTaskConfig.instructions },
         activityData: activityData,
         answers: studentProgress.answers,
-        stepStatus: { ...studentProgress.stepStatus, [stepNum]: currentStepStatus },
+        stepStatus: { ...studentProgress.stepStatus, [stepNum]: { completed: isSubmitted, attempts: attemptsLeft } },
         isReadOnly: isSubmitted, 
         isPerformanceTask: true, 
         showFeedback: isSubmitted, 
@@ -339,14 +348,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
-                    ${isLocked 
-                        ? html`<div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10 text-gray-400 font-bold">Task is currently locked.</div>`
-                        : html`
-                            <div className="h-full overflow-y-auto custom-scrollbar">
-                                <${TaskSection} ...${stepProps} />
-                            </div>
-                        `
-                    }
+                     <div className="h-full overflow-y-auto custom-scrollbar">
+                        <${TaskSection} ...${stepProps} />
+                    </div>
                 </div>
             </main>
         </div>
