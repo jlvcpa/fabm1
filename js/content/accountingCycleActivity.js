@@ -28,11 +28,14 @@ const db = getFirestore();
 
 // --- HELPER: Generate Consistent Document ID ---
 const generateResultDocId = (user) => {
-    // Trim strings to prevent mismatch due to accidental spaces
     const cn = String(user.CN || '').trim();
     const id = String(user.Idnumber || '').trim();
     const last = String(user.LastName || '').trim();
     const first = String(user.FirstName || '').trim();
+    
+    // SAFETY: If key data is missing, return null to prevent bad DB reads
+    if (!cn || !id || !last) return null;
+    
     return `${cn}-${id}-${last} ${first}`;
 };
 
@@ -100,28 +103,54 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
 
+    // Initial Load & Realtime Sync
     useEffect(() => {
         if(!activityDoc) return;
+
         const init = async () => {
+            // 1. GENERATE ID & SAFETY CHECK
             const resultDocId = generateResultDocId(user);
+            
+            // Debugging: Check console to see if ID matches what you see in Firebase
+            console.log("Checking Firebase for Student ID:", resultDocId); 
+
+            // If ID is invalid (user data missing), STOP. Do not query Firebase.
+            if (!resultDocId) {
+                console.warn("User data incomplete. Waiting for full profile...");
+                return; 
+            }
+
             const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
+            
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
+                    console.log("Found existing data!"); // Debug log
                     const data = docSnap.data();
-                    // Merge remote data, but for stepStatus, verify timestamps if possible. 
-                    // For now, simple merge.
+                    
+                    // DEEP MERGE to ensure nested keys like stepStatus don't get lost
                     setStudentProgress(prev => ({
-                        answers: { ...prev.answers, ...data.answers },
-                        stepStatus: { ...prev.stepStatus, ...data.stepStatus },
-                        scores: { ...prev.scores, ...data.scores }
+                        answers: { ...prev.answers, ...(data.answers || {}) },
+                        stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
+                        scores: { ...prev.scores, ...(data.scores || {}) }
                     }));
+                    
                     let qId = data.questionId;
-                    if (!qId) { qId = pickRandomQuestion(); setDoc(resultRef, { questionId: qId }, { merge: true }); }
+                    if (!qId) { 
+                        qId = pickRandomQuestion(); 
+                        setDoc(resultRef, { questionId: qId }, { merge: true }); 
+                    }
                     setQuestionId(qId);
                 } else {
+                    console.log("No data found. Creating NEW session."); // Debug log
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
-                    setDoc(resultRef, { studentName: `${user.LastName}, ${user.FirstName}`, studentId: user.Idnumber, section: activityDoc.section, questionId: qId, startedAt: new Date().toISOString() });
+                    setDoc(resultRef, { 
+                        studentName: `${user.LastName}, ${user.FirstName}`, 
+                        studentId: user.Idnumber, 
+                        section: activityDoc.section, 
+                        questionId: qId, 
+                        startedAt: new Date().toISOString() 
+                    });
                 }
                 setLoading(false);
             });
@@ -169,6 +198,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const handleSaveStep = async (stepNum, newData) => {
         setStudentProgress(prev => ({ ...prev, answers: { ...prev.answers, [stepNum]: newData } }));
         const resultDocId = generateResultDocId(user);
+        if (!resultDocId) return; // Safety check
+        
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         try { await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); } catch (e) { console.error("Save error", e); }
     };
@@ -192,25 +223,25 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
         
         // --- FIXED ATTEMPTS LOGIC ---
-        // Defaults to 3 if undefined.
         const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
         let newStatus = {};
 
         if (isFinalSubmit || isCorrect) {
-            newStatus = { completed: true, correct: isCorrect, attempts: currentAttempts };
+            newStatus = { 
+                completed: true, 
+                correct: isCorrect, 
+                attempts: currentAttempts 
+            };
             if(!isFinalSubmit && isCorrect) alert("Validation Passed! Step Completed.");
             else if(!isCorrect && isFinalSubmit) alert(`Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
         } else {
-            // Decrement attempt. Safe math.
-            // Explicitly calculate new attempts here to update local state immediately
-            const newAttempts = Math.max(0, currentAttempts - 1);
-            
-            if (newAttempts === 0) {
+            const attemptsLeft = Math.max(0, currentAttempts - 1);
+            if (attemptsLeft === 0) {
                 newStatus = { completed: true, correct: false, attempts: 0 };
                 alert(`No attempts remaining. Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
             } else {
-                newStatus = { completed: false, correct: false, attempts: newAttempts };
-                alert(`Incorrect. You have ${newAttempts} attempt(s) remaining.`);
+                newStatus = { completed: false, correct: false, attempts: attemptsLeft };
+                alert(`Incorrect. You have ${attemptsLeft} attempt(s) remaining.`);
             }
         }
 
@@ -223,6 +254,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
         // Database Save
         const resultDocId = generateResultDocId(user);
+        if (!resultDocId) return; // Safety check
+
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
         await setDoc(resultRef, {
@@ -234,10 +267,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) return html`<div className="p-8 text-center text-red-500">Error: No tasks defined.</div>`;
 
-    // Status & UI State
+    
+    // Status Logic
     const scoreData = studentProgress.scores[stepNum];
     const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
     
+    // UI State for Buttons
     let btnLabel = "Validate Answer";
     let btnColor = "bg-blue-600 hover:bg-blue-700";
     let btnAction = () => handleActionClick(stepNum, false);
