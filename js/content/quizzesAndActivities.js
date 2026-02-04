@@ -21,8 +21,7 @@ const db = getFirestore(app);
 let quizTimerInterval = null;
 let currentAntiCheat = null;
 
-export async function renderQuizzesAndActivities(containerElement, user) {
-    const contentArea = document.getElementById('content-area');
+export async function renderQuizzesAndActivities(containerElement, user, customRunner = null, filterType = null) { 
     
     contentArea.innerHTML = `
         <div class="flex h-full relative overflow-hidden bg-gray-50">
@@ -57,7 +56,7 @@ export async function renderQuizzesAndActivities(containerElement, user) {
         sidebar.classList.add('-translate-x-full');
     });
 
-    await loadStudentActivities(user);
+    await loadStudentActivities(user, customRunner, filterType);
 }
 
 async function loadStudentActivities(user) {
@@ -82,7 +81,22 @@ async function loadStudentActivities(user) {
             if (user.role === 'student' && data.section !== user.Section) {
                 return; 
             }
-            
+
+            if (filterType === 'accounting_cycle' || filterType === 'Task') {
+                // Only show Performance Tasks (Acct Cycle)
+                // Check if it has 'tasks' array OR title contains 'Task' OR type is 'accounting_cycle'
+                const isTask = (data.tasks && Array.isArray(data.tasks)) || 
+                               data.type === 'accounting_cycle' || 
+                               data.activityname.includes('Task');
+                if (!isTask) return; // Skip if not a task
+            } 
+            else if (filterType === 'standard') {
+                // Only show Standard Quizzes
+                const isTask = (data.tasks && Array.isArray(data.tasks)) || 
+                               data.type === 'accounting_cycle' || 
+                               data.activityname.includes('Task');
+                if (isTask) return; // Skip if it IS a task
+                
             const start = new Date(data.dateTimeStart);
             const expire = new Date(data.dateTimeExpire);
             const isExpired = now > expire;
@@ -113,12 +127,13 @@ async function loadStudentActivities(user) {
                 } else {
                     if(quizTimerInterval) clearInterval(quizTimerInterval); 
                     if(currentAntiCheat) currentAntiCheat.stopMonitoring();
+                    currentAntiCheat = null; // Ensure clean state
+                    }
                     
-                    renderQuizRunner(data, user);
+                    renderQuizRunner(data, user, customRunner);
                     document.getElementById('qa-sidebar').classList.add('-translate-x-full');
                 }
             };
-
             listContainer.appendChild(card);
         });
         
@@ -132,9 +147,27 @@ async function loadStudentActivities(user) {
     }
 }
 
-async function renderQuizRunner(data, user) {
+async function renderQuizRunner(data, user, customRunner = null) {
     const container = document.getElementById('qa-runner-container');
-    container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Checking Permissions...</span></div>';
+    
+    // --- NEW GUARD CLAUSE ---
+    // If a custom runner (like accountingCycleActivity) is provided, use it and STOP.
+    if (customRunner && typeof customRunner === 'function') {
+        console.log("Delegating to custom Activity Runner...");
+        
+        // Clear container first to be safe
+        container.innerHTML = '';
+        
+        // Define the "Go Back" callback
+        const goBack = () => {
+             // Re-render the list view when backing out
+             document.getElementById('qa-toggle-sidebar').click(); 
+        };
+
+        // Call your React Runner
+        customRunner(container, data, user, goBack);
+        return; // <--- CRITICAL: Stops execution of standard quiz logic
+    }  
     
     if (user.role !== 'teacher' && data.students && !data.students.includes(user.Idnumber)) {
         container.innerHTML = `
