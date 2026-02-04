@@ -1,15 +1,13 @@
 // --- js/content/accountingCycleActivity.js ---
 
-import React, { useState, useEffect, useMemo, useCallback } from 'https://esm.sh/react@18.2.0';
+import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, BookOpen } from 'https://esm.sh/lucide-react@0.263.1';
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
-// --- Import Question Bank Data ---
+// --- Import Data & Utils ---
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
-
-// --- Import Cycle Steps & Logic ---
 import { getAccountType, sortAccounts } from './accountingCycle/utils.js';
 import { TaskSection } from './accountingCycle/steps.js';
 
@@ -28,13 +26,10 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- HELPER: MAP STATIC DATA TO SIMULATOR FORMAT ---
-// The Step components expect a specific data structure (activityData). 
-// We must convert the static QB JSON into this dynamic structure.
+// --- HELPER: ADAPTER ---
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
     
-    // 1. Normalize Transactions (Convert 'solution' array to debits/credits for the logic engine)
     const normalizedTransactions = transactions.map((t, idx) => {
         const debits = [];
         const credits = [];
@@ -42,21 +37,21 @@ const adaptStaticDataToSimulator = (questionData) => {
             if (line.debit) debits.push({ account: line.account, amount: Number(line.debit) });
             if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
         });
+
         return {
             id: idx + 1,
-            date: t.date, // Keep string format "Jan 1"
+            date: t.date,
             description: t.description,
             debits,
             credits,
-            analysis: {} // Step 1 analysis expectation would need to be derived or mocked
+            analysis: {} // <-- Leave this empty! Step01Analysis now calculates it on its own.
         };
     });
 
-    // 2. Build the "Answer Key" Ledger based on these transactions
+    // 2. Build the "Answer Key" Ledger
     const ledger = {};
     const validAccounts = new Set();
 
-    // Helper to add to ledger
     const addToLedger = (acc, dr, cr) => {
         validAccounts.add(acc);
         if (!ledger[acc]) ledger[acc] = { debit: 0, credit: 0 };
@@ -64,15 +59,13 @@ const adaptStaticDataToSimulator = (questionData) => {
         ledger[acc].credit += cr;
     };
 
-    // Process Transactions for Ledger Key
     normalizedTransactions.forEach(t => {
         t.debits.forEach(d => addToLedger(d.account, d.amount, 0));
         t.credits.forEach(c => addToLedger(c.account, 0, c.amount));
     });
 
-    // 3. Process Adjustments for Ledger Key
+    // 3. Process Adjustments
     const normalizedAdjustments = adjustments.map((a, idx) => {
-        // Extract Dr/Cr from solution
         const drLine = a.solution.find(s => s.debit);
         const crLine = a.solution.find(s => s.credit);
         const amt = drLine ? Number(drLine.debit) : 0;
@@ -92,15 +85,15 @@ const adaptStaticDataToSimulator = (questionData) => {
     return {
         config: { 
             businessType: 'Merchandising', 
-            inventorySystem: 'Periodic', // Inferred from "Purchases" account in JSON
+            inventorySystem: 'Periodic',
             isSubsequentYear: false,
-            deferredExpenseMethod: 'Asset', // Default assumption unless specified
+            deferredExpenseMethod: 'Asset',
             deferredIncomeMethod: 'Liability' 
         },
         transactions: normalizedTransactions,
         ledger: ledger,
         validAccounts: sortAccounts(Array.from(validAccounts)),
-        beginningBalances: null, // Static problems usually start from scratch or text
+        beginningBalances: null,
         adjustments: normalizedAdjustments
     };
 };
@@ -113,33 +106,32 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [questionId, setQuestionId] = useState(null);
 
-    // 1. Initialize: Load or Assign Question & Fetch Progress
+    // 1. Initialize
     useEffect(() => {
+        if(!activityDoc) return;
+
         const init = async () => {
             const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
             const resultCollection = `results_${activityDoc.activityname}_${activityDoc.section}`;
             const resultRef = doc(db, resultCollection, resultDocId);
 
-            // Real-time listener for progress
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    setStudentProgress({
-                        answers: data.answers || {},
+                    // Merge remote data
+                    setStudentProgress(prev => ({
+                        answers: { ...prev.answers, ...data.answers },
                         stepStatus: data.stepStatus || {},
                         scores: data.scores || {}
-                    });
+                    }));
                     
-                    // Retrieve assigned question ID or pick new one if missing
                     let qId = data.questionId;
                     if (!qId) {
                         qId = pickRandomQuestion();
-                        // Save the assigned question immediately
                         setDoc(resultRef, { questionId: qId }, { merge: true });
                     }
                     setQuestionId(qId);
                 } else {
-                    // New Student: Pick random question and initialize
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
                     setDoc(resultRef, {
@@ -158,16 +150,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         init();
     }, [activityDoc, user]);
 
-    // 2. Hydrate Simulator Data when Question ID is set
+    // 2. Hydrate
     useEffect(() => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
                 const adaptedData = adaptStaticDataToSimulator(rawQ);
                 setActivityData(adaptedData);
-                
-                // Set initial task if none selected
-                if (!currentTaskId && activityDoc.tasks.length > 0) {
+                if (!currentTaskId && activityDoc.tasks && activityDoc.tasks.length > 0) {
                     setCurrentTaskId(activityDoc.tasks[0].taskId);
                 }
             }
@@ -179,70 +169,86 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         return merchTransactionsExamData[randomIndex].id;
     };
 
-    // --- SAVE & SUBMIT HANDLER ---
-    const handleSaveStep = async (stepId, newData, isSubmitting = false) => {
-        const taskConfig = activityDoc.tasks.find(t => t.taskId === stepId);
-        
-        // Map Task ID to Accounting Step ID (1-10) based on string analysis
-        // The Creator saved "Step 01...", "Step 02..." in stepName.
-        const stepNum = parseInt(taskConfig.stepName.split(' ')[1]);
+    // --- SAVE HANDLER (OPTIMISTIC) ---
+    // stepNum is the actual accounting step (1-10)
+    const handleSaveStep = async (stepNum, newData) => {
+        // 1. OPTIMISTIC UPDATE: Fixes Dropdown Lag
+        setStudentProgress(prev => ({
+            ...prev,
+            answers: {
+                ...prev.answers,
+                [stepNum]: newData
+            }
+        }));
 
-        // Validation Logic
-        let scoreData = null;
-        let isComplete = false;
-
-        if (isSubmitting) {
-            if (!confirm("Are you sure you want to submit? You cannot change answers after submission.")) return;
-            
-            // Run specific validator
-            let result = { score: 0, maxScore: 0 };
-            
-            // Note: We pass newData (current user answer) and activityData (answer key)
-            if (stepNum === 1) result = validateStep01(activityData.transactions, newData);
-            else if (stepNum === 2) result = validateStep02(activityData.transactions, newData);
-            else if (stepNum === 3) result = validateStep03(activityData, newData);
-            else if (stepNum === 4) result = validateStep04(activityData.transactions, newData, activityData.ledger);
-            else if (stepNum === 5) result = validateStep05(activityData.ledger, activityData.adjustments, newData);
-            else if (stepNum === 6) result = validateStep06(activityData.ledger, activityData.adjustments, activityData, newData);
-            else if (stepNum === 7) result = validateStep07(activityData.adjustments, newData.journal, newData.ledger, activityData.transactions);
-            else if (stepNum === 8) result = validateStep08(newData, activityData);
-            else if (stepNum === 9) result = validateStep09(newData, activityData);
-            else if (stepNum === 10) result = validateStep10(newData, activityData);
-
-            scoreData = { score: result.score, maxScore: result.maxScore };
-            isComplete = true;
-        }
-
-        // Construct Payload
+        // 2. BACKGROUND SAVE
         const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
 
-        const updatePayload = {
-            [`answers.${stepNum}`]: newData,
-            lastUpdated: new Date().toISOString()
-        };
-
-        if (isComplete) {
-            updatePayload[`stepStatus.${stepNum}`] = { completed: true, submittedAt: new Date().toISOString() };
-            updatePayload[`scores.${stepNum}`] = scoreData;
-        }
-
         try {
-            await setDoc(resultRef, updatePayload, { merge: true });
-            if (isSubmitting) alert(`Task Submitted! Score: ${scoreData.score}/${scoreData.maxScore}`);
+            await setDoc(resultRef, {
+                [`answers.${stepNum}`]: newData,
+                lastUpdated: new Date().toISOString()
+            }, { merge: true });
         } catch (e) {
             console.error("Save error", e);
-            alert("Error saving progress: " + e.message);
         }
+    };
+
+    // --- VALIDATION HANDLER ---
+    const handleStepValidation = async (stepNum) => {
+        const currentAns = studentProgress.answers[stepNum] || {};
+        let result = { score: 0, maxScore: 0 };
+        
+        // This runs the logic inside Step01Analysis.js, but now using the corrected activityData
+        if (stepNum === 1) result = validateStep01(activityData.transactions, currentAns);
+        else if (stepNum === 2) result = validateStep02(activityData.transactions, currentAns);
+        else if (stepNum === 3) result = validateStep03(activityData, currentAns);
+        else if (stepNum === 4) result = validateStep04(activityData.transactions, currentAns, activityData.ledger);
+        else if (stepNum === 5) result = validateStep05(activityData.ledger, activityData.adjustments, currentAns);
+        else if (stepNum === 6) result = validateStep06(activityData.ledger, activityData.adjustments, activityData, currentAns);
+        else if (stepNum === 7) result = validateStep07(activityData.adjustments, currentAns.journal, currentAns.ledger, activityData.transactions);
+        else if (stepNum === 8) result = validateStep08(currentAns, activityData);
+        else if (stepNum === 9) result = validateStep09(currentAns, activityData);
+        else if (stepNum === 10) result = validateStep10(currentAns, activityData);
+
+        const isCorrect = result.score === result.maxScore && result.maxScore > 0;
+        
+        const newStatus = { 
+            completed: isCorrect, 
+            correct: isCorrect, 
+            attempts: (studentProgress.stepStatus[stepNum]?.attempts || 3) - 1 
+        };
+
+        // Optimistic Status Update
+        setStudentProgress(prev => ({
+            ...prev,
+            stepStatus: { ...prev.stepStatus, [stepNum]: newStatus },
+            scores: { ...prev.scores, [stepNum]: { score: result.score, maxScore: result.maxScore } }
+        }));
+
+        // Firebase Status Save
+        const resultDocId = `${user.CN}-${user.Idnumber}-${user.LastName} ${user.FirstName}`;
+        const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
+        
+        await setDoc(resultRef, {
+            [`stepStatus.${stepNum}`]: newStatus,
+            [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore }
+        }, { merge: true });
+
+        if(isCorrect) alert("Validation Passed! Great job.");
+        else alert(`Validation Complete. Score: ${result.score}/${result.maxScore}`);
     };
 
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
 
-    // --- RENDER CURRENT TASK ---
+    if (!activityDoc.tasks || activityDoc.tasks.length === 0) {
+        return html`<div className="p-8 text-center text-red-500">Error: No tasks defined for this activity.</div>`;
+    }
+
     const activeTaskConfig = activityDoc.tasks.find(t => t.taskId === currentTaskId);
-    const stepNum = parseInt(activeTaskConfig.stepName.split(' ')[1]);
+    const stepNum = activeTaskConfig ? parseInt(activeTaskConfig.stepName.split(' ')[1]) : 1;
     
-    // Status Checks
     const now = new Date();
     const start = new Date(activeTaskConfig.dateTimeStart);
     const expire = new Date(activeTaskConfig.dateTimeExpire);
@@ -255,22 +261,38 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         step: { id: stepNum, title: activeTaskConfig.stepName, description: activeTaskConfig.instructions },
         activityData: activityData,
         answers: studentProgress.answers,
-        stepStatus: { [stepNum]: { completed: isSubmitted, attempts: isSubmitted ? 0 : 3 } }, // Logic adaptation
+        stepStatus: { 
+            ...studentProgress.stepStatus, 
+            [stepNum]: studentProgress.stepStatus[stepNum] || { completed: false, attempts: 3, correct: false } 
+        },
         isCurrentActiveTask: true,
-        isPrevStepCompleted: true, // In this Exam mode, we usually allow jumping or enforce via time. Let's assume unlocked by time.
+        isPrevStepCompleted: true, 
         
-        // This 'onValidate' is used by the internal components for feedback. 
-        // In Exam mode, we might want to disable intermediate validation or hook it to save.
-        // We pass a dummy or a save handler depending on isSubmitted.
-        onValidate: () => () => {}, // Disable the internal "Validate" buttons of Step components
+        // ENABLE VALIDATE BUTTON
+        onValidate: () => () => handleStepValidation(stepNum), 
         
         updateAnswerFns: {
-            updateAnswer: (id, val) => handleSaveStep(currentTaskId, val, false),
+            updateAnswer: (id, val) => handleSaveStep(stepNum, val),
+            
+            // CRITICAL FIX FOR DROPDOWNS:
             updateNestedAnswer: (id, key, subKey, val) => {
-                const current = studentProgress.answers[id] || {};
-                const nested = current[key] || {};
-                const newData = { ...current, [key]: { ...nested, [subKey]: val } };
-                handleSaveStep(currentTaskId, newData, false);
+                const currentStepData = studentProgress.answers[stepNum] || {};
+                const currentRowData = currentStepData[key] || {};
+                
+                // Merge new value into row
+                const newData = { 
+                    ...currentStepData, 
+                    [key]: { ...currentRowData, [subKey]: val } 
+                };
+                
+                handleSaveStep(stepNum, newData);
+            },
+            
+            updateTrialBalanceAnswer: (stepId, acc, side, val) => {
+                const current = studentProgress.answers[stepNum] || {};
+                const accData = current[acc] || {};
+                const newData = { ...current, [acc]: { ...accData, [side]: val } };
+                handleSaveStep(stepNum, newData);
             }
         }
     };
@@ -325,7 +347,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                                 `
                                 : isExpired
                                     ? html`<div className="bg-red-100 text-red-700 px-4 py-2 rounded font-bold border border-red-200">Expired</div>`
-                                    : html`<button onClick=${() => handleSaveStep(currentTaskId, studentProgress.answers[stepNum], true)} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2"><${Save} size=${18}/> Submit Task</button>`
+                                    : html`<button onClick=${() => handleStepValidation(stepNum)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2"><${Save} size=${18}/> Submit Step</button>`
                         }
                     </div>
                 </div>
