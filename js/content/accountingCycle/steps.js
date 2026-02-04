@@ -3,7 +3,7 @@
 import React from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Check, Printer } from 'https://esm.sh/lucide-react@0.263.1';
-import { ActivityHelper } from './utils.js';
+import { ActivityHelper } from '../utils.js';
 
 // --- EXPLICIT IMPORTS ---
 import Step01Analysis from './steps/Step01Analysis.js';
@@ -39,24 +39,22 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
         return html`<div className="p-4 text-red-500">Error: Component for Step ${step.id} not found.</div>`;
     }
     
-    // --- PERFORMANCE TASK MODE (Clean Layout) ---
+    // --- PERFORMANCE TASK MODE (Single Scrollable Flow) ---
     if (isPerformanceTask) {
         return html`
-            <div className="h-full flex flex-col p-4">
-                ${/* 1. TOP CONTAINER: Instructions & Rubric */''}
-                <div className="flex-none mb-4 space-y-4">
-                    <div className="bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm p-4" 
-                         dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}>
-                    </div>
-                    
-                    <div className="border rounded-lg overflow-hidden shadow-sm bg-white">
-                         <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
-                    </div>
+            <div className="h-full overflow-y-auto p-4 custom-scrollbar">
+                ${/* 1. INSTRUCTIONS */''}
+                <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
+                     dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(step.id, step.title) }}>
                 </div>
 
-                ${/* 2. WORKSPACE CONTAINER (Scrollable) */''}
-                ${/* 'flex-1 overflow-y-auto' ensures this takes remaining space and scrolls internally */''}
-                <div className="flex-1 overflow-y-auto min-h-0 border-t border-gray-200 pt-4 bg-white rounded shadow-sm relative">
+                ${/* 2. RUBRIC */''}
+                <div className="mb-6 border rounded-lg overflow-hidden shadow-sm bg-white">
+                     <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(step.id, step.title) }}></div>
+                </div>
+
+                ${/* 3. WORKSPACE (Flows naturally in the scroll container) */''}
+                <div className="bg-white rounded shadow-sm border border-gray-200">
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []} 
