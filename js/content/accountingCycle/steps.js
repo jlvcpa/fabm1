@@ -5,7 +5,7 @@ import htm from 'https://esm.sh/htm';
 import { Book, Check, X, Printer, ChevronDown, ChevronRight, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
 import { ActivityHelper } from './utils.js';
 
-// --- EXPLICIT IMPORTS (Fixes 'require is not defined') ---
+// --- EXPLICIT IMPORTS (Required to fix 'require is not defined') ---
 import Step01Analysis from './steps/Step01Analysis.js';
 import Step02Journalizing from './steps/Step02Journalizing.js';
 import Step03Posting from './steps/Step03Posting.js';
@@ -34,27 +34,28 @@ const STEP_COMPONENTS = {
 };
 
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPrevStepCompleted, isPerformanceTask }) => {
-    // FIX: Look up component from map instead of using require()
+    // Look up component from map
     const StepComponent = step.component || STEP_COMPONENTS[step.id];
 
     if (!StepComponent) {
         return html`<div className="p-4 text-red-500">Error: Component for Step ${step.id} not found.</div>`;
     }
     
-    // In Performance Task mode, we hide the internal instructions/rubrics because the parent handles them
+    // In Performance Task mode, we hide the internal instructions/rubrics
     if (isPerformanceTask) {
         return html`
             <div className="h-full flex flex-col">
                 <${StepComponent} 
                     activityData=${activityData}
+                    transactions=${activityData?.transactions || []} 
                     data=${answers[step.id] || {}}
                     onChange=${(id, key, val) => {
                         // Adapter for different step signatures
                         if (step.id === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
                         else if (step.id === 4 || step.id === 9) updateAnswerFns.updateTrialBalanceAnswer(step.id, id, key, val);
                         else if (step.id === 5 || step.id === 6) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: val }); 
-                        else if (step.id === 7 || step.id === 10) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: key }); // Special handler for journal-like
-                        else updateAnswerFns.updateAnswer(step.id, id); // Default (Step 2, 8)
+                        else if (step.id === 7 || step.id === 10) updateAnswerFns.updateAnswer(step.id, { ...answers[step.id], [id]: key }); 
+                        else updateAnswerFns.updateAnswer(step.id, id); 
                     }}
                     showFeedback=${stepStatus[step.id]?.completed || false}
                     isReadOnly=${stepStatus[step.id]?.completed || false}
@@ -63,7 +64,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
         `;
     }
 
-    // --- STANDARD MODE (For non-performance tasks, keeps original layout) ---
+    // --- STANDARD MODE (Legacy) ---
     const isExpanded = isCurrentActiveTask; 
     const status = stepStatus[step.id] || {};
     
@@ -88,6 +89,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                     
                     <${StepComponent} 
                         activityData=${activityData}
+                        transactions=${activityData?.transactions || []}
                         data=${answers[step.id] || {}}
                         onChange=${(id, key, val) => {
                              if (step.id === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
