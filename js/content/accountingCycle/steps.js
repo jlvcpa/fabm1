@@ -5,10 +5,41 @@ import htm from 'https://esm.sh/htm';
 import { Book, Check, X, Printer, ChevronDown, ChevronRight, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
 import { ActivityHelper } from './utils.js';
 
+// --- EXPLICIT IMPORTS (Fixes 'require is not defined') ---
+import Step01Analysis from './steps/Step01Analysis.js';
+import Step02Journalizing from './steps/Step02Journalizing.js';
+import Step03Posting from './steps/Step03Posting.js';
+import Step04TrialBalance from './steps/Step04TrialBalance.js';
+import Step05Worksheet from './steps/Step05Worksheet.js';
+import Step06FinancialStatements from './steps/Step06FinancialStatements.js';
+import Step07AdjustingEntries from './steps/Step07AdjustingEntries.js';
+import Step08ClosingEntries from './steps/Step08ClosingEntries.js';
+import Step09PostClosingTB from './steps/Step09PostClosingTB.js';
+import Step10ReversingEntries from './steps/Step10ReversingEntries.js';
+
 const html = htm.bind(React.createElement);
 
+// --- COMPONENT MAPPING ---
+const STEP_COMPONENTS = {
+    1: Step01Analysis,
+    2: Step02Journalizing,
+    3: Step03Posting,
+    4: Step04TrialBalance,
+    5: Step05Worksheet,
+    6: Step06FinancialStatements,
+    7: Step07AdjustingEntries,
+    8: Step08ClosingEntries,
+    9: Step09PostClosingTB,
+    10: Step10ReversingEntries
+};
+
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPrevStepCompleted, isPerformanceTask }) => {
-    const StepComponent = step.component || require(`./steps/Step${step.id.toString().padStart(2, '0')}${step.title.replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '')}.js`).default;
+    // FIX: Look up component from map instead of using require()
+    const StepComponent = step.component || STEP_COMPONENTS[step.id];
+
+    if (!StepComponent) {
+        return html`<div className="p-4 text-red-500">Error: Component for Step ${step.id} not found.</div>`;
+    }
     
     // In Performance Task mode, we hide the internal instructions/rubrics because the parent handles them
     if (isPerformanceTask) {
