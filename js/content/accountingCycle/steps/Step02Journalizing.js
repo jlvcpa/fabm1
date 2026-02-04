@@ -40,7 +40,6 @@ const validateRow = (row, t, tIdx, idx) => {
 
     // 1. Date Validation
     if (tIdx === 0 && idx === 0) {
-        // First row of first transaction: Needs Year
         const txnDate = new Date(t.date);
         const yyyy = txnDate.getFullYear().toString();
         const val = row.date?.trim() || ""; 
@@ -54,7 +53,6 @@ const validateRow = (row, t, tIdx, idx) => {
             result.date = false;
         }
     } else if ((tIdx === 0 && idx === 1) || (tIdx > 0 && idx === 0)) {
-        // Date row (Month/Day)
         const txnDate = new Date(t.date);
         const mm = txnDate.toLocaleString('default', { month: 'short' });
         const dd = txnDate.getDate().toString();
@@ -299,7 +297,8 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     }
                     
                     newRows.push(descRow);
-                    onChange(t.id, newRows);
+                    // FIX: Wrapped newRows in object { rows: ... }
+                    onChange(t.id, { rows: newRows });
                 }
             });
         }
@@ -327,8 +326,10 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     <div className="w-8"></div>
                 </div>
                 ${transactions.map((t, tIdx) => {
+                    // Safe Access
                     const entry = data[t.id] || {};
                     let initialRows = entry.rows;
+                    
                     if (!initialRows) {
                         if (tIdx === 0) { 
                             initialRows = [
@@ -346,9 +347,29 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                         }
                     }
                     const rows = initialRows;
-                    const updateRow = (idx, field, val) => { const newRows = [...rows]; if(!newRows[idx]) newRows[idx] = {}; newRows[idx] = { ...newRows[idx], [field]: val }; onChange(t.id, newRows); };
-                    const addRow = () => { const newRows = [...rows]; const descRow = newRows.pop(); newRows.push({ id: Date.now(), date: '', acc: '', dr: '', cr: '', pr: '' }); newRows.push(descRow); onChange(t.id, newRows); };
-                    const deleteRow = (idx) => { const minRows = tIdx === 0 ? 4 : 3; if (rows.length <= minRows) return; const newRows = rows.filter((_, i) => i !== idx); onChange(t.id, newRows); };
+                    
+                    // FIX: Wrapped updates in object { rows: ... } in all handlers below
+                    const updateRow = (idx, field, val) => { 
+                        const newRows = [...rows]; 
+                        if(!newRows[idx]) newRows[idx] = {}; 
+                        newRows[idx] = { ...newRows[idx], [field]: val }; 
+                        onChange(t.id, { rows: newRows }); 
+                    };
+                    
+                    const addRow = () => { 
+                        const newRows = [...rows]; 
+                        const descRow = newRows.pop(); 
+                        newRows.push({ id: Date.now(), date: '', acc: '', dr: '', cr: '', pr: '' }); 
+                        newRows.push(descRow); 
+                        onChange(t.id, { rows: newRows }); 
+                    };
+                    
+                    const deleteRow = (idx) => { 
+                        const minRows = tIdx === 0 ? 4 : 3; 
+                        if (rows.length <= minRows) return; 
+                        const newRows = rows.filter((_, i) => i !== idx); 
+                        onChange(t.id, { rows: newRows }); 
+                    };
                     
                     return html`
                         <div key=${t.id} className="border-b border-gray-300 text-sm">
