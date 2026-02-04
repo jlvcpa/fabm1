@@ -26,16 +26,30 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- 1. CRITICAL FIX: ID GENERATOR HELPER ---
-// Ensures we find the student's saved data even if name has extra spaces
+// --- HELPER 1: Generate Consistent Document ID ---
 const generateResultDocId = (user) => {
     const cn = String(user.CN || '').trim();
     const id = String(user.Idnumber || '').trim();
     const last = String(user.LastName || '').trim();
     const first = String(user.FirstName || '').trim();
-    
     if (!cn || !id || !last) return null;
     return `${cn}-${id}-${last} ${first}`;
+};
+
+// --- HELPER 2: Robust Step Number Parser (FIX FOR STUCK SCREEN) ---
+const getStepNumber = (taskConfig, index) => {
+    if (!taskConfig) return 1;
+    
+    // Strategy 1: Look for "Step X" or "StepX" in the name
+    const nameMatch = taskConfig.stepName.match(/Step\s*0?(\d+)/i);
+    if (nameMatch) return parseInt(nameMatch[1]);
+
+    // Strategy 2: Use taskId if it's a number
+    const idNum = parseInt(taskConfig.taskId);
+    if (!isNaN(idNum)) return idNum;
+
+    // Strategy 3: Fallback to array index (1-based)
+    return index + 1;
 };
 
 // --- LOGIC ENGINE ---
@@ -106,7 +120,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
-            // FIX: Use Consistent ID Generation
             const resultDocId = generateResultDocId(user);
             if (!resultDocId) return;
 
@@ -114,7 +127,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // FIX: Deep merge to prevent state loss
                     setStudentProgress(prev => ({
                         answers: { ...prev.answers, ...(data.answers || {}) },
                         stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
@@ -152,12 +164,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     }, [questionId, activityDoc]);
 
-    // FIX: String comparison for safer Task ID matching
-    const activeTaskConfig = activityDoc.tasks?.find(t => String(t.taskId) === String(currentTaskId));
-    
-    // FIX: Safer Step Number parsing using Regex to find the number in "Step 01 ..."
-    const stepNumMatch = activeTaskConfig ? activeTaskConfig.stepName.match(/Step\s+(\d+)/i) : null;
-    const stepNum = stepNumMatch ? parseInt(stepNumMatch[1]) : 1;
+    // --- FIX: DETERMINE STEP NUMBER ---
+    const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
+    const activeTaskConfig = activeTaskIndex >= 0 ? activityDoc.tasks[activeTaskIndex] : null;
+    const stepNum = getStepNumber(activeTaskConfig, activeTaskIndex);
 
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
@@ -245,7 +255,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) return html`<div className="p-8 text-center text-red-500">Error: No tasks defined.</div>`;
 
-    // UI Logic
+    // Status & UI State
     const scoreData = studentProgress.scores[stepNum];
     const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
     
@@ -303,8 +313,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
                 <div className="flex gap-2">
                     ${activityDoc.tasks.map(t => {
-                        const sNumMatch = t.stepName.match(/Step\s+(\d+)/i);
-                        const sNum = sNumMatch ? parseInt(sNumMatch[1]) : 1;
+                        const idx = activityDoc.tasks.indexOf(t);
+                        const sNum = getStepNumber(t, idx);
                         const isDone = studentProgress.stepStatus[sNum]?.completed;
                         const isActive = String(t.taskId) === String(currentTaskId);
                         return html`
