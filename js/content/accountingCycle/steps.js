@@ -59,7 +59,6 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
     if (isPerformanceTask) {
         return html`
             <div className="h-full overflow-y-auto p-4 custom-scrollbar">
-                ${/* Instructions & Rubric omitted for brevity ... */}
                 <div className="bg-white rounded shadow-sm border border-gray-200">
                     <${StepComponent} 
                         activityData=${activityData}
