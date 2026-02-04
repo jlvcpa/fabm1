@@ -26,16 +26,15 @@ import { validateStep10 } from './accountingCycle/steps/Step10ReversingEntries.j
 const html = htm.bind(React.createElement);
 const db = getFirestore();
 
-// --- HELPER: Generate Consistent Document ID ---
+// --- 1. CRITICAL FIX: ID GENERATOR HELPER ---
+// Ensures we find the student's saved data even if name has extra spaces
 const generateResultDocId = (user) => {
     const cn = String(user.CN || '').trim();
     const id = String(user.Idnumber || '').trim();
     const last = String(user.LastName || '').trim();
     const first = String(user.FirstName || '').trim();
     
-    // SAFETY: If key data is missing, return null to prevent bad DB reads
     if (!cn || !id || !last) return null;
-    
     return `${cn}-${id}-${last} ${first}`;
 };
 
@@ -106,42 +105,25 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     // Initial Load & Realtime Sync
     useEffect(() => {
         if(!activityDoc) return;
-
         const init = async () => {
-            // 1. GENERATE ID & SAFETY CHECK
+            // FIX: Use Consistent ID Generation
             const resultDocId = generateResultDocId(user);
-            
-            // Debugging: Check console to see if ID matches what you see in Firebase
-            console.log("Checking Firebase for Student ID:", resultDocId); 
-
-            // If ID is invalid (user data missing), STOP. Do not query Firebase.
-            if (!resultDocId) {
-                console.warn("User data incomplete. Waiting for full profile...");
-                return; 
-            }
+            if (!resultDocId) return;
 
             const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
-            
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    console.log("Found existing data!"); // Debug log
                     const data = docSnap.data();
-                    
-                    // DEEP MERGE to ensure nested keys like stepStatus don't get lost
+                    // FIX: Deep merge to prevent state loss
                     setStudentProgress(prev => ({
                         answers: { ...prev.answers, ...(data.answers || {}) },
                         stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
                         scores: { ...prev.scores, ...(data.scores || {}) }
                     }));
-                    
                     let qId = data.questionId;
-                    if (!qId) { 
-                        qId = pickRandomQuestion(); 
-                        setDoc(resultRef, { questionId: qId }, { merge: true }); 
-                    }
+                    if (!qId) { qId = pickRandomQuestion(); setDoc(resultRef, { questionId: qId }, { merge: true }); }
                     setQuestionId(qId);
                 } else {
-                    console.log("No data found. Creating NEW session."); // Debug log
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
                     setDoc(resultRef, { 
@@ -170,8 +152,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     }, [questionId, activityDoc]);
 
-    const activeTaskConfig = activityDoc.tasks?.find(t => t.taskId === currentTaskId);
-    const stepNum = activeTaskConfig ? parseInt(activeTaskConfig.stepName.split(' ')[1]) : 1;
+    // FIX: String comparison for safer Task ID matching
+    const activeTaskConfig = activityDoc.tasks?.find(t => String(t.taskId) === String(currentTaskId));
+    
+    // FIX: Safer Step Number parsing using Regex to find the number in "Step 01 ..."
+    const stepNumMatch = activeTaskConfig ? activeTaskConfig.stepName.match(/Step\s+(\d+)/i) : null;
+    const stepNum = stepNumMatch ? parseInt(stepNumMatch[1]) : 1;
+
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
 
@@ -198,8 +185,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const handleSaveStep = async (stepNum, newData) => {
         setStudentProgress(prev => ({ ...prev, answers: { ...prev.answers, [stepNum]: newData } }));
         const resultDocId = generateResultDocId(user);
-        if (!resultDocId) return; // Safety check
-        
+        if (!resultDocId) return;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         try { await setDoc(resultRef, { [`answers.${stepNum}`]: newData, lastUpdated: new Date().toISOString() }, { merge: true }); } catch (e) { console.error("Save error", e); }
     };
@@ -209,6 +195,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
         
+        // Validation Routing
         if (stepNum === 1) result = validateStep01(activityData.transactions, currentAns);
         else if (stepNum === 2) result = validateStep02(activityData.transactions, currentAns);
         else if (stepNum === 3) result = validateStep03(activityData, currentAns);
@@ -221,17 +208,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         else if (stepNum === 10) result = validateStep10(currentAns, activityData);
 
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
-        
-        // --- FIXED ATTEMPTS LOGIC ---
         const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
         let newStatus = {};
 
         if (isFinalSubmit || isCorrect) {
-            newStatus = { 
-                completed: true, 
-                correct: isCorrect, 
-                attempts: currentAttempts 
-            };
+            newStatus = { completed: true, correct: isCorrect, attempts: currentAttempts };
             if(!isFinalSubmit && isCorrect) alert("Validation Passed! Step Completed.");
             else if(!isCorrect && isFinalSubmit) alert(`Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
         } else {
@@ -245,17 +226,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             }
         }
 
-        // Optimistic Update
         setStudentProgress(prev => ({
             ...prev,
             stepStatus: { ...prev.stepStatus, [stepNum]: newStatus },
             scores: { ...prev.scores, [stepNum]: { score: result.score, maxScore: result.maxScore } }
         }));
 
-        // Database Save
         const resultDocId = generateResultDocId(user);
-        if (!resultDocId) return; // Safety check
-
+        if (!resultDocId) return;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
         await setDoc(resultRef, {
@@ -267,12 +245,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) return html`<div className="p-8 text-center text-red-500">Error: No tasks defined.</div>`;
 
-    
-    // Status Logic
+    // UI Logic
     const scoreData = studentProgress.scores[stepNum];
     const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
     
-    // UI State for Buttons
     let btnLabel = "Validate Answer";
     let btnColor = "bg-blue-600 hover:bg-blue-700";
     let btnAction = () => handleActionClick(stepNum, false);
@@ -327,9 +303,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
                 <div className="flex gap-2">
                     ${activityDoc.tasks.map(t => {
-                        const sNum = parseInt(t.stepName.split(' ')[1]);
+                        const sNumMatch = t.stepName.match(/Step\s+(\d+)/i);
+                        const sNum = sNumMatch ? parseInt(sNumMatch[1]) : 1;
                         const isDone = studentProgress.stepStatus[sNum]?.completed;
-                        const isActive = t.taskId === currentTaskId;
+                        const isActive = String(t.taskId) === String(currentTaskId);
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
@@ -364,12 +341,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         `}
                         
-                        ${/* BUTTON & ATTEMPTS */''}
                         <div className="flex flex-col items-end">
                             <button onClick=${btnAction} disabled=${isSubmitted} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
                                 <${btnIcon} size=${18}/> ${btnLabel}
                             </button>
-                            
                             ${!isSubmitted && html`
                                 <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide">
                                     Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
@@ -381,7 +356,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
                      <div className="h-full overflow-y-auto custom-scrollbar">
-                        <${TaskSection} ...${stepProps} />
+                        ${/* FIX: key={stepNum} forces React to destroy the old step and build the new one when you switch tasks */ }
+                        <${TaskSection} key=${stepNum} ...${stepProps} />
                     </div>
                 </div>
             </main>
