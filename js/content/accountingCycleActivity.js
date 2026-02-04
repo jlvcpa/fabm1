@@ -73,9 +73,15 @@ const deriveAnalysis = (debits, credits) => {
 
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
+    // FIX: Initialize Set here to capture accounts from all solution lines
+    const validAccounts = new Set(); 
+
     const normalizedTransactions = transactions.map((t, idx) => {
         const debits = []; const credits = [];
         t.solution.forEach(line => {
+            // FIX: Capture Account Names directly from Solution
+            if (line.account && !line.isExplanation) validAccounts.add(line.account);
+
             if (line.debit) debits.push({ account: line.account, amount: Number(line.debit) });
             if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
         });
@@ -83,20 +89,41 @@ const adaptStaticDataToSimulator = (questionData) => {
         return { id: idx + 1, date: t.date, description: t.description, debits, credits, analysis };
     });
 
-    const ledger = {}; const validAccounts = new Set();
-    const addToLedger = (acc, dr, cr) => { validAccounts.add(acc); if (!ledger[acc]) ledger[acc] = { debit: 0, credit: 0 }; ledger[acc].debit += dr; ledger[acc].credit += cr; };
+    const ledger = {}; 
+    const addToLedger = (acc, dr, cr) => { 
+        validAccounts.add(acc); // Ensure ledger build also adds to set
+        if (!ledger[acc]) ledger[acc] = { debit: 0, credit: 0 }; 
+        ledger[acc].debit += dr; 
+        ledger[acc].credit += cr; 
+    };
     normalizedTransactions.forEach(t => { t.debits.forEach(d => addToLedger(d.account, d.amount, 0)); t.credits.forEach(c => addToLedger(c.account, 0, c.amount)); });
 
     const normalizedAdjustments = adjustments.map((a, idx) => {
-        const drLine = a.solution.find(s => s.debit); const crLine = a.solution.find(s => s.credit);
+        const drLine = a.solution.find(s => s.debit); 
+        const crLine = a.solution.find(s => s.credit);
         const amt = drLine ? Number(drLine.debit) : 0;
-        if (drLine) validAccounts.add(drLine.account); if (crLine) validAccounts.add(crLine.account);
+        
+        // FIX: Capture accounts from adjustments
+        if (drLine) validAccounts.add(drLine.account); 
+        if (crLine) validAccounts.add(crLine.account);
+        
         return { id: `adj-${idx}`, desc: a.description, drAcc: drLine ? drLine.account : '', crAcc: crLine ? crLine.account : '', amount: amt };
     });
 
     return {
-        config: { businessType: 'Merchandising', inventorySystem: 'Periodic', isSubsequentYear: false, deferredExpenseMethod: 'Asset', deferredIncomeMethod: 'Liability' },
-        transactions: normalizedTransactions, ledger: ledger, validAccounts: sortAccounts(Array.from(validAccounts)), beginningBalances: null, adjustments: normalizedAdjustments
+        config: { 
+            businessType: 'Merchandising', 
+            // FIX: Use inventorySystem from JSON or default
+            inventorySystem: questionData.inventorySystem || 'Periodic', 
+            isSubsequentYear: false, 
+            deferredExpenseMethod: 'Asset', 
+            deferredIncomeMethod: 'Liability' 
+        },
+        transactions: normalizedTransactions, 
+        ledger: ledger, 
+        validAccounts: sortAccounts(Array.from(validAccounts)), 
+        beginningBalances: null, 
+        adjustments: normalizedAdjustments
     };
 };
 
@@ -246,17 +273,21 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         return merchTransactionsExamData[randomIndex].id;
     };
 
-    // --- FIX: LOCAL STATE UPDATE ONLY ---
+    // --- LOCAL STATE UPDATE ONLY ---
     const handleSaveStep = (stepNum, newData) => {
         setStudentProgress(prev => ({ 
             ...prev, 
             answers: { ...prev.answers, [stepNum]: newData } 
         }));
-        // NO Firebase Write here to save costs and enforce validate/submit behavior
     };
 
-    // --- FIX: VALIDATE & SAVE TO FIREBASE ---
+    // --- VALIDATE & SAVE TO FIREBASE ---
     const handleActionClick = async (stepNum, isFinalSubmit = false) => {
+        if (isLocked && !isFinalSubmit) {
+            console.warn("Attempted to validate a locked task.");
+            return;
+        }
+
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
         
@@ -300,9 +331,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         if (!resultDocId) return;
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
-        // SAVE EVERYTHING TO FIREBASE HERE (Answers + Status + Score)
         await setDoc(resultRef, {
-            [`answers.${stepNum}`]: currentAns, // Saved on Validate/Submit
+            [`answers.${stepNum}`]: currentAns, 
             [`stepStatus.${stepNum}`]: newStatus,
             [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore },
             lastUpdated: new Date().toISOString()
@@ -320,7 +350,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     let btnAction = () => handleActionClick(stepNum, false);
     let btnIcon = CheckSquare;
 
-    // --- BUTTON LOGIC WITH LOCKING ---
     if (isSubmitted) {
         btnLabel = "Step Submitted";
         btnColor = "bg-gray-400 cursor-not-allowed";
