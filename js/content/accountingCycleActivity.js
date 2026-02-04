@@ -98,10 +98,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const unsubscribe = onSnapshot(resultRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    // Merge remote data, but for stepStatus, verify timestamps if possible. 
+                    // For now, simple merge.
                     setStudentProgress(prev => ({
                         answers: { ...prev.answers, ...data.answers },
-                        stepStatus: data.stepStatus || {},
-                        scores: data.scores || {}
+                        stepStatus: { ...prev.stepStatus, ...data.stepStatus },
+                        scores: { ...prev.scores, ...data.scores }
                     }));
                     let qId = data.questionId;
                     if (!qId) { qId = pickRandomQuestion(); setDoc(resultRef, { questionId: qId }, { merge: true }); }
@@ -134,6 +136,21 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const currentStepStatus = studentProgress.stepStatus[stepNum] || {};
     const isSubmitted = currentStepStatus.completed;
 
+    // --- AUTO-SUBMIT TIMER ---
+    useEffect(() => {
+        if (!activeTaskConfig || isSubmitted) return;
+        const interval = setInterval(() => {
+            const now = new Date();
+            const expire = new Date(activeTaskConfig.dateTimeExpire);
+            if (now > expire) {
+                clearInterval(interval);
+                handleActionClick(stepNum, true); 
+                alert("Time Expired! Your answer has been automatically submitted.");
+            }
+        }, 5000); 
+        return () => clearInterval(interval);
+    }, [activeTaskConfig, isSubmitted, stepNum]);
+
     const pickRandomQuestion = () => {
         const randomIndex = Math.floor(Math.random() * merchTransactionsExamData.length);
         return merchTransactionsExamData[randomIndex].id;
@@ -165,33 +182,25 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const isCorrect = result.score === result.maxScore && result.maxScore > 0;
         
         // --- FIXED ATTEMPTS LOGIC ---
-        // 1. Get current attempts (default 3 if undefined)
-        // We use state directly to avoid stale closures
+        // Defaults to 3 if undefined.
         const currentAttempts = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
-        
         let newStatus = {};
 
         if (isFinalSubmit || isCorrect) {
-            // Case A: Correct Answer OR Force Submit (Timeout/3rd strike)
-            newStatus = { 
-                completed: true, 
-                correct: isCorrect, 
-                attempts: currentAttempts // Freeze attempts
-            };
+            newStatus = { completed: true, correct: isCorrect, attempts: currentAttempts };
             if(!isFinalSubmit && isCorrect) alert("Validation Passed! Step Completed.");
             else if(!isCorrect && isFinalSubmit) alert(`Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
         } else {
-            // Case B: Incorrect Answer AND has attempts left
-            const attemptsLeft = Math.max(0, currentAttempts - 1);
+            // Decrement attempt. Safe math.
+            // Explicitly calculate new attempts here to update local state immediately
+            const newAttempts = Math.max(0, currentAttempts - 1);
             
-            if (attemptsLeft === 0) {
-                // Exhausted attempts -> Trigger Submit State
+            if (newAttempts === 0) {
                 newStatus = { completed: true, correct: false, attempts: 0 };
                 alert(`No attempts remaining. Step Submitted.\nFinal Score: ${result.score}/${result.maxScore}`);
             } else {
-                // Just decrement
-                newStatus = { completed: false, correct: false, attempts: attemptsLeft };
-                alert(`Incorrect. You have ${attemptsLeft} attempt(s) remaining.`);
+                newStatus = { completed: false, correct: false, attempts: newAttempts };
+                alert(`Incorrect. You have ${newAttempts} attempt(s) remaining.`);
             }
         }
 
@@ -212,34 +221,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }, { merge: true });
     };
 
-    // --- AUTO-SUBMIT TIMER ---
-    useEffect(() => {
-        if (!activeTaskConfig || isSubmitted) return;
-
-        const interval = setInterval(() => {
-            const now = new Date();
-            const expire = new Date(activeTaskConfig.dateTimeExpire);
-            
-            if (now > expire) {
-                clearInterval(interval);
-                handleActionClick(stepNum, true); // Force Final Submit
-                alert("Time Expired! Your answer has been automatically submitted.");
-            }
-        }, 5000); 
-
-        return () => clearInterval(interval);
-    }, [activeTaskConfig, isSubmitted, stepNum]);
-
     if (loading || !activityData) return html`<div className="p-8 text-center text-gray-500">Loading activity data...</div>`;
     if (!activityDoc.tasks || activityDoc.tasks.length === 0) return html`<div className="p-8 text-center text-red-500">Error: No tasks defined.</div>`;
 
-    
-    // Status Logic
+    // Status & UI State
     const scoreData = studentProgress.scores[stepNum];
-    // Ensure we read attempts from the freshest state available
     const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
     
-    // UI State for Buttons
     let btnLabel = "Validate Answer";
     let btnColor = "bg-blue-600 hover:bg-blue-700";
     let btnAction = () => handleActionClick(stepNum, false);
@@ -251,7 +239,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         btnAction = () => {};
         btnIcon = CheckCircle;
     } else if (attemptsLeft <= 0) {
-        // Fallback catch if state is desynced but attempts are 0
         btnLabel = "Submit Step";
         btnColor = "bg-green-600 hover:bg-green-700";
         btnAction = () => handleActionClick(stepNum, true); 
@@ -321,10 +308,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                     
                     <div className="flex items-center gap-6">
-                        ${/* SCORE DISPLAY (Left Aligned) */''}
+                        ${/* SCORE DISPLAY */''}
                         ${isSubmitted && scoreData && html`
                             <div className="text-right">
-                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Validation Result</div>
+                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
                                 <div className="text-xl font-bold text-blue-800 flex items-center gap-2">
                                     ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
                                     <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
@@ -332,7 +319,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         `}
                         
-                        ${/* BUTTON & ATTEMPTS (Stacked) */''}
+                        ${/* BUTTON & ATTEMPTS */''}
                         <div className="flex flex-col items-end">
                             <button onClick=${btnAction} disabled=${isSubmitted} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
                                 <${btnIcon} size=${18}/> ${btnLabel}
