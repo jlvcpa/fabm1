@@ -113,6 +113,8 @@ const adaptStaticDataToSimulator = (questionData) => {
         return { id: `adj-${idx}`, desc: a.description, drAcc: drLine ? drLine.account : '', crAcc: crLine ? crLine.account : '', amount: amt };
     });
 
+    console.log("DEBUG: Constructed validAccounts list:", Array.from(validAccounts));
+
     return {
         config: { 
             businessType: 'Merchandising', 
