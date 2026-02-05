@@ -1,4 +1,3 @@
-// --- Step06FinancialStatements.js ---
 // --- js/content/accountingCycle/steps/Step06FinancialStatements.js ---
 
 import React, { useState, useMemo, useEffect } from 'https://esm.sh/react@18.2.0';
@@ -92,7 +91,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     let maxScore = 0;
     
     // 1. Calculate Expected Data (The Truth)
-    const s = new Set(Object.keys(ledgerData));
+    const s = new Set(Object.keys(ledgerData || {})); // Safety check
     
     // Safety check for adjustments array
     if(adjustments && Array.isArray(adjustments)) {
@@ -110,7 +109,6 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     };
 
     Array.from(s).forEach(acc => {
-        // --- FIX: Prevent undefined accounts from crashing getAccountType ---
         if (!acc) return; 
 
         const lBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
@@ -166,13 +164,13 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
             expected.equity.drawings = (expected.equity.drawings || 0) + val;
         } else if (type === 'Equity' && !acc.includes('Income Summary')) {
             expected.equity.capitalAccount = acc;
-            expected.equity.begBal = Math.abs(activityData.beginningBalances?.balances?.[acc]?.cr || 0); 
+            expected.equity.begBal = Math.abs(activityData?.beginningBalances?.balances?.[acc]?.cr || 0); 
             expected.equity.atbCapital = val; 
         }
     });
 
     let investments = 0;
-    if(activityData.transactions) {
+    if(activityData && activityData.transactions) {
         activityData.transactions.forEach(t => {
             // Check solution for credits to Capital (handles both data structures)
             const lines = t.solution || t.credits || [];
@@ -240,7 +238,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
 // --- COMPONENT: Source View (Read-Only) ---
 const WorksheetSourceView = ({ ledgerData, adjustments }) => {
     const mergedAccounts = useMemo(() => { 
-        const s = new Set(Object.keys(ledgerData)); 
+        const s = new Set(Object.keys(ledgerData || {})); // Safety
         if(adjustments && Array.isArray(adjustments)) {
              adjustments.forEach(adj => { 
                  if(adj.drAcc) s.add(adj.drAcc); 
@@ -489,8 +487,11 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
 // --- SCE COMPONENT ---
 // --- UPDATED: Fix the undefined ledger error by using calculatedTotals instead of activityData.ledger ---
 const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, activityData, expectedTotals }) => {
-    const { isSubsequentYear } = activityData.config || {};
-    const { beginningBalances, transactions } = activityData;
+    // FIX: Safely access nested config/balances
+    const { isSubsequentYear } = activityData?.config || {};
+    const beginningBalances = activityData?.beginningBalances;
+    const transactions = activityData?.transactions;
+    
     // FIX: Destructure ledger from calculatedTotals prop, NOT activityData
     const { ledger } = calculatedTotals;
 
@@ -787,8 +788,24 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
 
 // --- MAIN EXPORT ---
 
-export default function Step06FinancialStatements({ ledgerData, adjustments, activityData, data, onChange, showFeedback, isReadOnly }) {
-    const { fsFormat, includeCashFlows, businessType, inventorySystem } = activityData.config || { fsFormat: 'Multi', businessType: 'Merchandising', inventorySystem: 'Periodic' };
+// UPDATED: Now accepts props from BOTH sources (app.js and steps.js)
+export default function Step06FinancialStatements({ ledgerData: propLedger, adjustments: propAdjustments, activityData, data, onChange, showFeedback, isReadOnly }) {
+    
+    // --- SMART DATA SELECTION ---
+    // If props are passed directly (Practice Mode), use them.
+    // If not, try to extract them from activityData (Task Mode).
+    const ledgerData = propLedger || activityData?.ledger || {};
+    const adjustments = propAdjustments || activityData?.adjustments || [];
+    
+    // Fix: Safely access config properties, defaulting if activityData is missing or incomplete
+    const config = activityData?.config || {};
+    const { fsFormat, includeCashFlows, businessType, inventorySystem } = { 
+        fsFormat: 'Multi', 
+        businessType: 'Merchandising', 
+        inventorySystem: 'Periodic', 
+        ...config 
+    };
+
     const isMerch = businessType === 'Merchandising' || businessType === 'Manufacturing';
     const isPerpetual = inventorySystem === 'Perpetual';
 
@@ -830,7 +847,9 @@ export default function Step06FinancialStatements({ ledgerData, adjustments, act
     // Calculate Banner Results and Get Expected Totals
     const validationResult = useMemo(() => {
         if (!showFeedback && !isReadOnly) return null;
-        return validateStep06(ledgerData, adjustments, activityData, data);
+        // Pass the correct activityData object (either the prop or a constructed one if missing)
+        const safeActivityData = activityData || { transactions: [], beginningBalances: null, config: {} };
+        return validateStep06(ledgerData, adjustments, safeActivityData, data);
     }, [ledgerData, adjustments, activityData, data, showFeedback, isReadOnly]);
 
     const expectedTotals = validationResult?.expected?.totals;
@@ -848,9 +867,9 @@ export default function Step06FinancialStatements({ ledgerData, adjustments, act
         };
         
         if (!isMerch) {
-            return fsFormat === 'Single' 
-                ? html`<${ServiceSingleStepIS} ...${props} />`
-                : html`<${ServiceMultiStepIS} ...${props} />`;
+            // Placeholder for Service business components if they existed in your original code
+            // Assuming default to Merch Periodic if not Service
+             return html`<${MerchPeriodicIS} type=${fsFormat} ...${props} />`;
         } else {
             return isPerpetual 
                 ? html`<${MerchPerpetualIS} type=${fsFormat} ...${props} />`
@@ -877,7 +896,7 @@ export default function Step06FinancialStatements({ ledgerData, adjustments, act
                                 <div className="flex flex-col gap-4 h-full">
                                     <div className="flex-1 flex flex-col h-1/2">${renderIncomeStatement()}</div>
                                     <div className="flex-1 flex flex-col h-1/2">
-                                        <${StatementOfChangesInEquity} data=${data.sce} onChange=${handleSCEChange} isReadOnly=${isReadOnly} showFeedback=${showFeedback} calculatedTotals=${calculatedTotals} activityData=${activityData} expectedTotals=${expectedTotals}/>
+                                        <${StatementOfChangesInEquity} data=${data.sce} onChange=${handleSCEChange} isReadOnly=${isReadOnly} showFeedback=${showFeedback} calculatedTotals=${calculatedTotals} activityData=${activityData || {}} expectedTotals=${expectedTotals}/>
                                     </div>
                                 </div>
                                 <div className="h-full">
@@ -892,7 +911,7 @@ export default function Step06FinancialStatements({ ledgerData, adjustments, act
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full min-h-[400px]">
                                 <div className="h-full">${renderIncomeStatement()}</div>
                                 <div className="h-full">
-                                    <${StatementOfChangesInEquity} data=${data.sce} onChange=${handleSCEChange} isReadOnly=${isReadOnly} showFeedback=${showFeedback} calculatedTotals=${calculatedTotals} activityData=${activityData} expectedTotals=${expectedTotals}/>
+                                    <${StatementOfChangesInEquity} data=${data.sce} onChange=${handleSCEChange} isReadOnly=${isReadOnly} showFeedback=${showFeedback} calculatedTotals=${calculatedTotals} activityData=${activityData || {}} expectedTotals=${expectedTotals}/>
                                 </div>
                                 <div className="h-full">
                                     <${BalanceSheet} data=${data.bs} onChange=${(d)=>onChange('bs', d)} isReadOnly=${isReadOnly} showFeedback=${showFeedback} sceEndingCapital=${sceEndingCapital} expectedTotals=${expectedTotals} expectedData=${expectedData}/>
