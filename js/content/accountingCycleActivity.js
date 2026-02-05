@@ -259,6 +259,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         if (isSubmitted) { setTimeLeft(null); return; }
         if (!activeTaskConfig) return;
 
+        // 1. Declare the variable first (initialized to null)
+        let intervalId = null;
+
         const updateTimer = () => {
             const currentTime = new Date();
             const start = new Date(activeTaskConfig.dateTimeStart);
@@ -272,9 +275,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const diff = expire - currentTime;
             if (diff <= 0) {
                 setTimeLeft("00:00:00");
-                clearInterval(interval);
+                // 2. Safe clear: Check if intervalId exists before clearing
+                if (intervalId) clearInterval(intervalId);
+                
                 handleActionClick(stepNum, true); 
-                alert("Time Expired! Your answer has been automatically submitted.");
+                // Optional: Prevent alert loops by checking if we already submitted
+                if (!isSubmitted) alert("Time Expired! Your answer has been automatically submitted.");
                 return;
             }
 
@@ -284,9 +290,15 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
         };
 
+        // 3. Run once immediately
         updateTimer();
-        const interval = setInterval(updateTimer, 1000); 
-        return () => clearInterval(interval);
+        
+        // 4. Assign the ID to the variable declared at the top
+        intervalId = setInterval(updateTimer, 1000); 
+        
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
     }, [activeTaskConfig, isSubmitted, stepNum]);
 
     const pickRandomQuestion = () => {
