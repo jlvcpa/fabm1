@@ -502,6 +502,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 };
 
 export async function renderAccountingCycleActivity(container, activityDoc, user, goBack) {
-    const root = createRoot(container);
-    root.render(html`<${ActivityRunner} activityDoc=${activityDoc} user=${user} goBack=${goBack} />`);
+    if (!container._reactRoot) {
+        container._reactRoot = createRoot(container);
+    }
+    container._reactRoot.render(html`<${ActivityRunner} activityDoc=${activityDoc} user=${user} goBack=${goBack} />`);
 }
