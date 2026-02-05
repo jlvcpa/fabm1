@@ -92,7 +92,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
 
                 ${/* 3. WORKSPACE */''}
                 ${/* ADDED: mb-12 to ensure bottom content isn't cut off when scrolling */''}
-                <div className="bg-white rounded shadow-sm border border-gray-200 relative mb-50">
+                <div className="bg-white rounded shadow-sm border border-gray-200 relative mb-48">
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-30 z-10 pointer-events-none"></div>`}
 
                     <${StepComponent} 
