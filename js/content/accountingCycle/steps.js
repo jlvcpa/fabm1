@@ -80,9 +80,9 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                     </div>
                 `}
 
-                ${/* 1. INSTRUCTIONS */''}
+                ${/* 1. INSTRUCTIONS - FIXED: Use step.description instead of calling ActivityHelper again */''}
                 <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
-                     dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(stepId, step.title) }}>
+                     dangerouslySetInnerHTML=${{ __html: step.description }}>
                 </div>
 
                 ${/* 2. RUBRIC */''}
@@ -137,7 +137,11 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                 <div className="p-4 relative">
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-50 z-20 flex items-center justify-center font-bold text-gray-500">Task Locked</div>`}
                     
-                    <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" dangerouslySetInnerHTML=${{ __html: ActivityHelper.getInstructionsHTML(stepId, step.title) }}></div>
+                    ${/* FIXED: Use step.description here as well */''}
+                    <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" 
+                         dangerouslySetInnerHTML=${{ __html: step.description }}>
+                    </div>
+                    
                     <${StepComponent} 
                         activityData=${activityData}
                         transactions=${activityData?.transactions || []}
