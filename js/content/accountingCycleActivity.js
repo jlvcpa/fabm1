@@ -501,7 +501,21 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     `;
 };
 
+// At the bottom of accountingCycleActivity.js
+
 export async function renderAccountingCycleActivity(container, activityDoc, user, goBack) {
+    
+    // --- DEBUG CHECK ---
+    if (window.lastContainer && window.lastContainer !== container) {
+        console.error("🔥 CRITICAL ISSUE: Parent is passing a DIFFERENT container div!");
+    } else if (container.innerHTML === "") {
+        console.warn("⚠️ WARNING: Container DOM was wiped empty (innerHTML = '')!");
+    } else {
+        console.log("✅ Container is stable.");
+    }
+    window.lastContainer = container;
+    // -------------------
+
     if (!container._reactRoot) {
         container._reactRoot = createRoot(container);
     }
