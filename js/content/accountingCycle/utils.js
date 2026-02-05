@@ -71,7 +71,7 @@ export const ActivityHelper = {
             `;
         } else if (stepId === 2) {
             instructionsHTML = `
-                <li>Journalize the transactions using <strong>${inventorySystem}</strong> and use the following accounts: ${accountsList}</li>
+                <li>Journalize the transactions using <strong>${inventorySystem} Inventory System</strong> and use the following accounts: ${accountsList}</li>
                 ${deferredLine}
                 <li>Complete all required fields. Enter amounts without commas and decimal places. Round off centavos to the nearest peso. Validate each task to unlock the next one.</li>
             `;
