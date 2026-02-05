@@ -162,6 +162,11 @@ const normalizeFirebaseData = (data) => {
     return normalized;
 };
 
+// 1. ADD THIS HELPER FUNCTION BEFORE ActivityRunner
+const removeUndefined = (obj) => {
+    return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
+};
+
 const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [loading, setLoading] = useState(true);
     const [activityData, setActivityData] = useState(null);
