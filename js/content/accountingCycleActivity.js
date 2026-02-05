@@ -118,7 +118,7 @@ const adaptStaticDataToSimulator = (questionData) => {
     const sortedList = sortAccounts(Array.from(validAccounts));
     
     // 2. Log it to see exactly what is being sent out
-    console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
+    // console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
 
     return {
         config: { 
