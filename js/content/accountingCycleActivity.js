@@ -220,12 +220,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         }
     }, [questionId]); // <--- FIXED: Removed activityDoc
 
-    // EFFECT 2: Set Initial Task ID (Only runs once when tasks load)
+    // EFFECT 2: Set Initial Task ID
     useEffect(() => {
+        // We check if we have tasks and no current ID
         if (!currentTaskId && activityDoc?.tasks?.length > 0) {
             setCurrentTaskId(activityDoc.tasks[0].taskId);
         }
-    }, [activityDoc, currentTaskId]);
+    // Fixed dependencies: Only run if the Task ID *value* changes, not the whole doc
+    }, [currentTaskId, activityDoc?.tasks?.[0]?.taskId]);
 
     const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
     const validIndex = activeTaskIndex >= 0 ? activeTaskIndex : 0;
