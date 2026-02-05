@@ -114,6 +114,11 @@ const adaptStaticDataToSimulator = (questionData) => {
     });
 
     // console.log("DEBUG: Constructed validAccounts list:", Array.from(validAccounts));
+    // 1. Create the sorted list first
+    const sortedList = sortAccounts(Array.from(validAccounts));
+    
+    // 2. Log it to see exactly what is being sent out
+    console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
 
     return {
         config: { 
@@ -125,7 +130,10 @@ const adaptStaticDataToSimulator = (questionData) => {
         },
         transactions: normalizedTransactions, 
         ledger: ledger, 
-        validAccounts: sortAccounts(Array.from(validAccounts)), 
+        
+        // 3. Use the variable here
+        validAccounts: sortedList, 
+        
         beginningBalances: null, 
         adjustments: normalizedAdjustments
     };
