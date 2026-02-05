@@ -38,6 +38,11 @@ export const ActivityHelper = {
     // --- UPDATED INSTRUCTIONS GENERATOR ---
     // Added inventorySystem as the last argument
     getInstructionsHTML: (stepId, taskTitle, validAccounts = [], isSubsequentYear = false, beginningBalances = null, deferredExpenseMethod = 'Asset', deferredIncomeMethod = 'Liability', inventorySystem = 'Periodic') => {
+        console.log("🔍 UTILS DEBUG:", {
+        stepId: stepId,
+        typeOfStepId: typeof stepId,  // If this says 'string', that is the culprit!
+        accountsCount: validAccounts ? validAccounts.length : 'null'
+    });
         let instructionsHTML = "";
         let accountsList = "";
         
