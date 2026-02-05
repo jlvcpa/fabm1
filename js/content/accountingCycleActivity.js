@@ -5,7 +5,8 @@ import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, 
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
-import { getAccountType, sortAccounts, getLetterGrade } from './accountingCycle/utils.js';
+// Added ActivityHelper to imports
+import { getAccountType, sortAccounts, getLetterGrade, ActivityHelper } from './accountingCycle/utils.js';
 import { TaskSection } from './accountingCycle/steps.js';
 
 import { validateStep01 } from './accountingCycle/steps/Step01Analysis.js';
@@ -70,7 +71,6 @@ const deriveAnalysis = (debits, credits) => {
 
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
-    // CRITICAL FIX: Initialize Set here to capture accounts from ALL solution lines
     const validAccounts = new Set(); 
 
     const normalizedTransactions = transactions.map((t, idx) => {
@@ -116,7 +116,6 @@ const adaptStaticDataToSimulator = (questionData) => {
     return {
         config: { 
             businessType: 'Merchandising', 
-            // FIX: Ensure inventorySystem is passed from JSON or defaults
             inventorySystem: questionData.inventorySystem || 'Periodic', 
             isSubsequentYear: false, 
             deferredExpenseMethod: 'Asset', 
@@ -365,8 +364,22 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         btnIcon = Save;
     }
 
+    // --- DYNAMIC INSTRUCTIONS GENERATION ---
+    const stepInstructions = (activeTaskConfig && activityData) 
+        ? ActivityHelper.getInstructionsHTML(
+            stepNum,
+            activeTaskConfig.stepName,
+            activityData.validAccounts,
+            activityData.config.isSubsequentYear,
+            activityData.beginningBalances,
+            activityData.config.deferredExpenseMethod,
+            activityData.config.deferredIncomeMethod,
+            activityData.config.inventorySystem
+          )
+        : (activeTaskConfig ? activeTaskConfig.instructions : '');
+
     const stepProps = {
-        step: { id: stepNum, title: activeTaskConfig.stepName, description: activeTaskConfig.instructions },
+        step: { id: stepNum, title: activeTaskConfig.stepName, description: stepInstructions },
         activityData: activityData,
         answers: studentProgress.answers,
         stepStatus: studentProgress.stepStatus, 
