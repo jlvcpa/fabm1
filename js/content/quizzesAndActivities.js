@@ -173,16 +173,31 @@ async function renderQuizRunner(data, user, customRunner = null) {
     if (isAccountingCycle && customRunner && typeof customRunner === 'function') {
         console.log("Routing to Accounting Cycle Activity Runner...");
         
-        // Clean up standard runner artifacts if any
-        container.innerHTML = '';
+        // ✅ FIX: Check if React is already attached to this container
+        // If it is, DO NOT wipe innerHTML. Just call the runner again to update props.
+        if (container._reactRoot) {
+             console.log("♻️ React Root exists. Updating properties without wiping DOM.");
+             // We intentionally skip container.innerHTML = '';
+        } else {
+             // Only wipe if this is a fresh start (no React Root yet)
+             container.innerHTML = '';
+        }
         
         const goBack = () => {
+             // When going back, we MUST destroy the root so the standard quiz can render
+             if (container._reactRoot) {
+                 // Best practice: unmount if you can, or just delete the property
+                 // container._reactRoot.unmount(); // (If you had access to the root instance)
+                 delete container._reactRoot; 
+             }
              document.getElementById('qa-toggle-sidebar').click(); 
+             // Reload the list or handle back navigation
+             loadStudentActivities(user, customRunner);
         };
 
         // HAND OFF CONTROL
         customRunner(container, data, user, goBack);
-        return; // STOP HERE! Do not run standard logic.
+        return; 
     }
     
     // ----------------------------------------------------
