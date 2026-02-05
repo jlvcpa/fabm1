@@ -189,18 +189,21 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     }));
                     
                     let qId = data.questionId;
-                    if (!qId) { qId = pickRandomQuestion(); setDoc(resultRef, { questionId: qId }, { merge: true }); }
+                    if (!qId) { 
+                        qId = pickRandomQuestion();
+                             //  setDoc(resultRef, { questionId: qId }, { merge: true }); 
+                    }
                     setQuestionId(qId);
                 } else {
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
-                    setDoc(resultRef, { 
+                 /*   setDoc(resultRef, { 
                         studentName: `${user.LastName}, ${user.FirstName}`, 
                         studentId: user.Idnumber, 
                         section: activityDoc.section, 
                         questionId: qId, 
                         startedAt: new Date().toISOString() 
-                    });
+                    }); */
                 }
                 setLoading(false);
             });
