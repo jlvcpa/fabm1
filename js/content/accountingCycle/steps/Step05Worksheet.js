@@ -1,4 +1,3 @@
-// --- Step05Worksheet.js ---
 // --- js/content/accountingCycle/steps/Step05Worksheet.js ---
 
 import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
@@ -11,6 +10,11 @@ const html = htm.bind(React.createElement);
 // --- DRY VALIDATION LOGIC ---
 
 export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
+    // 1. SAFETY CHECK: Ensure ledgerData exists to prevent crash
+    if (!ledgerData) {
+        return { isCorrect: false, score: 0, maxScore: 0, letterGrade: 'IR', validationResults: { rows: {}, footers: { totals: {}, net: {}, final: {} } }, expectedMap: {} };
+    }
+
     const rows = userAnswers.rows || [];
     
     // Safety check for footers
@@ -21,7 +25,7 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         final: rawFooters.final || {} 
     };
     
-    // 1. Calculate Expected Data
+    // 2. Calculate Expected Data
     const mergedAccounts = new Set(Object.keys(ledgerData));
     
     // Validate adjustments array exists before iterating
@@ -128,7 +132,7 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         bsCr: columnTotals.bsCr + netRow.bsCr
     };
 
-    // 2. Score Calculation
+    // 3. Score Calculation
     let score = 0;
     let maxScore = 0;
     const validationResults = { rows: {}, footers: { totals: {}, net: {}, final: {} } };
@@ -192,14 +196,15 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
     
     // Logic to include accounts from adjustments even if not in ledgerData
     const allAccounts = useMemo(() => {
+        // FIX: Handle missing ledgerData gracefully
+        if (!ledgerData) return [];
+
         const accounts = new Set(Object.keys(ledgerData));
         if (Array.isArray(adjustments)) {
             adjustments.forEach(adj => {
-                // Check legacy format
                 if(adj.drAcc) accounts.add(adj.drAcc);
                 if(adj.crAcc) accounts.add(adj.crAcc);
                 
-                // Check new solution array format
                 if (Array.isArray(adj.solution)) {
                     adj.solution.forEach(line => {
                         if (line.account && !line.isExplanation && line.account !== "No Entry") {
@@ -240,8 +245,18 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
 
 // --- MAIN COMPONENT ---
 
-export default function Step05Worksheet({ ledgerData, adjustments, data, onChange, showFeedback, isReadOnly }) {
+// UPDATED: Now accepts props from BOTH sources (app.js and steps.js)
+// 1. `ledgerData` & `adjustments` (from app.js Practice Mode)
+// 2. `activityData` (from accountingCycleActivity.js Task Mode)
+export default function Step05Worksheet({ ledgerData: propLedger, adjustments: propAdjustments, activityData, data, onChange, showFeedback, isReadOnly }) {
     
+    // --- SMART DATA SELECTION ---
+    // If props are passed directly (Practice Mode), use them.
+    // If not, try to extract them from activityData (Task Mode).
+    // Fallback to empty objects/arrays to prevent crashes.
+    const ledgerData = propLedger || activityData?.ledger || {};
+    const adjustments = propAdjustments || activityData?.adjustments || [];
+
     const initialRows = useMemo(() => Array.from({ length: 15 }).map((_, i) => ({ id: i, account: '', tbDr: '', tbCr: '', adjDr: '', adjCr: '', atbDr: '', atbCr: '', isDr: '', isCr: '', bsDr: '', bsCr: '' })), []);
     const rows = data.rows || initialRows;
 
@@ -258,6 +273,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
     }, [data.footers]);
 
     const validation = useMemo(() => {
+        // Now validates using the correctly selected data source
         return validateStep05(ledgerData, adjustments, { rows, footers: localFooters });
     }, [ledgerData, adjustments, rows, localFooters]);
 
