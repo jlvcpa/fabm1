@@ -202,7 +202,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 } else {
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
-                 /*   setDoc(resultRef, { 
+                  /* setDoc(resultRef, { 
                         studentName: `${user.LastName}, ${user.FirstName}`, 
                         studentId: user.Idnumber, 
                         section: activityDoc.section, 
@@ -371,7 +371,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
         await setDoc(resultRef, {
-            [`answers.${stepNum}`]: currentAns, 
+            [`answers.${stepNum}`]: removeUndefined(currentAns), 
             [`stepStatus.${stepNum}`]: newStatus,
             [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore },
             lastUpdated: new Date().toISOString()
