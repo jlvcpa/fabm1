@@ -255,11 +255,12 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     const isLocked = isEarly || isLockedBySequence;
 
+    // --- FIXED TIMER EFFECT ---
     useEffect(() => {
+        // 1. Safety Checks: If submitted, no config, OR NO DATA YET, do not run timer.
         if (isSubmitted) { setTimeLeft(null); return; }
-        if (!activeTaskConfig) return;
+        if (!activeTaskConfig || !activityData) return; // <--- CRITICAL FIX
 
-        // 1. Declare the variable first (initialized to null)
         let intervalId = null;
 
         const updateTimer = () => {
@@ -275,11 +276,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const diff = expire - currentTime;
             if (diff <= 0) {
                 setTimeLeft("00:00:00");
-                // 2. Safe clear: Check if intervalId exists before clearing
                 if (intervalId) clearInterval(intervalId);
                 
+                // Now safe to call because we ensured activityData exists
                 handleActionClick(stepNum, true); 
-                // Optional: Prevent alert loops by checking if we already submitted
+                
                 if (!isSubmitted) alert("Time Expired! Your answer has been automatically submitted.");
                 return;
             }
@@ -290,16 +291,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
         };
 
-        // 3. Run once immediately
         updateTimer();
-        
-        // 4. Assign the ID to the variable declared at the top
         intervalId = setInterval(updateTimer, 1000); 
         
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [activeTaskConfig, isSubmitted, stepNum]);
+    // 2. Added activityData to dependencies so timer restarts once data loads
+    }, [activeTaskConfig, isSubmitted, stepNum, activityData]);
 
     const pickRandomQuestion = () => {
         const randomIndex = Math.floor(Math.random() * merchTransactionsExamData.length);
@@ -314,6 +313,10 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     };
 
     const handleActionClick = async (stepNum, isFinalSubmit = false) => {
+        if (!activityData) {
+            console.warn("Cannot validate: Activity Data is missing.");
+            return;
+        }
         if (isLocked && !isFinalSubmit) {
             console.warn("Attempted to validate a locked task.");
             return;
