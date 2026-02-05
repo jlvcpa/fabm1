@@ -209,16 +209,23 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         init();
     }, [activityDoc, user]);
 
+    // EFFECT 1: Load Activity Data (Only runs when questionId changes)
     useEffect(() => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
                 const adaptedData = adaptStaticDataToSimulator(rawQ);
                 setActivityData(adaptedData);
-                if (!currentTaskId && activityDoc.tasks?.length > 0) setCurrentTaskId(activityDoc.tasks[0].taskId);
             }
         }
-    }, [questionId, activityDoc]);
+    }, [questionId]); // <--- FIXED: Removed activityDoc
+
+    // EFFECT 2: Set Initial Task ID (Only runs once when tasks load)
+    useEffect(() => {
+        if (!currentTaskId && activityDoc?.tasks?.length > 0) {
+            setCurrentTaskId(activityDoc.tasks[0].taskId);
+        }
+    }, [activityDoc, currentTaskId]);
 
     const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
     const validIndex = activeTaskIndex >= 0 ? activeTaskIndex : 0;
