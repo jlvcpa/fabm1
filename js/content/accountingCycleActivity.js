@@ -449,14 +449,16 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     return html`
         <div className="flex flex-col h-screen bg-gray-50 font-sans">
             <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
                     <div>
                         <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
                         <p className="text-xs text-gray-500">Student: ${user.LastName}, ${user.FirstName}</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                
+                {/* CHANGED: Added overflow handling, max-width for mobile, and padding */}
+                <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
                     ${activityDoc.tasks.map(t => {
                         const idx = activityDoc.tasks.indexOf(t);
                         const sNum = getStepNumber(t, idx);
@@ -465,7 +467,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
-                                className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1 ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                                /* CHANGED: Added flex-shrink-0 and whitespace-nowrap to prevent squashing */
+                                className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1 flex-shrink-0 whitespace-nowrap ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
                             >
                                 ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
                             </button>
