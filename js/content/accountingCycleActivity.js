@@ -207,7 +207,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             return () => unsubscribe();
         };
         init();
-    }, [activityDoc, user]);
+    }, [activityDoc.activityname, activityDoc.section, user.CN, user.Idnumber]);
 
     // EFFECT 1: Load Activity Data (Only runs when questionId changes)
     useEffect(() => {
