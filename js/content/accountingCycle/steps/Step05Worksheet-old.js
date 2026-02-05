@@ -1,3 +1,6 @@
+// --- Step05Worksheet.js ---
+// --- js/content/accountingCycle/steps/Step05Worksheet.js ---
+
 import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Table, Trash2, Plus, List, ChevronDown, ChevronRight, Check, X, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
@@ -24,8 +27,18 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
     // Validate adjustments array exists before iterating
     if (Array.isArray(adjustments)) {
         adjustments.forEach(adj => { 
+            // Support legacy format (drAcc/crAcc)
             if (adj.drAcc) mergedAccounts.add(adj.drAcc); 
             if (adj.crAcc) mergedAccounts.add(adj.crAcc); 
+            
+            // Support new format (solution array)
+            if (Array.isArray(adj.solution)) {
+                adj.solution.forEach(line => {
+                    if (line.account && !line.isExplanation && line.account !== "No Entry") {
+                        mergedAccounts.add(line.account);
+                    }
+                });
+            }
         });
     }
 
@@ -47,9 +60,21 @@ export const validateStep05 = (ledgerData, adjustments, userAnswers) => {
         let aDr = 0; let aCr = 0;
         if (Array.isArray(adjustments)) {
             adjustments.forEach(a => { 
-                const amt = Number(a.amount) || 0;
-                if(a.drAcc === acc) aDr += amt; 
-                if(a.crAcc === acc) aCr += amt; 
+                // Check new solution format
+                if (Array.isArray(a.solution)) {
+                    a.solution.forEach(line => {
+                        if (line.account === acc) {
+                            if (line.debit) aDr += Number(line.debit);
+                            if (line.credit) aCr += Number(line.credit);
+                        }
+                    });
+                } 
+                // Fallback to old format
+                else {
+                    const amt = Number(a.amount) || 0;
+                    if(a.drAcc === acc) aDr += amt; 
+                    if(a.crAcc === acc) aCr += amt; 
+                }
             });
         }
         
@@ -170,13 +195,22 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
         const accounts = new Set(Object.keys(ledgerData));
         if (Array.isArray(adjustments)) {
             adjustments.forEach(adj => {
+                // Check legacy format
                 if(adj.drAcc) accounts.add(adj.drAcc);
                 if(adj.crAcc) accounts.add(adj.crAcc);
+                
+                // Check new solution array format
+                if (Array.isArray(adj.solution)) {
+                    adj.solution.forEach(line => {
+                        if (line.account && !line.isExplanation && line.account !== "No Entry") {
+                            accounts.add(line.account);
+                        }
+                    });
+                }
             });
         }
         return sortAccounts(Array.from(accounts).filter(a => a));
     }, [ledgerData, adjustments]);
-    // --- RESTORED LOGIC END ---
     
     return html`
         <div className="border rounded-lg shadow-sm bg-blue-50 overflow-hidden no-print h-full flex flex-col">
@@ -185,7 +219,7 @@ const SimpleLedgerView = ({ ledgerData, adjustments }) => {
                 ${expanded ? html`<${ChevronDown} size=${16}/>` : html`<${ChevronRight} size=${16}/>`}
             </div>
             ${expanded && html`
-                <div className="p-2 max-h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
+                <div className="p-2 h-40 overflow-y-auto flex flex-wrap gap-2 flex-grow">
                     ${allAccounts.map(acc => { 
                         const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                         const bal = accData.debit - accData.credit; 
@@ -312,7 +346,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
             
             ${renderBanner()}
 
-          <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
+            <div className="flex flex-col lg:flex-row gap-4 mb-4 items-stretch">
                 <div className="w-full lg:w-[70%]">
                     <${SimpleLedgerView} ledgerData=${ledgerData} adjustments=${adjustments} />
                 </div>
@@ -321,7 +355,7 @@ export default function Step05Worksheet({ ledgerData, adjustments, data, onChang
                     <div className="bg-yellow-100 p-2 font-bold text-yellow-900 flex items-center gap-2 shrink-0">
                         <${List} size=${16}/> Adjustments Data
                     </div>
-                    <div className="p-2 max-h-40 overflow-y-auto h-full">
+                    <div className="p-2 h-40 overflow-y-auto">
                         <ul className="list-decimal list-inside text-xs space-y-1">
                             ${Array.isArray(adjustments) && adjustments.map((adj, i) => html`<li key=${i}>${adj.desc || adj.description}</li>`)}
                         </ul>
