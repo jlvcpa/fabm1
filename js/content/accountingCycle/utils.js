@@ -70,7 +70,7 @@ export const ActivityHelper = {
 
         if (stepId === 1) {
             instructionsHTML = `
-                <li>Analyze the increase or decrease effects of each transactions on assets, liabilities, and equity. If it affects equity, determine the cause.</li>
+                <li>Analyze the increase or decrease effects of each transactions on assets, liabilities, and equity using <strong>${inventorySystem} Inventory System</strong>. If it affects equity, determine the cause.</li>
                 ${deferredLine}
                 <li>Complete all required fields. Enter amounts without commas and decimal places. Round off centavos to the nearest peso. Validate each task to unlock the next one.</li>
             `;
