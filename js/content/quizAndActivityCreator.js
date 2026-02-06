@@ -54,6 +54,9 @@ export async function renderQuizActivityCreator(container) {
                                     <option value="S2T1 Formative Test 02">S2T1 Formative Test 02</option>
                                     <option value="S2T1 Summative Test 01">S2T1 Summative Test 01</option>
                                     <option value="S2T1 Summative Test 02">S2T1 Summative Test 02</option>
+                                    <option value="S2T1 Midterm Exam">S2T1 Midterm Exam</option>
+                                    <option value="S2T2 Final Exam">S2T2 Final Exam</option>
+
                                 </select>
                             </div>
                         </div>
