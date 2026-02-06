@@ -7,6 +7,10 @@ import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/f
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
 // Added ActivityHelper to imports
 import { getAccountType, sortAccounts, getLetterGrade, ActivityHelper } from './accountingCycle/utils.js';
+
+// --- NEW IMPORT: Get the Global Year from root utils ---
+import { COURSE_YEAR } from '../utils.js';
+
 import { TaskSection } from './accountingCycle/steps.js';
 
 import { validateStep01 } from './accountingCycle/steps/Step01Analysis.js';
@@ -167,6 +171,31 @@ const removeUndefined = (obj) => {
     return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
 };
 
+// --- HELPER: DATA INJECTOR (FIXED) ---
+const injectYearToQuestion = (question, year) => {
+    const q = JSON.parse(JSON.stringify(question));
+    
+    // Inject into Transactions Array
+    if (q.transactions && Array.isArray(q.transactions)) {
+        q.transactions.forEach(t => {
+            if (t.date && !t.date.toString().includes(year)) {
+                t.date = `${t.date}, ${year}`;
+            }
+        });
+    }
+    
+    // Inject into Adjustments Array (if they have dates, though usually generic)
+    if (q.adjustments && Array.isArray(q.adjustments)) {
+        q.adjustments.forEach(a => {
+            if (a.date && !a.date.toString().includes(year)) {
+                a.date = `${a.date}, ${year}`;
+            }
+        });
+    }
+    
+    return q;
+};
+
 const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [loading, setLoading] = useState(true);
     const [activityData, setActivityData] = useState(null);
@@ -222,7 +251,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
-                const adaptedData = adaptStaticDataToSimulator(rawQ);
+                // --- NEW LOGIC: INJECT YEAR ---
+                // We inject the year BEFORE adapting the data for the simulator
+                const datedQ = injectYearToQuestion(rawQ, COURSE_YEAR);
+
+                const adaptedData = adaptStaticDataToSimulator(datedQ);
                 setActivityData(adaptedData);
             }
         }
@@ -457,6 +490,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                 </div>
                 
+                {/* CHANGED: Added overflow handling, max-width for mobile, and padding */}
                 <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
                     ${activityDoc.tasks.map(t => {
                         const idx = activityDoc.tasks.indexOf(t);
@@ -466,6 +500,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
+                                /* CHANGED: Added flex-shrink-0 and whitespace-nowrap to prevent squashing */
                                 className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1 flex-shrink-0 whitespace-nowrap ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
                             >
                                 ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
@@ -513,6 +548,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             `}
                         </div>
                     </div>
+                </div>
+
+                {/* --- MOVED INSTRUCTIONS HERE --- */}
+                <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
+                     dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                 </div>
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
