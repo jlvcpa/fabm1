@@ -471,7 +471,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     return html`
         <div className="flex flex-col h-screen bg-gray-50 font-sans">
             <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20">
-                <div className="flex items-center gap-0 flex-shrink-0">
+                <div className="flex items-center gap-4 flex-shrink-0">
                     <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
                     <div>
                         <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
@@ -479,7 +479,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
+                <div className="flex gap-1 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
                     ${activityDoc.tasks.map(t => {
                         const idx = activityDoc.tasks.indexOf(t);
                         const sNum = getStepNumber(t, idx);
@@ -499,7 +499,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
             <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
                 
-                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-1">
+                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-0">
                     
                     <div className="flex justify-between items-center w-full px-2 pt-1">
                         <div>
