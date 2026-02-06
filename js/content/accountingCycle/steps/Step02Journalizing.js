@@ -301,7 +301,7 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                         if (descIndex >= 0) {
                             descRow = newRows.splice(descIndex, 1)[0];
                         } else {
-                            descRow = { id: 'desc', date: '', acc: `      ${t.description}`, dr: '', cr: '', pr: '', isDescription: true };
+                            descRow = { id: 'desc', date: '', acc: `        ${t.description}`, dr: '', cr: '', pr: '', isDescription: true };
                         }
                         
                         while (newRows.length < (requiredCount - 1)) {
