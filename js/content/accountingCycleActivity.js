@@ -516,7 +516,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         </div>
                         
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-0">
                             ${isSubmitted && scoreData && html`
                                 <div className="text-right">
                                     <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
