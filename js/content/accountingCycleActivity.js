@@ -3,8 +3,8 @@ import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from 'https://esm.sh/lucide-react@0.263.1';
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
-import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
 
+import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
 // Added ActivityHelper to imports
 import { getAccountType, sortAccounts, getLetterGrade, ActivityHelper } from './accountingCycle/utils.js';
 
@@ -509,47 +509,55 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             </header>
 
             <main className="flex-1 overflow-hidden flex flex-col p-4 max-w-7xl mx-auto w-full">
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex justify-between items-center">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800">${activeTaskConfig.stepName}</h2>
-                        <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                            <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
-                            <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
-                            
-                            ${timeLeft && !isSubmitted && html`
-                                <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
-                                    <${Timer} size=${14}/> Remaining: ${timeLeft}
-                                </span>
-                            `}
-                        </div>
-                    </div>
+                
+                ${/* --- UPDATED: Main Info Panel now is flex-col to stack Title Row and Instructions --- */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
                     
-                    <div className="flex items-center gap-6">
-                        ${isSubmitted && scoreData && html`
-                            <div className="text-right">
-                                <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
-                                <div className="text-xl font-bold text-blue-800 flex items-center gap-2">
-                                    ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
-                                    <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
-                                </div>
+                    ${/* Top Row: Title, Date, Score, Buttons */ }
+                    <div className="flex justify-between items-center w-full">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800">${activeTaskConfig.stepName}</h2>
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                                <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
+                                <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
+                                
+                                ${timeLeft && !isSubmitted && html`
+                                    <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
+                                        <${Timer} size=${14}/> Remaining: ${timeLeft}
+                                    </span>
+                                `}
                             </div>
-                        `}
+                        </div>
                         
-                        <div className="flex flex-col items-end">
-                            <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
-                                <${btnIcon} size=${18}/> ${btnLabel}
-                            </button>
-                            ${!isSubmitted && !isLocked && html`
-                                <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide">
-                                    Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
-                                </span>
+                        <div className="flex items-center gap-6">
+                            ${isSubmitted && scoreData && html`
+                                <div className="text-right">
+                                    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
+                                    <div className="text-xl font-bold text-blue-800 flex items-center gap-2">
+                                        ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
+                                        <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
+                                    </div>
+                                </div>
                             `}
+                            
+                            <div className="flex flex-col items-end">
+                                <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
+                                    <${btnIcon} size=${18}/> ${btnLabel}
+                                </button>
+                                ${!isSubmitted && !isLocked && html`
+                                    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide">
+                                        Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
+                                    </span>
+                                `}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
-                     dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
+                    ${/* --- INSTRUCTIONS MOVED HERE (Inside Fixed Panel) --- */}
+                    <div className="w-full p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
+                         dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
+                    </div>
+
                 </div>
 
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
