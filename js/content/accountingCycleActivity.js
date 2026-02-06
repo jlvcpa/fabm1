@@ -117,12 +117,7 @@ const adaptStaticDataToSimulator = (questionData) => {
         return { id: `adj-${idx}`, desc: a.description, drAcc: drLine ? drLine.account : '', crAcc: crLine ? crLine.account : '', amount: amt };
     });
 
-    // console.log("DEBUG: Constructed validAccounts list:", Array.from(validAccounts));
-    // 1. Create the sorted list first
     const sortedList = sortAccounts(Array.from(validAccounts));
-    
-    // 2. Log it to see exactly what is being sent out
-    // console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
 
     return {
         config: { 
@@ -134,10 +129,7 @@ const adaptStaticDataToSimulator = (questionData) => {
         },
         transactions: normalizedTransactions, 
         ledger: ledger, 
-        
-        // 3. Use the variable here
         validAccounts: sortedList, 
-        
         beginningBalances: null, 
         adjustments: normalizedAdjustments
     };
@@ -184,7 +176,7 @@ const injectYearToQuestion = (question, year) => {
         });
     }
     
-    // Inject into Adjustments Array (if they have dates, though usually generic)
+    // Inject into Adjustments Array
     if (q.adjustments && Array.isArray(q.adjustments)) {
         q.adjustments.forEach(a => {
             if (a.date && !a.date.toString().includes(year)) {
@@ -225,19 +217,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     let qId = data.questionId;
                     if (!qId) { 
                         qId = pickRandomQuestion();
-                             //  setDoc(resultRef, { questionId: qId }, { merge: true }); 
                     }
                     setQuestionId(qId);
                 } else {
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
-                  /* setDoc(resultRef, { 
-                        studentName: `${user.LastName}, ${user.FirstName}`, 
-                        studentId: user.Idnumber, 
-                        section: activityDoc.section, 
-                        questionId: qId, 
-                        startedAt: new Date().toISOString() 
-                    }); */
                 }
                 setLoading(false);
             });
@@ -259,15 +243,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 setActivityData(adaptedData);
             }
         }
-    }, [questionId]); // <--- FIXED: Removed activityDoc
+    }, [questionId]); 
 
     // EFFECT 2: Set Initial Task ID
     useEffect(() => {
-        // We check if we have tasks and no current ID
         if (!currentTaskId && activityDoc?.tasks?.length > 0) {
             setCurrentTaskId(activityDoc.tasks[0].taskId);
         }
-    // Fixed dependencies: Only run if the Task ID *value* changes, not the whole doc
     }, [currentTaskId, activityDoc?.tasks?.[0]?.taskId]);
 
     const activeTaskIndex = activityDoc.tasks?.findIndex(t => String(t.taskId) === String(currentTaskId));
@@ -295,9 +277,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     // --- FIXED TIMER EFFECT ---
     useEffect(() => {
-        // 1. Safety Checks: If submitted, no config, OR NO DATA YET, do not run timer.
         if (isSubmitted) { setTimeLeft(null); return; }
-        if (!activeTaskConfig || !activityData) return; // <--- CRITICAL FIX
+        if (!activeTaskConfig || !activityData) return;
 
         let intervalId = null;
 
@@ -316,7 +297,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 setTimeLeft("00:00:00");
                 if (intervalId) clearInterval(intervalId);
                 
-                // Now safe to call because we ensured activityData exists
                 handleActionClick(stepNum, true); 
                 
                 if (!isSubmitted) alert("Time Expired! Your answer has been automatically submitted.");
@@ -335,7 +315,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    // 2. Added activityData to dependencies so timer restarts once data loads
     }, [activeTaskConfig, isSubmitted, stepNum, activityData]);
 
     const pickRandomQuestion = () => {
@@ -512,7 +491,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
                     
-                    // Top Row: Title, Date, Score, Buttons ---
                     <div className="flex justify-between items-center w-full">
                         <div>
                             <h2 className="text-xl font-bold text-gray-800">${activeTaskConfig.stepName}</h2>
@@ -552,7 +530,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         </div>
                     </div>
 
-                    ${/* --- INSTRUCTIONS MOVED HERE (Inside Fixed Panel) --- */}
                     <div className="w-full p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
