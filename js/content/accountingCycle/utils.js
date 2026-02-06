@@ -257,9 +257,9 @@ export const ActivityHelper = {
                     if (isDebit && normalBalance === 'Cr') suffix = ' Dr'; 
                     else if (!isDebit && normalBalance === 'Dr') suffix = ' Cr';
 
-                    return `${acc} P${absBal.toLocaleString()}${suffix}`; 
+                    return `${acc}: ₱${absBal.toLocaleString()}${suffix}`; 
                 });
-                ledgerListStr = `<span class="font-mono text-xs text-blue-700 font-bold">${ledgerItems.join(', ')}</span>`;
+                ledgerListStr = `<span class="font-mono text-xs text-blue-700 font-bold">${ledgerItems.join('; ')}</span>`;
             }
 
             // 2. Generate Adjustments List (Concatenated Sentence with Numbering)
