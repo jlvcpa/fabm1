@@ -230,22 +230,17 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         init();
     }, [activityDoc.activityname, activityDoc.section, user.CN, user.Idnumber]);
 
-    // EFFECT 1: Load Activity Data (Only runs when questionId changes)
     useEffect(() => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
-                // --- NEW LOGIC: INJECT YEAR ---
-                // We inject the year BEFORE adapting the data for the simulator
                 const datedQ = injectYearToQuestion(rawQ, COURSE_YEAR);
-
                 const adaptedData = adaptStaticDataToSimulator(datedQ);
                 setActivityData(adaptedData);
             }
         }
     }, [questionId]); 
 
-    // EFFECT 2: Set Initial Task ID
     useEffect(() => {
         if (!currentTaskId && activityDoc?.tasks?.length > 0) {
             setCurrentTaskId(activityDoc.tasks[0].taskId);
@@ -275,7 +270,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     const isLocked = isEarly || isLockedBySequence;
 
-    // --- FIXED TIMER EFFECT ---
     useEffect(() => {
         if (isSubmitted) { setTimeLeft(null); return; }
         if (!activeTaskConfig || !activityData) return;
@@ -418,7 +412,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         btnIcon = Save;
     }
 
-    // --- DYNAMIC INSTRUCTIONS GENERATION ---
     const stepInstructions = (activeTaskConfig && activityData) 
         ? ActivityHelper.getInstructionsHTML(
             stepNum,
@@ -478,7 +471,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
-                                className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1 flex-shrink-0 whitespace-nowrap ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                                className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex-shrink-0 whitespace-nowrap flex items-center gap-1 ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
                             >
                                 ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
                             </button>
@@ -487,14 +480,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden flex flex-col p-4 max-w-7xl mx-auto w-full">
+            <main className="flex-1 overflow-hidden flex flex-col p-2 max-w-7xl mx-auto w-full">
                 
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
+                <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-2 flex flex-col gap-2">
                     
                     <div className="flex justify-between items-center w-full">
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800">${activeTaskConfig.stepName}</h2>
-                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                            <h2 className="text-xl font-bold text-gray-800 leading-tight">${activeTaskConfig.stepName}</h2>
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1 leading-none">
                                 <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
                                 <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
                                 
@@ -510,7 +503,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             ${isSubmitted && scoreData && html`
                                 <div className="text-right">
                                     <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
-                                    <div className="text-xl font-bold text-blue-800 flex items-center gap-2">
+                                    <div className="text-xl font-bold text-blue-800 flex items-center gap-2 leading-none">
                                         ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
                                         <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
                                     </div>
@@ -522,7 +515,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                                     <${btnIcon} size=${18}/> ${btnLabel}
                                 </button>
                                 ${!isSubmitted && !isLocked && html`
-                                    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide">
+                                    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide leading-none">
                                         Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
                                     </span>
                                 `}
@@ -530,7 +523,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         </div>
                     </div>
 
-                    <div className="w-full p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
+                    <div className="w-full p-2 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm leading-snug" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
