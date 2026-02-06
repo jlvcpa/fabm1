@@ -207,8 +207,8 @@ export const ActivityHelper = {
         } else if (stepId === 5) {
             // --- TASK 5 SPECIAL INSTRUCTIONS ---
             
-            // 1. Generate Ledger Balances View (Boxes)
-            let ledgerBoxes = '';
+            // 1. Generate Ledger Balances View (Text List)
+            let ledgerListStr = '';
             if (ledgerData) {
                 const accountsSet = new Set(Object.keys(ledgerData));
                 // Add accounts from adjustments
@@ -227,30 +227,31 @@ export const ActivityHelper = {
                 }
                 const allAccounts = sortAccounts(Array.from(accountsSet).filter(a => a));
                 
-                ledgerBoxes = allAccounts.map(acc => {
+                const ledgerItems = allAccounts.map(acc => {
                     const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                     const bal = accData.debit - accData.credit;
-                    return `<div class="bg-white border px-2 py-1 text-xs rounded shadow-sm inline-block mr-2 mb-2 font-mono"><span class="font-semibold font-sans text-gray-600">${acc}:</span> <span class="font-bold text-blue-800">${Math.abs(bal).toLocaleString()}</span></div>`;
-                }).join('');
+                    const type = bal >= 0 ? 'Dr' : 'Cr';
+                    return `${acc} ${Math.abs(bal)} ${type}`; 
+                });
+                ledgerListStr = `<span class="font-mono text-xs text-blue-700 font-bold">${ledgerItems.join(', ')}</span>`;
             }
 
-            // 2. Generate Adjustments List
-            let adjustmentsList = '';
+            // 2. Generate Adjustments List (Concatenated Sentence)
+            let adjustmentsSentence = '';
             if (Array.isArray(adjustments)) {
-                adjustmentsList = adjustments.map(adj => `<li>${adj.desc || adj.description}</li>`).join('');
+                adjustmentsSentence = adjustments.map(adj => {
+                    let d = adj.desc || adj.description || '';
+                    d = d.trim();
+                    if (d && !d.endsWith('.')) d += '.';
+                    return d;
+                }).join(' ');
             }
+            
+            const highlightedAdj = `<span class="font-mono text-xs text-orange-800 font-bold bg-orange-50 px-1 rounded">${adjustmentsSentence}</span>`;
 
             instructionsHTML = `
-                <li>Complete the 10-column worksheet using the following unadjusted general ledger accounts and corresponding balances:
-                    <div class="mt-2 p-2 bg-blue-100 rounded border border-blue-200">
-                        ${ledgerBoxes}
-                    </div>
-                </li>
-                <li>Applying the following adjustments:
-                    <ul class="list-decimal list-inside text-xs space-y-1 mt-1 p-2 bg-yellow-50 rounded border border-yellow-200 text-yellow-900">
-                        ${adjustmentsList}
-                    </ul>
-                </li>
+                <li>Complete the 10-column worksheet using the following unadjusted general ledger accounts and corresponding balances: ${ledgerListStr}</li>
+                <li>Apply the following adjustments: ${highlightedAdj}</li>
                 ${deferredLine}
                 <li>Complete all required fields by extended the balances correctly. Enter amounts without commas and decimal places. Round off centavos to the nearest peso. Validate each task to unlock the next one.</li>
             `;
