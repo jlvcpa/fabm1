@@ -117,7 +117,12 @@ const adaptStaticDataToSimulator = (questionData) => {
         return { id: `adj-${idx}`, desc: a.description, drAcc: drLine ? drLine.account : '', crAcc: crLine ? crLine.account : '', amount: amt };
     });
 
+    // console.log("DEBUG: Constructed validAccounts list:", Array.from(validAccounts));
+    // 1. Create the sorted list first
     const sortedList = sortAccounts(Array.from(validAccounts));
+    
+    // 2. Log it to see exactly what is being sent out
+    // console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
 
     return {
         config: { 
@@ -129,7 +134,10 @@ const adaptStaticDataToSimulator = (questionData) => {
         },
         transactions: normalizedTransactions, 
         ledger: ledger, 
+        
+        // 3. Use the variable here
         validAccounts: sortedList, 
+        
         beginningBalances: null, 
         adjustments: normalizedAdjustments
     };
@@ -176,7 +184,7 @@ const injectYearToQuestion = (question, year) => {
         });
     }
     
-    // Inject into Adjustments Array
+    // Inject into Adjustments Array (if they have dates, though usually generic)
     if (q.adjustments && Array.isArray(q.adjustments)) {
         q.adjustments.forEach(a => {
             if (a.date && !a.date.toString().includes(year)) {
@@ -230,17 +238,22 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         init();
     }, [activityDoc.activityname, activityDoc.section, user.CN, user.Idnumber]);
 
+    // EFFECT 1: Load Activity Data (Only runs when questionId changes)
     useEffect(() => {
         if (questionId) {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
+                // --- NEW LOGIC: INJECT YEAR ---
+                // We inject the year BEFORE adapting the data for the simulator
                 const datedQ = injectYearToQuestion(rawQ, COURSE_YEAR);
+
                 const adaptedData = adaptStaticDataToSimulator(datedQ);
                 setActivityData(adaptedData);
             }
         }
     }, [questionId]); 
 
+    // EFFECT 2: Set Initial Task ID
     useEffect(() => {
         if (!currentTaskId && activityDoc?.tasks?.length > 0) {
             setCurrentTaskId(activityDoc.tasks[0].taskId);
@@ -270,9 +283,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     const isLocked = isEarly || isLockedBySequence;
 
+    // --- FIXED TIMER EFFECT ---
     useEffect(() => {
+        // 1. Safety Checks: If submitted, no config, OR NO DATA YET, do not run timer.
         if (isSubmitted) { setTimeLeft(null); return; }
-        if (!activeTaskConfig || !activityData) return;
+        if (!activeTaskConfig || !activityData) return; // <--- CRITICAL FIX
 
         let intervalId = null;
 
@@ -291,6 +306,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 setTimeLeft("00:00:00");
                 if (intervalId) clearInterval(intervalId);
                 
+                // Now safe to call because we ensured activityData exists
                 handleActionClick(stepNum, true); 
                 
                 if (!isSubmitted) alert("Time Expired! Your answer has been automatically submitted.");
@@ -309,6 +325,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
+    // 2. Added activityData to dependencies so timer restarts once data loads
     }, [activeTaskConfig, isSubmitted, stepNum, activityData]);
 
     const pickRandomQuestion = () => {
@@ -480,14 +497,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 </div>
             </header>
 
-            <main className="flex-1 overflow-hidden flex flex-col p-2 max-w-7xl mx-auto w-full">
+            <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
                 
-                <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-200 mb-2 flex flex-col gap-2">
+                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-1">
                     
-                    <div className="flex justify-between items-center w-full">
+                    <div className="flex justify-between items-center w-full px-2 pt-1">
                         <div>
                             <h2 className="text-xl font-bold text-gray-800 leading-tight">${activeTaskConfig.stepName}</h2>
-                            <div className="flex items-center gap-4 text-xs text-gray-500 mt-1 leading-none">
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 leading-none">
                                 <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
                                 <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
                                 
@@ -499,7 +516,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         </div>
                         
-                        <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
                             ${isSubmitted && scoreData && html`
                                 <div className="text-right">
                                     <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
@@ -523,7 +540,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         </div>
                     </div>
 
-                    <div className="w-full p-2 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm leading-snug" 
+                    <div className="w-full p-1 bg-blue-50 text-blue-900 text-xs rounded-lg border border-blue-100 shadow-sm leading-tight" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
