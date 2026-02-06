@@ -499,7 +499,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
             <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
                 
-                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-2">
+                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-1">
                     
                     <div className="flex justify-between items-center w-full px-2 pt-1">
                         <div>
@@ -540,7 +540,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         </div>
                     </div>
 
-                    <div className="w-full p-1 bg-blue-50 text-blue-900 text-xs rounded-lg border border-blue-100 shadow-sm leading-tight" 
+                    <div className="w-full px-2 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-lg border border-blue-100 shadow-sm leading-tight" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
