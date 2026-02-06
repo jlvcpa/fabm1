@@ -510,10 +510,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
             <main className="flex-1 overflow-hidden flex flex-col p-4 max-w-7xl mx-auto w-full">
                 
-                ${/* --- UPDATED: Main Info Panel now is flex-col to stack Title Row and Instructions --- */}
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 flex flex-col gap-4">
                     
-                    ${/* Top Row: Title, Date, Score, Buttons */ }
+                    // Top Row: Title, Date, Score, Buttons ---
                     <div className="flex justify-between items-center w-full">
                         <div>
                             <h2 className="text-xl font-bold text-gray-800">${activeTaskConfig.stepName}</h2>
