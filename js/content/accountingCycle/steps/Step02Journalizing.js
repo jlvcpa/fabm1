@@ -360,7 +360,7 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                         initialRows.push({ 
                             id: 'desc', 
                             date: '', 
-                            acc: `      ${t.description}`, 
+                            acc: `        ${t.description}`, 
                             dr: '', 
                             cr: '', 
                             pr: '', 
