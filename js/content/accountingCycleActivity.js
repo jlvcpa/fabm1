@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
-import htm from 'https://esm.sh/htm';
-import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from 'https://esm.sh/lucide-react@0.263.1';
-import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+import React, { useState, useEffect } from '[https://esm.sh/react@18.2.0](https://esm.sh/react@18.2.0)';
+import htm from '[https://esm.sh/htm](https://esm.sh/htm)';
+import { createRoot } from '[https://esm.sh/react-dom@18.2.0/client](https://esm.sh/react-dom@18.2.0/client)';
+import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from '[https://esm.sh/lucide-react@0.263.1](https://esm.sh/lucide-react@0.263.1)';
+import { getFirestore, doc, onSnapshot, setDoc } from "[https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js)";
 
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
 // Added ActivityHelper to imports
@@ -490,7 +490,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                 </div>
                 
-                {/* CHANGED: Added overflow handling, max-width for mobile, and padding */}
                 <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
                     ${activityDoc.tasks.map(t => {
                         const idx = activityDoc.tasks.indexOf(t);
@@ -500,7 +499,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         return html`
                             <button key=${t.taskId} 
                                 onClick=${() => setCurrentTaskId(t.taskId)}
-                                /* CHANGED: Added flex-shrink-0 and whitespace-nowrap to prevent squashing */
                                 className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1 flex-shrink-0 whitespace-nowrap ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
                             >
                                 ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
@@ -550,7 +548,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                 </div>
 
-                {/* --- MOVED INSTRUCTIONS HERE --- */}
                 <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
                      dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                 </div>
