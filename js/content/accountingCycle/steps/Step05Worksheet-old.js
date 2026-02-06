@@ -1,4 +1,5 @@
 // --- js/content/accountingCycle/steps/Step05Worksheet.js ---
+// --- this verion is compatible to the Worksheet Practice Activity
 
 import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
