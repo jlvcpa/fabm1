@@ -240,12 +240,12 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
             <div className="w-24 h-full border-r relative">
                 ${!isDesc && !isYearRow && html`
                     <input type="number" 
-                        className=${`w-full h-full px-2 pr-6 text-right outline-none bg-transparent ${bgClass(valResult?.drAmt)}`} 
+                        className=${`w-full h-full pl-6 pr-1 text-right outline-none bg-transparent ${bgClass(valResult?.drAmt)}`} 
                         value=${row.dr||''} 
                         onChange=${(e)=>updateRow(idx,'dr',e.target.value)} 
                         disabled=${isReadOnly} 
                     />
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="absolute left-1 top-1/2 -translate-y-1/2 pointer-events-none">
                         <${StatusIcon} show=${showFeedback} status=${valResult?.drAmt} />
                     </div>
                 `}
@@ -254,12 +254,12 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
             <div className="w-24 h-full border-r relative">
                 ${!isDesc && !isYearRow && html`
                     <input type="number" 
-                        className=${`w-full h-full px-2 pr-6 text-right outline-none bg-transparent ${bgClass(valResult?.crAmt)}`} 
+                        className=${`w-full h-full pl-6 pr-1 text-right outline-none bg-transparent ${bgClass(valResult?.crAmt)}`} 
                         value=${row.cr||''} 
                         onChange=${(e)=>updateRow(idx,'cr',e.target.value)} 
                         disabled=${isReadOnly} 
                     />
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="absolute left-1 top-1/2 -translate-y-1/2 pointer-events-none">
                         <${StatusIcon} show=${showFeedback} status=${valResult?.crAmt} />
                     </div>
                 `}
