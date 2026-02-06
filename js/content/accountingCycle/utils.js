@@ -211,7 +211,6 @@ export const ActivityHelper = {
             let ledgerListStr = '';
             if (ledgerData) {
                 const accountsSet = new Set(Object.keys(ledgerData));
-                // Add accounts from adjustments
                 if (Array.isArray(adjustments)) {
                     adjustments.forEach(adj => {
                         if(adj.drAcc) accountsSet.add(adj.drAcc);
@@ -230,20 +229,47 @@ export const ActivityHelper = {
                 const ledgerItems = allAccounts.map(acc => {
                     const accData = ledgerData[acc] || { debit: 0, credit: 0 };
                     const bal = accData.debit - accData.credit;
-                    const type = bal >= 0 ? 'Dr' : 'Cr';
-                    return `${acc} ${Math.abs(bal)} ${type}`; 
+                    const absBal = Math.abs(bal);
+                    
+                    // Logic to show 'Dr' or 'Cr' ONLY if abnormal balance
+                    const type = getAccountType(acc);
+                    const name = acc.toLowerCase();
+                    let normalBalance = 'Dr'; // Default Normal
+
+                    if (type === 'Asset') normalBalance = 'Dr';
+                    if (name.includes('accumulated depreciation')) normalBalance = 'Cr';
+
+                    if (type === 'Liability') normalBalance = 'Cr';
+
+                    if (type === 'Equity') normalBalance = 'Cr';
+                    if (name.includes('drawings') || name.includes('withdrawal') || name.includes('dividends')) normalBalance = 'Dr';
+
+                    if (type === 'Revenue') normalBalance = 'Cr';
+                    if (name.includes('sales returns') || name.includes('sales discounts')) normalBalance = 'Dr';
+
+                    if (type === 'Expense') normalBalance = 'Dr';
+                    if (name.includes('purchase returns') || name.includes('purchase discounts')) normalBalance = 'Cr';
+
+                    const isDebit = bal >= 0;
+                    let suffix = '';
+                    
+                    // Only append suffix if balance is opposite of normal
+                    if (isDebit && normalBalance === 'Cr') suffix = ' Dr'; 
+                    else if (!isDebit && normalBalance === 'Dr') suffix = ' Cr';
+
+                    return `${acc} P${absBal.toLocaleString()}${suffix}`; 
                 });
                 ledgerListStr = `<span class="font-mono text-xs text-blue-700 font-bold">${ledgerItems.join(', ')}</span>`;
             }
 
-            // 2. Generate Adjustments List (Concatenated Sentence)
+            // 2. Generate Adjustments List (Concatenated Sentence with Numbering)
             let adjustmentsSentence = '';
             if (Array.isArray(adjustments)) {
-                adjustmentsSentence = adjustments.map(adj => {
+                adjustmentsSentence = adjustments.map((adj, i) => {
                     let d = adj.desc || adj.description || '';
                     d = d.trim();
                     if (d && !d.endsWith('.')) d += '.';
-                    return d;
+                    return `(${i + 1}) ${d}`;
                 }).join(' ');
             }
             
