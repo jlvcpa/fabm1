@@ -154,7 +154,7 @@ export const validateStep02 = (transactions, currentAns = {}) => {
             }
         });
 
-        const contentRows = rows.filter((r, rIdx) => !r.isDescription && !((r.id === 'year' || rIdx === 0) && tIdx === 0)); 
+        // Check if any required logic was missed (optional stricter check)
         if (txScore < txMax) isTxPerfect = false;
 
         totalScore += txScore;
@@ -280,25 +280,47 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
     useEffect(() => {
         if (showFeedback && !isReadOnly) {
             transactions.forEach((t, tIdx) => {
+                // Ensure data entry exists
                 const entry = data[t.id] || {};
-                const currentRows = entry.rows || [];
                 
-                const lineItems = t.debits.length + t.credits.length;
-                const requiredCount = (tIdx === 0 ? 1 : 0) + lineItems + 1;
+                // If rows don't exist yet, we can't 'fix' them here (that happens in render/init)
+                // But if they do exist, we check if they are sufficient.
+                if (entry.rows) {
+                    const currentRows = entry.rows;
+                    
+                    // --- DYNAMIC COUNT LOGIC ---
+                    // 1. Calculate how many DATA rows we need (excluding descriptions)
+                    const neededDataLines = (t.solution && t.solution.filter(l => !l.isExplanation && (l.debit || l.credit)).length) 
+                                            || (t.debits.length + t.credits.length) 
+                                            || 2;
 
-                if (currentRows.length < requiredCount) {
-                    const newRows = [...currentRows];
-                    const descIndex = newRows.findIndex(r => r.isDescription);
-                    const descRow = descIndex >= 0 ? newRows.splice(descIndex, 1)[0] : { id: 'desc', date: '', acc: `      ${t.description}`, dr: '', cr: '', pr: '', isDescription: true };
+                    // 2. Base required = Data Lines + 1 Description
+                    let requiredCount = neededDataLines + 1;
                     
-                    const needed = requiredCount - 1;
-                    while (newRows.length < needed) {
-                        newRows.push({ id: Date.now() + Math.random(), date: '', acc: '', dr: '', cr: '', pr: '' });
+                    // 3. Add 1 for Year Row if first transaction
+                    if (tIdx === 0) requiredCount += 1;
+
+                    if (currentRows.length < requiredCount) {
+                        // This block runs if the user deleted rows below the minimum required
+                        // It restores the structure.
+                        const newRows = [...currentRows];
+                        const descIndex = newRows.findIndex(r => r.isDescription);
+                        
+                        // Temporarily remove description to append data rows before it
+                        let descRow;
+                        if (descIndex >= 0) {
+                            descRow = newRows.splice(descIndex, 1)[0];
+                        } else {
+                            descRow = { id: 'desc', date: '', acc: `      ${t.description}`, dr: '', cr: '', pr: '', isDescription: true };
+                        }
+                        
+                        while (newRows.length < (requiredCount - 1)) {
+                            newRows.push({ id: Date.now() + Math.random(), date: '', acc: '', dr: '', cr: '', pr: '' });
+                        }
+                        
+                        newRows.push(descRow);
+                        onChange(t.id, { rows: newRows });
                     }
-                    
-                    newRows.push(descRow);
-                    // FIX: Wrapped newRows in object { rows: ... }
-                    onChange(t.id, { rows: newRows });
                 }
             });
         }
@@ -326,29 +348,45 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     <div className="w-8"></div>
                 </div>
                 ${transactions.map((t, tIdx) => {
-                    // Safe Access
                     const entry = data[t.id] || {};
                     let initialRows = entry.rows;
                     
                     if (!initialRows) {
-                        if (tIdx === 0) { 
-                            initialRows = [
-                                { id: 'year', date: '', acc: '', dr: '', cr: '', pr: '' }, 
-                                { id: 1, date: '', acc: '', dr: '', cr: '', pr: '' }, 
-                                { id: 2, date: '', acc: '', dr: '', cr: '', pr: '' }, 
-                                { id: 'desc', date: '', acc: `      ${t.description}`, dr: '', cr: '', pr: '', isDescription: true }
-                            ]; 
-                        } else { 
-                            initialRows = [
-                                { id: 1, date: '', acc: '', dr: '', cr: '', pr: '' }, 
-                                { id: 2, date: '', acc: '', dr: '', cr: '', pr: '' }, 
-                                { id: 'desc', date: '', acc: `      ${t.description}`, dr: '', cr: '', pr: '', isDescription: true }
-                            ]; 
+                        // --- DYNAMIC INITIALIZATION LOGIC (Runs once per empty state) ---
+                        // 1. Calculate how many DATA rows we need (excluding descriptions)
+                        //    - Filters out lines marked isExplanation
+                        //    - Also filters out lines with NO debit/credit (empty placeholders in solution) for safety
+                        const neededDataLines = (t.solution && t.solution.filter(l => !l.isExplanation && (l.debit || l.credit)).length) 
+                                                || (t.debits.length + t.credits.length) 
+                                                || 2;
+                        
+                        initialRows = [];
+
+                        // 2. Add Year Row (Only for First Transaction)
+                        if (tIdx === 0) {
+                            initialRows.push({ id: 'year', date: '', acc: '', dr: '', cr: '', pr: '' });
                         }
+
+                        // 3. Add Data Rows
+                        for (let i = 0; i < neededDataLines; i++) {
+                            initialRows.push({ id: i, date: '', acc: '', dr: '', cr: '', pr: '' });
+                        }
+
+                        // 4. Add Description Row
+                        initialRows.push({ 
+                            id: 'desc', 
+                            date: '', 
+                            acc: `      ${t.description}`, 
+                            dr: '', 
+                            cr: '', 
+                            pr: '', 
+                            isDescription: true 
+                        });
+                        // --- END DYNAMIC INITIALIZATION ---
                     }
+                    
                     const rows = initialRows;
                     
-                    // FIX: Wrapped updates in object { rows: ... } in all handlers below
                     const updateRow = (idx, field, val) => { 
                         const newRows = [...rows]; 
                         if(!newRows[idx]) newRows[idx] = {}; 
@@ -365,7 +403,7 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     };
                     
                     const deleteRow = (idx) => { 
-                        const minRows = tIdx === 0 ? 4 : 3; 
+                        const minRows = tIdx === 0 ? 3 : 2; 
                         if (rows.length <= minRows) return; 
                         const newRows = rows.filter((_, i) => i !== idx); 
                         onChange(t.id, { rows: newRows }); 
