@@ -539,14 +539,14 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         </div>
                     </div>
-
-                    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight"> 
+                    
+                    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
                 </div>
-
-                <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative"
+                
+                <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
                      <div className="h-full overflow-y-auto custom-scrollbar">
                         <${TaskSection} key=${stepNum} ...${stepProps} />
                     </div>
