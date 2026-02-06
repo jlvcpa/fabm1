@@ -81,8 +81,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                 `}
 
                 ${/* 1. INSTRUCTIONS - FIXED: Use step.description instead of calling ActivityHelper again */''}
-                <div className="mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm" 
-                     dangerouslySetInnerHTML=${{ __html: step.description }}>
+                <div className="sticky top-0 z-30 mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm"                     dangerouslySetInnerHTML=${{ __html: step.description }}>
                 </div>
 
                 ${/* 2. RUBRIC */''}
