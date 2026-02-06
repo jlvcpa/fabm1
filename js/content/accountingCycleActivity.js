@@ -8,8 +8,7 @@ import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js
 // Added ActivityHelper to imports
 import { getAccountType, sortAccounts, getLetterGrade, ActivityHelper } from './accountingCycle/utils.js';
 
-// --- NEW IMPORT: Get the Global Year ---
-// Note: We go up one level (..) to get out of 'content' and find 'utils.js' in 'js' folder
+// --- NEW IMPORT: Get the Global Year from root utils ---
 import { COURSE_YEAR } from '../utils.js';
 
 import { TaskSection } from './accountingCycle/steps.js';
@@ -178,14 +177,24 @@ const injectYearToQuestion = (question, year) => {
     // 1. Create a clean copy to avoid modifying the original source file
     const q = JSON.parse(JSON.stringify(question));
     
-    // 2. Append year if it's not already there
-    // Input: "Feb 1" -> Output: "Feb 1, 2026"
-    if (q.date && !q.date.includes(year)) {
-        q.date = `${q.date}, ${year}`;
+    // 2. Inject into Transactions Array
+    if (q.transactions && Array.isArray(q.transactions)) {
+        q.transactions.forEach(t => {
+            if (t.date && !t.date.toString().includes(year)) {
+                t.date = `${t.date}, ${year}`;
+            }
+        });
     }
     
-    // Note: We do NOT need to update the 'solution' array.
-    // The validation logic in Step02 uses the main 'q.date' we just updated.
+    // 3. Inject into Adjustments Array (optional, but good for consistency)
+    if (q.adjustments && Array.isArray(q.adjustments)) {
+        q.adjustments.forEach(a => {
+            // Adjustments usually assume end of period, but if they have explicit dates:
+            if (a.date && !a.date.toString().includes(year)) {
+                a.date = `${a.date}, ${year}`;
+            }
+        });
+    }
     
     return q;
 };
@@ -246,8 +255,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
                 // --- NEW LOGIC: INJECT YEAR ---
+                // We inject the year BEFORE adapting the data for the simulator
                 const datedQ = injectYearToQuestion(rawQ, COURSE_YEAR);
-                
+
                 const adaptedData = adaptStaticDataToSimulator(datedQ);
                 setActivityData(adaptedData);
             }
