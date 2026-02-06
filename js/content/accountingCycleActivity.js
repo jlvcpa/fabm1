@@ -516,7 +516,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         </div>
                         
-                        <div className="flex items-center gap-0">
+                        <div className="flex items-center gap-2">
                             ${isSubmitted && scoreData && html`
                                 <div className="text-right">
                                     <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
@@ -540,7 +540,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         </div>
                     </div>
 
-                    <div className="w-full p-1 bg-blue-50 text-blue-900 text-xs rounded-lg border border-blue-100 shadow-sm leading-tight" 
+                    <div className="w-full p-2 bg-blue-50 text-blue-900 text-xs rounded-lg border border-blue-100 shadow-sm leading-tight" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
