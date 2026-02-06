@@ -540,7 +540,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                         </div>
                     </div>
 
-                    <div className="w-full px-2 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-lg border border-blue-100 shadow-sm leading-tight" 
+                    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight"> 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
