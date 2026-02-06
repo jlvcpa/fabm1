@@ -99,10 +99,10 @@ const validateRow = (row, t, tIdx, idx) => {
                 result.drAmt = null; 
                 const fiveSpaces = '     ';
                 const startsWith5 = acc.startsWith(fiveSpaces);
-                const fourthCharNotSpace = acc.length > 3 && acc[3] !== ' '; 
-                const cleanName = acc.substring(3);
+                const sixthCharNotSpace = acc.length > 5 && acc[5] !== ' '; 
+                const cleanName = acc.substring(5);
                 
-                const accValid = startsWith5 && fourthCharNotSpace && cleanName === expected.data.account;
+                const accValid = startsWith5 && sixthCharNotSpace && cleanName === expected.data.account;
 
                 if (!accValid) result.acc = false;
                 else { result.acc = true; result.score += 1; }
