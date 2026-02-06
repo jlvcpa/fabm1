@@ -378,10 +378,10 @@ export const validateStep03 = (activityData, studentAnswer) => {
 
 // --- INTERNAL COMPONENTS ---
 
-const ValidationIcon = ({ status, show }) => {
+const ValidationIcon = ({ status, show, position = "right-1" }) => {
     if (!show || status === undefined || status === null) return null;
     return html`
-        <div className="absolute top-1 right-1 pointer-events-none z-10">
+        <div className=${`absolute top-1 ${position} pointer-events-none z-10`}>
             ${status === true 
                 ? html`<${Check} size=${12} className="text-green-600 bg-white rounded-full opacity-80 shadow-sm" />` 
                 : html`<${X} size=${12} className="text-red-600 bg-white rounded-full opacity-80 shadow-sm" />`
@@ -517,7 +517,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                 ${!isReadOnly && html`<button onClick=${() => deleteLedger(idx)} className="absolute right-2 top-2 text-red-500 hover:text-red-700"><${Trash2} size=${16}/></button>`}
             </div>
             <div className="flex">
-                ${/* DEBIT SIDE */''}
+                //-- DEBIT SIDE --
                 <div className="flex-1 border-r-2 border-gray-800">
                     <div className="text-center font-bold border-b border-gray-400 bg-gray-50 text-xs py-1">DEBIT</div>
                     <div className="flex text-xs font-bold border-b border-gray-400"><div className="w-16 border-r p-1 text-center">Date</div><div className="flex-1 border-r p-1 text-center">Particulars</div><div className="w-10 border-r p-1 text-center">PR</div><div className="w-20 p-1 text-center">Amount</div></div>
@@ -528,7 +528,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                             <div key=${`l-${rowIdx}`} className="flex text-xs border-b border-gray-200 h-8 relative">
                                 <div className="w-16 border-r relative group">
                                     <input type="text" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${row.date||''} onChange=${(e)=>updateSideRow(idx,'left',rowIdx,'date',e.target.value)} disabled=${isReadOnly} placeholder=${rowIdx===0 ? "(YYYY)" : ""}/>
-                                    <${ValidationIcon} show=${showFeedback} status=${rVal.date} />
+                                    <${ValidationIcon} show=${showFeedback} status=${rVal.date} position="left-1" />
                                 </div>
                                 <div className="flex-1 border-r relative group">
                                     <input type="text" className="w-full h-full text-left px-1 outline-none bg-transparent" value=${row.part||''} onChange=${(e)=>updateSideRow(idx,'left',rowIdx,'part',e.target.value)} disabled=${isReadOnly}/>
@@ -540,7 +540,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                                 </div>
                                 <div className="w-20 relative group">
                                     <input type="number" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${row.amount||''} onChange=${(e)=>updateSideRow(idx,'left',rowIdx,'amount',e.target.value)} disabled=${isReadOnly}/>
-                                    <${ValidationIcon} show=${showFeedback} status=${rVal.amount} />
+                                    <${ValidationIcon} show=${showFeedback} status=${rVal.amount} position="left-1" />
                                 </div>
                             </div>
                         `;
@@ -554,7 +554,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                     </div>
                 </div>
                 
-                ${/* CREDIT SIDE */''}
+                //-- CREDIT SIDE --
                 <div className="flex-1">
                     <div className="text-center font-bold border-b border-gray-400 bg-gray-50 text-xs py-1">CREDIT</div>
                     <div className="flex text-xs font-bold border-b border-gray-400 bg-white"><div className="w-16 border-r p-1 text-center">Date</div><div className="flex-1 border-r p-1 text-center">Particulars</div><div className="w-10 border-r p-1 text-center">PR</div><div className="w-20 p-1 text-center border-r">Amount</div><div className="w-6"></div></div>
@@ -565,8 +565,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                             <div key=${`r-${rowIdx}`} className="flex text-xs border-b border-gray-200 h-8 relative">
                                 <div className="w-16 border-r relative group">
                                     <input type="text" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${row.date||''} onChange=${(e)=>updateSideRow(idx,'right',rowIdx,'date',e.target.value)} disabled=${isReadOnly} placeholder=${rowIdx===0 ? "(YYYY)" : ""}/>
-                                    <${ValidationIcon} show=${showFeedback} status=${rVal.date} />
-                                </div>
+                                    <${ValidationIcon} show=${showFeedback} status=${rVal.date} position="left-1" />                                </div>
                                 <div className="flex-1 border-r relative group">
                                     <input type="text" className="w-full h-full text-left px-1 outline-none bg-transparent" value=${row.part||''} onChange=${(e)=>updateSideRow(idx,'right',rowIdx,'part',e.target.value)} disabled=${isReadOnly}/>
                                     <${ValidationIcon} show=${showFeedback} status=${rVal.part} />
@@ -577,8 +576,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                                 </div>
                                 <div className="w-20 border-r relative group">
                                     <input type="number" className="w-full h-full text-right px-1 outline-none bg-transparent" value=${row.amount||''} onChange=${(e)=>updateSideRow(idx,'right',rowIdx,'amount',e.target.value)} disabled=${isReadOnly}/>
-                                    <${ValidationIcon} show=${showFeedback} status=${rVal.amount} />
-                                </div>
+                                    <${ValidationIcon} show=${showFeedback} status=${rVal.amount} position="left-1" />                                </div>
                             </div>
                         `;
                     })}
