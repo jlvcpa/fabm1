@@ -471,7 +471,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     return html`
         <div className="flex flex-col h-screen bg-gray-50 font-sans">
             <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20">
-                <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="flex items-center gap-0 flex-shrink-0">
                     <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
                     <div>
                         <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
