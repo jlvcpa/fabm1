@@ -1,3 +1,9 @@
+// --- GLOBAL CONFIGURATION ---
+// Change this value to update the "Academic Year" for the entire courseware.
+// This affects dates in the Syllabus, Journals, and dynamic Question Banks.
+export const COURSE_YEAR = 2026;
+
+
 // --- DATA HELPERS ---
 
 export function createPlaceholderDays(topics) {
