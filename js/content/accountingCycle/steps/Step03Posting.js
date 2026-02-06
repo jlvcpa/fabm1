@@ -517,7 +517,7 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                 ${!isReadOnly && html`<button onClick=${() => deleteLedger(idx)} className="absolute right-2 top-2 text-red-500 hover:text-red-700"><${Trash2} size=${16}/></button>`}
             </div>
             <div className="flex">
-                //-- DEBIT SIDE --
+                
                 <div className="flex-1 border-r-2 border-gray-800">
                     <div className="text-center font-bold border-b border-gray-400 bg-gray-50 text-xs py-1">DEBIT</div>
                     <div className="flex text-xs font-bold border-b border-gray-400"><div className="w-16 border-r p-1 text-center">Date</div><div className="flex-1 border-r p-1 text-center">Particulars</div><div className="w-10 border-r p-1 text-center">PR</div><div className="w-20 p-1 text-center">Amount</div></div>
@@ -554,7 +554,6 @@ const LedgerAccount = ({ l, idx, updateLedger, updateSideRow, addRow, deleteLedg
                     </div>
                 </div>
                 
-                //-- CREDIT SIDE --
                 <div className="flex-1">
                     <div className="text-center font-bold border-b border-gray-400 bg-gray-50 text-xs py-1">CREDIT</div>
                     <div className="flex text-xs font-bold border-b border-gray-400 bg-white"><div className="w-16 border-r p-1 text-center">Date</div><div className="flex-1 border-r p-1 text-center">Particulars</div><div className="w-10 border-r p-1 text-center">PR</div><div className="w-20 p-1 text-center border-r">Amount</div><div className="w-6"></div></div>
