@@ -374,7 +374,7 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     const txnDate = new Date(t.date);
                     const displayDate = txnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-                .js    const updateRow = (idx, field, val) => { 
+                    const updateRow = (idx, field, val) => { 
                         const newRows = [...rows]; 
                         if(!newRows[idx]) newRows[idx] = {}; 
                         newRows[idx] = { ...newRows[idx], [field]: val }; 
