@@ -647,7 +647,7 @@ export default function Step03Posting({ activityData, data, onChange, showFeedba
         onChange('journalPRs', newPRs);
     };
 
-    // REMOVE 'FALSE &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
+    // REMOVE 'false &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col gap-4 h-full">
             ${showFeedback && html`
