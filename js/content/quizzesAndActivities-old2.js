@@ -21,7 +21,7 @@ const db = getFirestore(app);
 let quizTimerInterval = null;
 let currentAntiCheat = null;
 
-// --- MAIN ENTRY POINT ---
+// --- MAIN ENTRY POINT -----
 export async function renderQuizzesAndActivities(containerElement, user, customRunner = null, filterType = null) {
     // 1. Assign the container explicitly to avoid reference errors
     const contentArea = containerElement;
