@@ -164,7 +164,7 @@ export default function Step01Analysis({
     // Calculate result for display using the selected transactions
     const result = validateStep01(transactions, data);
 
-    // REMOVE FALSE IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
+    // REMOVE 'FALSE &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col gap-4">
             ${false && showFeedback && html`
