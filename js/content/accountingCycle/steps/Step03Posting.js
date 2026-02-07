@@ -650,7 +650,7 @@ export default function Step03Posting({ activityData, data, onChange, showFeedba
     // REMOVE 'false &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col gap-4 h-full">
-            ${showFeedback && html`
+            ${false && showFeedback && html`
                 <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 flex justify-between items-center shadow-sm">
                     <span className="font-bold">Validation Results:</span>
                     <span className="font-mono font-bold text-lg">Score: ${scoreInfo.score} of ${scoreInfo.maxScore} - (${scoreInfo.letterGrade})</span>
