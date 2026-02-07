@@ -1,5 +1,3 @@
-// --- js/content/accountingCycle/steps.js ---
-
 import React from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Check, Printer, Lock, Clock } from 'https://esm.sh/lucide-react@0.263.1';
@@ -33,9 +31,7 @@ const STEP_COMPONENTS = {
 };
 
 export const TaskSection = ({ step, activityData, answers, stepStatus, updateAnswerFns, onValidate, isCurrentActiveTask, isPerformanceTask, isLockedBySequence, isReadOnly }) => {
-    // FIX: Force ID to be a number to ensure consistent lookup in objects
     const stepId = Number(step.id);
-    
     const StepComponent = step.component || STEP_COMPONENTS[stepId];
 
     if (!StepComponent) {
@@ -58,12 +54,8 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
         `;
     }
 
-    // FIX: Use stepId for status lookup
     const currentStatus = stepStatus[stepId] || {};
     const isCompleted = currentStatus.completed === true;
-
-    // --- SECURITY: EARLY START WARNING ---
-    // If it is ReadOnly (due to time) but NOT completed (submitted), show warning
     const showEarlyWarning = isReadOnly && !isCompleted;
 
     // --- PERFORMANCE TASK MODE (Single Scrollable Flow) ---
@@ -80,17 +72,10 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                     </div>
                 `}
 
-                ${/* 1. INSTRUCTIONS - FIXED: Use step.description instead of calling ActivityHelper again */''}
-                <div className="sticky top-0 z-30 mb-4 p-4 bg-blue-50 text-blue-900 text-sm rounded-lg border border-blue-100 shadow-sm"                     dangerouslySetInnerHTML=${{ __html: step.description }}>
-                </div>
-
-                ${/* 2. RUBRIC */''}
                 <div className="mb-6 border rounded-lg overflow-hidden shadow-sm bg-white">
                      <div dangerouslySetInnerHTML=${{ __html: ActivityHelper.getRubricHTML(stepId, step.title) }}></div>
                 </div>
 
-                ${/* 3. WORKSPACE */''}
-                ${/* ADDED: mb-12 to ensure bottom content isn't cut off when scrolling */''}
                 <div className="bg-white rounded shadow-sm border border-gray-200 relative mb-48">
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-30 z-10 pointer-events-none"></div>`}
 
@@ -101,7 +86,9 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                         onChange=${(id, key, val) => {
                             if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
                             else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
-                            else if (stepId === 4 || stepId === 9) updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
+                            // FIX: Step 4 and 9 now use updateAnswer (Standard Object Replace)
+                            // because Step04TrialBalance manages its own complex object structure.
+                            else if (stepId === 4 || stepId === 9) updateAnswerFns.updateAnswer(stepId, id); 
                             else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val }); 
                             else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key }); 
                             else updateAnswerFns.updateAnswer(stepId, id); 
@@ -114,7 +101,7 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
         `;
     }
 
-    // --- STANDARD MODE (Legacy) ---
+    // --- STANDARD MODE ---
     const isExpanded = isCurrentActiveTask; 
     
     return html`
@@ -137,7 +124,6 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                 <div className="p-4 relative">
                     ${showEarlyWarning && html`<div className="absolute inset-0 bg-gray-50 bg-opacity-50 z-20 flex items-center justify-center font-bold text-gray-500">Task Locked</div>`}
                     
-                    ${/* FIXED: Use step.description here as well */''}
                     <div className="mb-4 p-3 bg-blue-50 text-blue-900 text-sm rounded border border-blue-100" 
                          dangerouslySetInnerHTML=${{ __html: step.description }}>
                     </div>
@@ -149,7 +135,8 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                         onChange=${(id, key, val) => {
                              if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
                              else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
-                             else if (stepId === 4 || stepId === 9) updateAnswerFns.updateTrialBalanceAnswer(stepId, id, key, val);
+                             // FIX: Step 4 and 9 updated here as well
+                             else if (stepId === 4 || stepId === 9) updateAnswerFns.updateAnswer(stepId, id);
                              else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val });
                              else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
                              else updateAnswerFns.updateAnswer(stepId, id);
