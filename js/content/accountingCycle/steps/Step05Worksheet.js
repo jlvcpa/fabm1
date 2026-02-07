@@ -295,7 +295,7 @@ export default function Step05Worksheet({ ledgerData: propLedger, adjustments: p
         `;
     };
 
-    // REMOVE 'false && ' IN ${false && renderBanner()} TO UNHIDE THE BANNER
+    // REMOVE 'false && ' IN ${false && renderBanner()} TO UNHIDE THE BANNER //
     return html`
         <div className="w-full">
             
