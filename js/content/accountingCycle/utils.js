@@ -200,7 +200,7 @@ export const ActivityHelper = {
             }
         } else if (stepId === 4) {
             instructionsHTML = `
-                <li>Prepare the Unadjusted Trial Balance based on the balances in the General Ledger.</li>
+                <li>Prepare the Unadjusted Trial Balance based on the balances in the General Ledger. Accounts with a zero unadjusted balance may not be included.</li>
                 ${deferredLine}
                 <li>Complete all required fields. Enter amounts without commas and decimal places. Round off centavos to the nearest peso. Validate each task to unlock the next one.</li>
             `;
