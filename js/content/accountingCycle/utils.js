@@ -51,7 +51,8 @@ const getAccountRank = (accountName) => {
         if (n.includes('cash')) return 100;
         if (n.includes('receivable')) return 110;
         if (n.includes('inventory')) return 120;
-        if (n.includes('supplies') || n.includes('prepaid')) return 130;
+        if (n.includes('supplies')) return 130;
+        if (n.includes('prepaid')) return 135;
 
         // Non-current
         if (n.includes('land')) return 140;
