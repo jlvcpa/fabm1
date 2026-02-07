@@ -376,7 +376,7 @@ export default function Step04TrialBalance({ activityData, data, onChange, showF
         onChange(newData); 
     };
 
-    // REMOVE 'FALSE && ' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
+    // REMOVE 'false &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
             ${false && showFeedback && html`
