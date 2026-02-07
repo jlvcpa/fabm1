@@ -136,6 +136,7 @@ function addTestSectionUI(existingData = null) {
     div.className = "bg-gray-50 p-3 rounded border border-gray-300 shadow-sm relative text-sm section-card";
     
     // HTML Structure
+    // NOTE: Changed Selects to 'multiple' and added 'h-32' to keep them open for convenient selection
     div.innerHTML = `
         <div class="absolute top-2 right-2 cursor-pointer text-red-400 hover:text-red-600" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
@@ -159,26 +160,32 @@ function addTestSectionUI(existingData = null) {
         
         <div class="mb-2">
             <label class="block text-xs text-purple-600 font-bold mb-1">1. Filter by Competency</label>
-            <select class="section-competency-select w-full p-1 border rounded bg-white mb-1">
-                <option value="">Loading...</option>
-            </select>
-            <textarea class="section-competency-area w-full p-1 border rounded bg-white h-8 text-xs" placeholder="Selected competencies (or leave empty for all)..."></textarea>
+            <div class="flex flex-col gap-1">
+                <textarea class="section-competency-area w-full p-1 border rounded bg-white h-8 text-xs bg-purple-50" placeholder="All Competencies (Select below to filter)..."></textarea>
+                <select multiple class="section-competency-select w-full p-1 border rounded bg-white text-xs h-32 cursor-pointer scrollbar-thin">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
         </div>
 
         <div class="mb-2">
             <label class="block text-xs text-blue-600 font-bold mb-1">2. Filter by Topic</label>
-            <select class="section-topic-select w-full p-1 border rounded bg-white mb-1">
-                <option value="">Loading...</option>
-            </select>
-            <textarea class="section-topics-area w-full p-1 border rounded bg-white h-8 text-xs" placeholder="Selected topics (or leave empty for all)..."></textarea>
+            <div class="flex flex-col gap-1">
+                <textarea class="section-topics-area w-full p-1 border rounded bg-white h-8 text-xs bg-blue-50" placeholder="All Topics (Select below to filter)..."></textarea>
+                <select multiple class="section-topic-select w-full p-1 border rounded bg-white text-xs h-32 cursor-pointer scrollbar-thin">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
         </div>
 
         <div class="mb-2">
             <label class="block text-xs text-green-600 font-bold mb-1">3. Filter by Subtopic</label>
-            <select class="section-subtopic-select w-full p-1 border rounded bg-white mb-1">
-                <option value="">Loading...</option>
-            </select>
-            <textarea class="section-subtopics-area w-full p-1 border rounded bg-white h-8 text-xs" placeholder="Selected subtopics (or leave empty for all)..."></textarea>
+             <div class="flex flex-col gap-1">
+                <textarea class="section-subtopics-area w-full p-1 border rounded bg-white h-8 text-xs bg-green-50" placeholder="All Subtopics (Select below to filter)..."></textarea>
+                <select multiple class="section-subtopic-select w-full p-1 border rounded bg-white text-xs h-32 cursor-pointer scrollbar-thin">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
         </div>
 
         <div class="grid grid-cols-3 gap-2 mb-2 bg-blue-100 p-2 rounded">
@@ -224,38 +231,77 @@ function addTestSectionUI(existingData = null) {
     const limitInput = div.querySelector('.section-time-limit');
     const expireInput = div.querySelector('.section-expire-time');
 
-    // === DATA LOADING ===
-    const refreshDropdowns = (type) => {
-        loadMetadataForType(type, 'competency', competencySelect);
-        loadMetadataForType(type, 'topic', topicSelect);
-        loadMetadataForType(type, 'subtopic', subtopicSelect);
+    // === DYNAMIC FILTERING LOGIC ===
+    
+    // Main function to refresh all dropdowns based on current textarea values
+    const refreshAllDropdowns = () => {
+        // Capture current selected filters
+        const filters = {
+            competency: competencyArea.value ? competencyArea.value.split(',').map(s => s.trim()).filter(Boolean) : [],
+            topic: topicArea.value ? topicArea.value.split(',').map(s => s.trim()).filter(Boolean) : [],
+            subtopic: subtopicArea.value ? subtopicArea.value.split(',').map(s => s.trim()).filter(Boolean) : []
+        };
+        const type = typeSelect.value;
+
+        // Update Competency Dropdown (Filtered by Topic & Subtopic, but NOT by Competency to allow adding more)
+        updateDropdownOptions(competencySelect, type, 'competency', { topic: filters.topic, subtopic: filters.subtopic });
+
+        // Update Topic Dropdown (Filtered by Competency & Subtopic)
+        updateDropdownOptions(topicSelect, type, 'topic', { competency: filters.competency, subtopic: filters.subtopic });
+
+        // Update Subtopic Dropdown (Filtered by Competency & Topic)
+        updateDropdownOptions(subtopicSelect, type, 'subtopic', { competency: filters.competency, topic: filters.topic });
     };
 
-    // Load initial data
-    refreshDropdowns(typeSelect.value);
+    // Initialize
+    refreshAllDropdowns();
 
-    // Event: Type Changed
+    // Event: Type Changed (Clear inputs and refresh)
     typeSelect.addEventListener('change', () => {
-        refreshDropdowns(typeSelect.value);
         competencyArea.value = "";
         topicArea.value = "";
         subtopicArea.value = "";
+        refreshAllDropdowns();
     });
 
-    // Helper for multiselect logic
-    const attachMultiSelect = (select, area) => {
+    // Helper to attach listeners to Select boxes (Click to add, then refresh others)
+    const attachInteraction = (select, area) => {
+        // Use 'click' on options or 'change' on select. 
+        // For 'multiple' select, 'change' works best.
         select.addEventListener('change', (e) => {
-            if(e.target.value) {
-                const current = area.value ? area.value + ', ' : '';
-                area.value = current + e.target.value;
-                e.target.value = ""; // Reset dropdown
-            }
+            const selectedVals = Array.from(select.selectedOptions).map(opt => opt.value);
+            
+            // Append selections to textarea
+            let current = area.value ? area.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+            
+            selectedVals.forEach(val => {
+                if(!current.includes(val)) current.push(val);
+            });
+            
+            area.value = current.join(', ');
+            
+            // Unselect visual highlights in listbox to indicate "added" (optional, but cleaner for repeated adding)
+            select.selectedIndex = -1; 
+            
+            // Trigger filtering of OTHER boxes
+            refreshAllDropdowns();
         });
     };
 
-    attachMultiSelect(competencySelect, competencyArea);
-    attachMultiSelect(topicSelect, topicArea);
-    attachMultiSelect(subtopicSelect, subtopicArea);
+    // Helper to attach listeners to TextAreas (Manual typing updates filters)
+    const attachManualTyping = (area) => {
+        area.addEventListener('input', () => {
+             refreshAllDropdowns();
+        });
+    };
+
+    attachInteraction(competencySelect, competencyArea);
+    attachInteraction(topicSelect, topicArea);
+    attachInteraction(subtopicSelect, subtopicArea);
+
+    attachManualTyping(competencyArea);
+    attachManualTyping(topicArea);
+    attachManualTyping(subtopicArea);
 
     // === TIME LOGIC (Per Section) ===
     limitInput.addEventListener('input', () => {
@@ -292,17 +338,17 @@ function addTestSectionUI(existingData = null) {
         if(existingData.timeLimit) limitInput.value = existingData.timeLimit;
         if(existingData.dateTimeExpire) expireInput.value = existingData.dateTimeExpire;
         
-        refreshDropdowns(existingData.type);
+        // Refresh options based on the loaded text data
+        refreshAllDropdowns();
     }
 }
 
 /**
- * Generic helper to fetch unique metadata (Topic, Competency, Subtopic) 
- * from Local QuestionBank files based on Question Type.
+ * Filtered Metadata Loader
+ * Loads unique values for targetField from sourceData,
+ * but only includes rows that match the constraints in filterCriteria.
  */
-async function loadMetadataForType(type, field, selectElement) {
-    selectElement.innerHTML = '<option value="">Loading...</option>';
-    
+function updateDropdownOptions(selectElement, type, targetField, filterCriteria) {
     let sourceData = [];
     
     if (type === "Multiple Choice") sourceData = qbMerchMultipleChoice;
@@ -317,24 +363,40 @@ async function loadMetadataForType(type, field, selectElement) {
     try {
         const uniqueValues = new Set();
 
-        // Iterate through the array of question objects
         sourceData.forEach(item => {
-            Object.values(item).forEach(data => {
-                // Access dynamic field: data.topic, data.competency, or data.subtopic
-                if (data[field]) {
-                    uniqueValues.add(data[field].trim());
-                } 
-            });
+            const q = Object.values(item)[0]; // Get the question object
+            
+            // CHECK FILTERS
+            // 1. If competency filters exist, does this question match?
+            if (filterCriteria.competency && filterCriteria.competency.length > 0) {
+                if (!q.competency || !filterCriteria.competency.includes(q.competency.trim())) return;
+            }
+
+            // 2. If topic filters exist, does this question match?
+            if (filterCriteria.topic && filterCriteria.topic.length > 0) {
+                if (!q.topic || !filterCriteria.topic.includes(q.topic.trim())) return;
+            }
+
+            // 3. If subtopic filters exist, does this question match?
+            if (filterCriteria.subtopic && filterCriteria.subtopic.length > 0) {
+                if (!q.subtopic || !filterCriteria.subtopic.includes(q.subtopic.trim())) return;
+            }
+
+            // If we passed all filters, add the target field value
+            if (q[targetField]) {
+                uniqueValues.add(q[targetField].trim());
+            }
         });
 
         const sortedValues = Array.from(uniqueValues).filter(t => t).sort();
 
+        selectElement.innerHTML = ''; // Clear existing
         if (sortedValues.length === 0) {
-            selectElement.innerHTML = `<option value="">No ${field}s found</option>`;
+            const opt = document.createElement('option');
+            opt.text = "-- No matching options --";
+            opt.disabled = true;
+            selectElement.appendChild(opt);
         } else {
-            // Capitalize first letter for UI label
-            const label = field.charAt(0).toUpperCase() + field.slice(1);
-            selectElement.innerHTML = `<option value="">-- Add ${label} --</option>`;
             sortedValues.forEach(val => {
                 const opt = document.createElement('option');
                 opt.value = val;
@@ -344,7 +406,7 @@ async function loadMetadataForType(type, field, selectElement) {
         }
 
     } catch (e) {
-        console.error(`Error loading ${field} for ${type}:`, e);
+        console.error(`Error filtering ${targetField}:`, e);
         selectElement.innerHTML = '<option value="">Error loading</option>';
     }
 }
