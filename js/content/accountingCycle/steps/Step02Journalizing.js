@@ -320,9 +320,9 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
     
     const result = validateStep02(transactions, data);
 
+    // REMOVE FALSE IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div>
-        // false made the UI invisible
          ${false && showFeedback && html`
                 <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 mb-4 flex justify-between items-center shadow-sm">
                     <span className="font-bold">Validation Results:</span>
