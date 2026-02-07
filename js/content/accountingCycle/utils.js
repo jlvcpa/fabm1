@@ -82,7 +82,7 @@ const getAccountRank = (accountName) => {
         if (n.includes('retained')) return 310;
         if (n.includes('drawings') || n.includes('withdrawal') || n.includes('dividends')) return 320;
         // User Request: Income Summary is last among equity
-        return 350;
+        return 398;
     }
 
     // RANK 400: REVENUE
@@ -106,7 +106,14 @@ const getAccountRank = (accountName) => {
         if (n.includes('freight in')) return 540;
 
         // RANK 600: OPERATING EXPENSES
-        return 600; 
+        if (n.includes('salaries expense')) return 601;
+        if (n.includes('Supplies Expense')) return 604;
+        if (n.includes('Depreciation Expense')) return 608;
+        if (n.includes('Insurance Expense')) return 612;
+        if (n.includes('Utilities Expense')) return 676;
+        if (n.includes('Interest Expense')) return 680;
+        
+        return 699; 
     }
 
     return 999; // Catch-all
