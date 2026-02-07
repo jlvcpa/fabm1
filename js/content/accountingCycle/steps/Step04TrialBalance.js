@@ -376,14 +376,15 @@ export default function Step04TrialBalance({ activityData, data, onChange, showF
         onChange(newData); 
     };
 
+    // REMOVE FALSE IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px]">
-           // ${showFeedback && html`
-           //     <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 mb-4 flex justify-between items-center shadow-sm w-full flex-shrink-0">
-           //         <span className="font-bold flex items-center gap-2"><${AlertCircle} size=${18}/> Validation Results:</span>
-           //         <span className="font-mono font-bold text-lg">Score: ${result.score || 0} of ${result.maxScore || 0} - (${result.letterGrade || 'IR'})</span>
-           //     </div>
-           // `}
+            ${false && showFeedback && html`
+                <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 mb-4 flex justify-between items-center shadow-sm w-full flex-shrink-0">
+                    <span className="font-bold flex items-center gap-2"><${AlertCircle} size=${18}/> Validation Results:</span>
+                    <span className="font-mono font-bold text-lg">Score: ${result.score || 0} of ${result.maxScore || 0} - (${result.letterGrade || 'IR'})</span>
+                </div>
+            `}
 
             <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
                 <div className="flex-1 lg:w-1/2 h-full min-h-0">
