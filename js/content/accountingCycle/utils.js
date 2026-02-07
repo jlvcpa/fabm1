@@ -52,16 +52,24 @@ const getAccountRank = (accountName) => {
         if (n.includes('receivable')) return 110;
         if (n.includes('inventory')) return 120;
         if (n.includes('supplies') || n.includes('prepaid')) return 130;
-        // Non-Current
+
+        // Non-current
         if (n.includes('land')) return 140;
-        if (n.includes('building')) return 150;
+
         if (n.includes('accumulated') && n.includes('building')) return 151;
-        if (n.includes('equipment') || n.includes('machinery') || n.includes('vehicle')) return 160;
-        if (n.includes('accumulated') && n.includes('equipment') || n.includes('machinery')) return 161;
-        if (n.includes('furniture') || n.includes('fixtures') || n.includes('vehicle')) return 162;
-        if (n.includes('accumulated') && n.includes('furniture') || n.includes('furniture')) return 163;
-        if (n.includes('accumulated')) return 180; // General Accum Dep
-        return 199; // Other Assets
+        if (n.includes('building')) return 150;
+
+        if (n.includes('accumulated') && (n.includes('equipment') || n.includes('machinery'))) return 161;
+        if (n.includes('equipment') || n.includes('machinery')) return 160;
+
+        if (n.includes('accumulated') && (n.includes('furniture') || n.includes('fixtures'))) return 163;
+        if (n.includes('furniture') || n.includes('fixtures')) return 162;
+
+        if (n.includes('accumulated')) return 180;
+
+        return 199;
+
+ // Other Assets
     }
 
     // RANK 200: LIABILITIES
@@ -107,11 +115,11 @@ const getAccountRank = (accountName) => {
 
         // RANK 600: OPERATING EXPENSES
         if (n.includes('salaries expense')) return 601;
-        if (n.includes('Supplies Expense')) return 604;
-        if (n.includes('Depreciation Expense')) return 608;
-        if (n.includes('Insurance Expense')) return 612;
-        if (n.includes('Utilities Expense')) return 676;
-        if (n.includes('Interest Expense')) return 680;
+        if (n.includes('supplies expense')) return 604;
+        if (n.includes('depreciation expense')) return 608;
+        if (n.includes('insurance expense')) return 612;
+        if (n.includes('utilities expense')) return 676;
+        if (n.includes('interest expense')) return 680;
         
         return 699; 
     }
