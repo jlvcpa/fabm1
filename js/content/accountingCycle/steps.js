@@ -87,9 +87,9 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                             if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
                             else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
                             // FIX: Step 4 and 9 now use updateAnswer (Standard Object Replace)
-                            // because Step04TrialBalance manages its own complex object structure.
                             else if (stepId === 4 || stepId === 9) updateAnswerFns.updateAnswer(stepId, id); 
-                            else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val }); 
+                            // FIX APPLIED HERE: Changed `val` to `key` because Step 5 sends (field, data)
+                            else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key }); 
                             else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key }); 
                             else updateAnswerFns.updateAnswer(stepId, id); 
                         }}
@@ -135,9 +135,9 @@ export const TaskSection = ({ step, activityData, answers, stepStatus, updateAns
                         onChange=${(id, key, val) => {
                              if (stepId === 1) updateAnswerFns.updateNestedAnswer(1, id.toString(), key, val);
                              else if (stepId === 2 || stepId === 3) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
-                             // FIX: Step 4 and 9 updated here as well
                              else if (stepId === 4 || stepId === 9) updateAnswerFns.updateAnswer(stepId, id);
-                             else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: val });
+                             // FIX APPLIED HERE: Changed `val` to `key`
+                             else if (stepId === 5 || stepId === 6) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
                              else if (stepId === 7 || stepId === 10) updateAnswerFns.updateAnswer(stepId, { ...answers[stepId], [id]: key });
                              else updateAnswerFns.updateAnswer(stepId, id);
                         }}
