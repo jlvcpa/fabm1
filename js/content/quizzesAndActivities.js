@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebas
 import { getLetterGrade } from "../utils.js"; 
 import { AntiCheatSystem } from '../antiCheat.js';
 
-// --- NEW IMPORTS: Question Banks for Live Lookup ---
+// --- QUESTION BANK IMPORTS ---
 import { qbMerchMultipleChoice } from "./questionBank/qbMerchMultipleChoice.js";
 import { qbMerchProblemSolving } from "./questionBank/qbMerchProblemSolving.js";
 import { qbMerchJournalizing } from "./questionBank/qbMerchJournalizing.js";
@@ -20,11 +20,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let sectionIntervals = []; // Array to hold intervals for each section
+let sectionIntervals = []; 
 let currentAntiCheat = null;
 
 // --- GLOBAL QUESTION MAP BUILDER ---
-// This ensures we can look up the "Latest" version of any question by ID
+// This allows us to look up the "Live" version of a question by its ID
 const globalQuestionMap = new Map();
 function buildQuestionMap() {
     if (globalQuestionMap.size > 0) return;
@@ -37,9 +37,8 @@ function buildQuestionMap() {
             });
         }
     });
-    console.log(`[System] Question Map Built: ${globalQuestionMap.size} questions indexed.`);
 }
-buildQuestionMap(); // Run immediately
+buildQuestionMap();
 
 // --- MAIN ENTRY POINT ---
 export async function renderQuizzesAndActivities(containerElement, user, customRunner = null, filterType = null) {
@@ -122,14 +121,14 @@ async function loadStudentActivities(user, customRunner, filterType) {
 
             hasItems = true;
 
-            // --- DATE LOGIC (New vs Old) ---
-            // New: Per-section times. Old: Global times.
-            // For list display, we pick the FIRST section's start/expire if available, else global.
+            // Date Handling: Handle New Structure (Per Section) vs Old Structure (Global)
+            // For the list view, we look at the FIRST section's dates if available
             let start, expire;
             if (data.testQuestions && data.testQuestions.length > 0 && data.testQuestions[0].dateTimeStart) {
                 start = new Date(data.testQuestions[0].dateTimeStart);
                 expire = new Date(data.testQuestions[0].dateTimeExpire);
             } else {
+                // Old Structure (Backwards Compatibility)
                 start = new Date(data.dateTimeStart);
                 expire = new Date(data.dateTimeExpire);
             }
@@ -193,23 +192,23 @@ async function renderQuizRunner(data, user, customRunner = null) {
     const isAccountingCycle = data.tasks && Array.isArray(data.tasks) && data.tasks.length > 0;
 
     if (isAccountingCycle && customRunner && typeof customRunner === 'function') {
-        // ... (Accounting Cycle Routing Logic Preserved) ...
         if (container._reactRoot) {
-             // Reuse logic
+             // Reuse existing root
         } else {
              container.innerHTML = '';
         }
+        
         const goBack = () => {
              if (container._reactRoot) delete container._reactRoot; 
              document.getElementById('qa-toggle-sidebar').click(); 
              loadStudentActivities(user, customRunner);
         };
+
         customRunner(container, data, user, goBack);
         return; 
     }
     
     // --- STANDARD QUIZ LOGIC ---
-    
     if (user.role !== 'teacher' && data.students && !data.students.includes(user.Idnumber)) {
         container.innerHTML = `
             <div class="h-full flex flex-col items-center justify-center text-red-600 bg-white p-8 text-center">
@@ -229,7 +228,8 @@ async function renderQuizRunner(data, user, customRunner = null) {
         if (resultDoc.exists()) {
             const rData = resultDoc.data();
             if (rData.status === "final") {
-                // If final, render READ-ONLY result with Live Calculation
+                // If already finally submitted, show READ-ONLY result
+                // Note: We pass docId so the "Update Score" button works
                 await renderQuizResultPreview(data, user, rData, collectionName, docId);
                 return;
             } else {
@@ -241,7 +241,6 @@ async function renderQuizRunner(data, user, customRunner = null) {
 
     container.innerHTML = '<div class="flex justify-center items-center h-full"><i class="fas fa-spinner fa-spin text-4xl text-blue-800"></i><span class="ml-3">Generating Activity...</span></div>';
     
-    // Pass savedState to generator
     const generatedContent = await generateQuizContent(data, savedState);
 
     // Standard Anti-Cheat HTML
@@ -281,7 +280,6 @@ async function generateQuizContent(activityData, savedState = null) {
         return { html: '<div class="p-8 text-center text-gray-500">No test sections defined.</div>', data: [] };
     }
 
-    // --- TABS HEADER ---
     tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap shrink-0 z-20 sticky top-0 shadow-sm">`;
     
     activityData.testQuestions.forEach((section, index) => {
@@ -293,7 +291,6 @@ async function generateQuizContent(activityData, savedState = null) {
         `;
     });
 
-    // Save & Submit Buttons
     tabsHtml += `
         <div class="ml-auto pl-4 py-2 flex gap-2">
             <button type="button" id="btn-save-progress" class="bg-blue-600 text-white text-sm font-bold px-4 py-1.5 rounded shadow hover:bg-blue-700 transition whitespace-nowrap">
@@ -308,16 +305,17 @@ async function generateQuizContent(activityData, savedState = null) {
     sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
 
     for (const [index, section] of activityData.testQuestions.entries()) {
+        const isHidden = index === 0 ? '' : 'hidden'; 
+        
+        // --- FILTERING ---
+        // Support both old "topics" string and new "topics/competencies/subtopics"
         const sTopics = section.topics ? section.topics.split(',').map(t => t.trim()).filter(t => t) : [];
         const sCompetencies = section.competencies ? section.competencies.split(',').map(t => t.trim()).filter(t => t) : [];
         const sSubtopics = section.subtopics ? section.subtopics.split(',').map(t => t.trim()).filter(t => t) : [];
 
-        const isHidden = index === 0 ? '' : 'hidden'; 
-
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
-        // --- PER-SECTION TIMER UI ---
-        // Fallback to global if section times are missing (Backwards Compatibility)
+        // --- TIMER UI ---
         const startTime = section.dateTimeStart ? new Date(section.dateTimeStart) : new Date(activityData.dateTimeStart);
         const expireTime = section.dateTimeExpire ? new Date(section.dateTimeExpire) : new Date(activityData.dateTimeExpire);
         
@@ -337,7 +335,7 @@ async function generateQuizContent(activityData, savedState = null) {
         let questions = [];
         const count = parseInt(section.noOfQuestions) || 5;
 
-        // --- SOURCE SELECTION ---
+        // --- SOURCE DATA ---
         let localSource = [];
         if (section.type === "Multiple Choice") localSource = qbMerchMultipleChoice;
         else if (section.type === "Problem Solving") localSource = qbMerchProblemSolving;
@@ -348,9 +346,10 @@ async function generateQuizContent(activityData, savedState = null) {
             return { id, ...obj[id] };
         });
 
-        // --- FILTERING ---
+        // --- FILTER ---
         let candidates = flattenedCandidates.filter(q => {
             const subjectMatch = q.subject === "FABM1";
+            // Check filters: If filter list is empty, accept all. Else check includes.
             const topicMatch = sTopics.length === 0 || sTopics.includes(q.topic);
             const compMatch = sCompetencies.length === 0 || sCompetencies.includes(q.competency);
             const subMatch = sSubtopics.length === 0 || sSubtopics.includes(q.subtopic);
@@ -359,19 +358,18 @@ async function generateQuizContent(activityData, savedState = null) {
 
         candidates.sort(() => 0.5 - Math.random());
         
-        // --- SELECTION & RESUME LOGIC ---
+        // --- SELECTION (Gap Filling Logic) ---
         for(let i=0; i < count; i++) {
             const uiId = `s${index}_q${i}`;
             let selectedQ = null;
 
-            // If we have saved state for this slot, use the SAVED Question ID to ensure consistency
+            // 1. Try to load SAVED question for this specific slot
             if (savedState && savedState.questionsTaken && savedState.questionsTaken[uiId]) {
                 const savedRef = savedState.questionsTaken[uiId];
-                // 1. Try to lookup fresh data using DB_ID
+                // Try live lookup by ID first, then fallback to snapshot
                 if (savedRef.dbId && globalQuestionMap.has(savedRef.dbId)) {
                     selectedQ = { ...globalQuestionMap.get(savedRef.dbId) };
                 } else {
-                    // 2. Fallback to legacy snapshot
                     selectedQ = {
                         id: savedRef.id || "legacy",
                         question: savedRef.questionText,
@@ -382,9 +380,11 @@ async function generateQuizContent(activityData, savedState = null) {
                         instructions: savedRef.instructions
                     };
                 }
-                selectedQ.isSaved = true; // Mark as saved so we can disable inputs
-            } else {
-                // New question for this slot (unanswered)
+                selectedQ.isSaved = true; 
+            } 
+            
+            // 2. If no saved question, pick NEW random
+            if (!selectedQ) {
                 if (candidates.length > 0) {
                     selectedQ = candidates.pop(); 
                     selectedQ.isSaved = false;
@@ -394,30 +394,35 @@ async function generateQuizContent(activityData, savedState = null) {
             if (selectedQ) questions.push(selectedQ);
         }
         
+        // --- RENDER QUESTIONS ---
         let questionsHtml = '';
         let trackerHtml = '';
 
         questions.forEach((q, qIdx) => {
             const uiId = `s${index}_q${qIdx}`;
             
-            // Logic to disable input if saved
+            // Lock inputs if saved
             const disabledAttr = q.isSaved ? 'disabled' : '';
             const lockIcon = q.isSaved ? '<i class="fas fa-lock text-gray-400 ml-2" title="Answer Saved"></i>' : '';
-            const dimClass = q.isSaved ? 'bg-gray-100 cursor-not-allowed' : 'bg-white';
             
-            // Load saved value
             let savedValue = null;
             if (q.isSaved && savedState && savedState.answers) {
                 savedValue = savedState.answers[uiId];
             }
 
-            // Save metadata for submission (reference based)
+            const getSafeCorrectAnswer = (q) => {
+                if (q.answer !== undefined && q.answer !== null && q.answer !== "") return q.answer;
+                if (q.solution !== undefined && q.solution !== null && q.solution !== "") return q.solution;
+                if (q.correctAnswer !== undefined && q.correctAnswer !== null) return q.correctAnswer;
+                return null;
+            };
+
             questionData.push({ 
                 uiId: uiId, 
                 dbId: q.id, 
                 type: section.type,
                 questionText: q.question || (q.title || 'Journal Activity'),
-                correctAnswer: q.correctAnswer,
+                correctAnswer: getSafeCorrectAnswer(q),
                 options: q.options || [],
                 explanation: q.explanation || '',
                 transactions: q.transactions || [],
@@ -448,7 +453,6 @@ async function generateQuizContent(activityData, savedState = null) {
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
-                // Tracker Button logic: Green if Saved, Blue if Current
                 const trackerClass = q.isSaved 
                     ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center"
                     : (qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700');
@@ -460,13 +464,14 @@ async function generateQuizContent(activityData, savedState = null) {
                 `;
 
                 let innerContent = '';
+                const dimClass = q.isSaved ? 'opacity-75 cursor-not-allowed bg-gray-50' : 'hover:bg-blue-50 cursor-pointer bg-white';
+                const textDim = q.isSaved ? 'bg-gray-100 cursor-not-allowed' : 'bg-white';
+
                 if (section.type === "Multiple Choice") {
                     const opts = q.options ? q.options.map((opt, optIdx) => {
                         const isChecked = String(savedValue) === String(optIdx) ? 'checked' : '';
-                        const optDim = q.isSaved ? 'opacity-75 cursor-not-allowed bg-gray-50' : 'hover:bg-blue-50 cursor-pointer bg-white';
-                        
                         return `
-                        <label class="flex items-start p-3 border border-gray-200 rounded transition-colors mb-2 shadow-sm ${optDim}">
+                        <label class="flex items-start p-3 border border-gray-200 rounded transition-colors mb-2 shadow-sm ${dimClass}">
                             <input type="radio" name="${uiId}" value="${optIdx}" class="input-checker mt-1 mr-3 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 shrink-0" ${disabledAttr} ${isChecked}>
                             <span class="text-sm text-gray-700">${opt}</span>
                         </label>
@@ -475,7 +480,7 @@ async function generateQuizContent(activityData, savedState = null) {
                 } else {
                     const val = savedValue || '';
                     innerContent = `
-                        <textarea name="${uiId}" class="input-checker w-full mt-2 p-3 border border-gray-300 rounded h-32 md:h-48 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-y ${dimClass}" placeholder="Type your answer here..." ${disabledAttr}>${val}</textarea>
+                        <textarea name="${uiId}" class="input-checker w-full mt-2 p-3 border border-gray-300 rounded h-32 md:h-48 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm resize-y ${textDim}" placeholder="Type your answer here..." ${disabledAttr}>${val}</textarea>
                     `;
                 }
 
@@ -502,7 +507,6 @@ async function generateQuizContent(activityData, savedState = null) {
                 `;
             } 
             else {
-                // --- JOURNALIZING ---
                 const transactions = q.transactions || [];
                 const jHiddenClass = qIdx === 0 ? '' : 'hidden'; 
                 
@@ -640,11 +644,10 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
     const saveBtn = document.getElementById('btn-save-progress');
     const form = document.getElementById('quiz-form');
 
-    // --- ANTICHEAT LOGIC ---
+    // Anti-Cheat
     const highStakesKeywords = ['Summative', 'Prelim', 'Midterm', 'Semi-final', 'Final', 'Performance'];
     const isHighStakes = highStakesKeywords.some(keyword => activityData.activityname.includes(keyword));
     
-    // Stop any existing anti-cheat before starting new one
     if (currentAntiCheat) {
         currentAntiCheat.stopMonitoring();
         currentAntiCheat = null;
@@ -653,21 +656,18 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
     if (isHighStakes) {
         currentAntiCheat = new AntiCheatSystem({
             onCheatDetected: () => {
-                // Penalty Logic: Reload to force restart/refresh
                 sectionIntervals.forEach(i => clearInterval(i));
                 alert("Anti-Cheat Violation Detected! The activity will now reload.");
                 renderQuizRunner(activityData, user);
             }
         });
-        
         window.handleUnlockClick = () => currentAntiCheat.handleUnlockClick();
         currentAntiCheat.startMonitoring();
     }
 
-    // --- PER SECTION TIMERS ---
+    // Per-Section Timers
     activityData.testQuestions.forEach((section, index) => {
         const timerDisplay = document.getElementById(`timer-display-${index}`);
-        // Fallback dates
         const exp = section.dateTimeExpire ? new Date(section.dateTimeExpire).getTime() : new Date(activityData.dateTimeExpire).getTime();
 
         const updateSectionTimer = () => {
@@ -686,35 +686,27 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 if(timerDisplay) timerDisplay.innerHTML = `${h > 0 ? h + ':' : ''}${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
             }
         };
-        
         updateSectionTimer();
         const interval = setInterval(updateSectionTimer, 1000);
         sectionIntervals.push(interval);
     });
 
-    // --- TAB LOGIC ---
+    // Tab Logic
     const tabs = document.querySelectorAll('.tab-btn');
     const sections = document.querySelectorAll('.test-section-panel');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            tabs.forEach(t => {
-                t.classList.remove('border-blue-800', 'text-blue-800', 'bg-blue-50');
-                t.classList.add('border-transparent', 'text-gray-600');
-            });
-            tab.classList.remove('border-transparent', 'text-gray-600');
-            tab.classList.add('border-blue-800', 'text-blue-800', 'bg-blue-50');
-
-            const targetId = tab.dataset.target;
+            tabs.forEach(t => { t.classList.remove('border-blue-800', 'text-blue-800', 'bg-blue-50'); t.classList.add('border-transparent', 'text-gray-600'); });
+            tab.classList.remove('border-transparent', 'text-gray-600'); tab.classList.add('border-blue-800', 'text-blue-800', 'bg-blue-50');
             sections.forEach(sec => sec.classList.add('hidden'));
-            document.getElementById(targetId).classList.remove('hidden');
+            document.getElementById(tab.dataset.target).classList.remove('hidden');
         });
     });
 
-    // --- NAVIGATION & TRACKER LOGIC ---
+    // Navigation & Tracker Logic
     sections.forEach(section => {
         const type = section.dataset.sectionType;
-        
         if (type !== 'Journalizing') {
             const questions = section.querySelectorAll('.question-block');
             const trackers = section.querySelectorAll('.tracker-btn');
@@ -722,12 +714,8 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
             const nextBtns = section.querySelectorAll('.nav-next-btn');
             
             let currentIndex = 0;
-            // Find first incomplete question
             for (let i = 0; i < trackers.length; i++) {
-                if (trackers[i].dataset.isAnswered !== "true") {
-                    currentIndex = i;
-                    break;
-                }
+                if (trackers[i].dataset.isAnswered !== "true") { currentIndex = i; break; }
             }
 
             function showQuestion(index) {
@@ -737,23 +725,18 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 });
                 trackers.forEach((t, i) => {
                     if (i === index) {
-                        if (t.dataset.isAnswered === "true") {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center ring-2 ring-blue-400";
-                        } else {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
-                        }
+                        t.className = t.dataset.isAnswered === "true" 
+                            ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center ring-2 ring-blue-400"
+                            : "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
                     } else {
-                        if (t.dataset.isAnswered === "true") {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center";
-                        } else {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
-                        }
+                        t.className = t.dataset.isAnswered === "true"
+                            ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center"
+                            : "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
                     }
                 });
                 currentIndex = index;
             }
-            
-            showQuestion(currentIndex); 
+            showQuestion(currentIndex);
 
             trackers.forEach((t, idx) => t.addEventListener('click', () => showQuestion(idx)));
             prevBtns.forEach(btn => btn.addEventListener('click', () => { if (currentIndex > 0) showQuestion(currentIndex - 1); }));
@@ -776,7 +759,6 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
             prevQuestionBtns.forEach(btn => btn.addEventListener('click', () => { if (currentJournalIndex > 0) showJournalQuestion(currentJournalIndex - 1); }));
             nextQuestionBtns.forEach(btn => btn.addEventListener('click', () => { if (currentJournalIndex < questions.length - 1) showJournalQuestion(currentJournalIndex + 1); }));
             
-            // Internal Transaction Navigation
             questions.forEach(qBlock => {
                 const transBtns = qBlock.querySelectorAll('.trans-tracker-btn');
                 const transBlocks = qBlock.querySelectorAll('.journal-trans-block');
@@ -786,16 +768,13 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 const switchTransaction = (idx) => {
                       transBlocks.forEach(b => b.classList.add('hidden'));
                       if(transBlocks[idx]) transBlocks[idx].classList.remove('hidden');
-
                       transBtns.forEach((b, bIdx) => {
                           if (bIdx === idx) {
                               b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-blue-100 border-l-4 border-blue-600 text-blue-800';
                           } else {
-                              if (b.dataset.isAnswered === "true") {
-                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
-                              } else {
-                                  b.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-                              }
+                              b.className = b.dataset.isAnswered === "true"
+                                  ? 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100'
+                                  : 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
                           }
                       });
                 };
@@ -811,30 +790,22 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
     
     function checkCompletion() {
         let allAnswered = true;
-        
         for (const q of questionData) {
             let isQuestionAnswered = false;
-
             if (q.type === 'Multiple Choice') {
                 const checked = form.querySelector(`input[name="${q.uiId}"]:checked`);
-                // Also check if previously saved (disabled)
-                if (checked || (document.querySelector(`input[name="${q.uiId}"][disabled]:checked`))) {
-                    isQuestionAnswered = true;
-                }
+                if (checked || document.querySelector(`input[name="${q.uiId}"][disabled]:checked`)) isQuestionAnswered = true;
                 else allAnswered = false;
                 
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
                     if (!trackerBtn.classList.contains('bg-blue-600')) {
-                        if (isQuestionAnswered) {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center";
-                        } else {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
-                        }
+                        trackerBtn.className = isQuestionAnswered 
+                            ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center"
+                            : "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
                     }
                 }
-
             } else if (q.type === 'Problem Solving') {
                 const val = form.querySelector(`textarea[name="${q.uiId}"]`).value;
                 if (val && val.trim() !== '') isQuestionAnswered = true;
@@ -844,36 +815,27 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
                     if (!trackerBtn.classList.contains('bg-blue-600')) {
-                        if (isQuestionAnswered) {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center";
-                        } else {
-                            trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
-                        }
+                        trackerBtn.className = isQuestionAnswered
+                            ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center"
+                            : "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
                     }
                 }
-
             } else if (q.type === 'Journalizing') {
                 const transBtns = document.querySelectorAll(`button[data-target-trans^="${q.uiId}_t"]`);
                 let questionHasData = false;
-                
                 transBtns.forEach(btn => {
                     const transUiId = btn.dataset.targetTrans;
                     const inputs = form.querySelectorAll(`input[name^="${transUiId}"]`);
                     let transHasData = false;
                     inputs.forEach(i => { if(i.value) transHasData = true; });
-
                     btn.dataset.isAnswered = transHasData ? "true" : "false";
                     if(transHasData) questionHasData = true;
-
                     if (!btn.classList.contains('bg-blue-100')) {
-                        if (transHasData) {
-                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100';
-                        } else {
-                            btn.className = 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
-                        }
+                        btn.className = transHasData
+                            ? 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-green-50 border-l-4 border-green-500 text-green-700 hover:bg-green-100'
+                            : 'trans-tracker-btn w-full text-left p-3 border-b border-gray-100 text-xs md:text-sm font-medium transition-colors focus:outline-none bg-white border-l-4 border-transparent text-gray-600 hover:bg-gray-50';
                     }
                 });
-
                 if(!questionHasData) allAnswered = false; 
             }
         }
@@ -903,7 +865,7 @@ async function saveProgress(activityData, questionData, user) {
     const form = document.getElementById('quiz-form');
     const formData = new FormData(form);
     const answers = {};
-    const questionsTaken = {}; // To persist WHICH questions were loaded
+    const questionsTaken = {}; 
 
     questionData.forEach(q => {
         let hasValue = false;
@@ -930,10 +892,7 @@ async function saveProgress(activityData, questionData, user) {
                  if(!currentRow[key]) currentRow[key] = {};
                  currentRow[key][field] = input.value;
             });
-            if (hasRowData) {
-                value = currentRow;
-                hasValue = true;
-            }
+            if (hasRowData) { value = currentRow; hasValue = true; }
         }
 
         // Check for already saved (disabled) values
@@ -961,9 +920,9 @@ async function saveProgress(activityData, questionData, user) {
              }
         }
 
+        // Only save key if we have a value (Don't save unanswered)
         if (hasValue) {
             answers[q.uiId] = value;
-            // SAVE REFERENCE + SNAPSHOT
             questionsTaken[q.uiId] = {
                 dbId: q.dbId,
                 questionText: q.questionText,
@@ -996,7 +955,7 @@ async function saveProgress(activityData, questionData, user) {
     try {
         await setDoc(doc(db, collectionName, docName), payload);
         alert("Progress saved! Page will reload to lock saved answers.");
-        renderQuizRunner(activityData, user); // Reload to apply disabled state
+        renderQuizRunner(activityData, user); 
     } catch (e) {
         console.error("Save Error:", e);
         alert("Error saving: " + e.message);
@@ -1007,7 +966,6 @@ async function saveProgress(activityData, questionData, user) {
 async function submitQuiz(activityData, questionData, user, isFinal = false) {
     if(!confirm("Are you sure you want to submit? This is final.")) return;
     
-    // Stop AntiCheat
     if(currentAntiCheat) {
         currentAntiCheat.stopMonitoring();
         currentAntiCheat = null;
@@ -1021,7 +979,6 @@ async function submitQuiz(activityData, questionData, user, isFinal = false) {
     const questionsTaken = {};
 
     questionData.forEach(q => {
-        // Collect full snapshot data + dbId reference
         questionsTaken[q.uiId] = {
             dbId: q.dbId, 
             questionText: q.questionText,
@@ -1052,7 +1009,6 @@ async function submitQuiz(activityData, questionData, user, isFinal = false) {
              val = currentRow;
         }
 
-        // If null, check for disabled (saved) inputs
         if (!val || (typeof val === 'string' && val === '')) {
              const disabledInput = document.querySelector(`[name="${q.uiId}"][disabled]`);
              if (disabledInput) {
@@ -1139,12 +1095,40 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
     let contentHtml = '';
     const newSectionScores = {}; // To store the RE-CALCULATED scores
 
-    // Filter Saved Questions
     let savedQuestions = resultData.questionsTaken;
     if (!savedQuestions || Object.keys(savedQuestions).length === 0) {
         // Fallback for legacy data without questionsTaken
         savedQuestions = {}; 
-        // ... (Legacy handling code logic similar to previous version if needed, simplified here)
+        const answers = resultData.answers || {};
+        const ensureQ = (key, type) => {
+            if (!savedQuestions[key]) {
+                savedQuestions[key] = {
+                    uiId: key,
+                    type: type,
+                    questionText: "Legacy Submission",
+                    correctAnswer: "N/A",
+                    explanation: "Details not available",
+                    options: [], 
+                    transactions: [],
+                    instructions: null
+                };
+            }
+            return savedQuestions[key];
+        };
+        Object.keys(answers).forEach(k => {
+            const parts = k.split('_'); 
+            if (parts.length < 2) return;
+            const sectionIdx = parseInt(parts[0].replace('s',''));
+            const qKey = `${parts[0]}_${parts[1]}`;
+            const sectionType = activityData.testQuestions[sectionIdx] ? activityData.testQuestions[sectionIdx].type : 'Unknown';
+            const qObj = ensureQ(qKey, sectionType);
+            if (sectionType === 'Journalizing' && parts.length >= 4) {
+                const tIdx = parseInt(parts[2].replace('t',''));
+                const rIdx = parseInt(parts[3].replace('r',''));
+                if (!qObj.transactions[tIdx]) qObj.transactions[tIdx] = { date: `Trans ${tIdx+1}`, description: "Legacy", rows: 0 };
+                if (rIdx >= qObj.transactions[tIdx].rows) qObj.transactions[tIdx].rows = rIdx + 1;
+            } 
+        });
     }
 
     // --- RENDER SECTIONS ---
@@ -1153,7 +1137,6 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
         let sectionMaxScore = 0;
         let sectionBodyHtml = '';
 
-        // Filter keys for this section (s0_q1, s0_q2...)
         const sectionKeys = Object.keys(savedQuestions).filter(k => k.startsWith(`s${index}_`));
         
         sectionKeys.sort((a, b) => {
@@ -1185,7 +1168,6 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
             if (record.dbId && globalQuestionMap.has(record.dbId)) {
                 liveQ = globalQuestionMap.get(record.dbId);
             } else {
-                // Fallback to snapshot
                 liveQ = { 
                     question: record.questionText, 
                     correctAnswer: record.correctAnswer, 
@@ -1246,13 +1228,11 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
                     let studentRowsHtml = '';
                     let solutionRowsHtml = '';
 
-                    // Score calculation logic mirrored from submitQuiz but using liveQ
                     for(let r=0; r < rowCount; r++) {
                         const cellKey = `t${tIdx}_r${r}`;
                         const cellData = (userAnswer && userAnswer[cellKey]) ? userAnswer[cellKey] : { date:'', acct:'', dr:'', cr:'' };
                         const solRow = solRows[r] || null;
 
-                        // Date Scoring
                         const sDate = cellData.date.trim();
                         if (solRow && !solRow.isExplanation && (solRow.date || r === 0)) {
                              sectionMaxScore++; 
@@ -1271,7 +1251,6 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
                              }
                         } else { if (sDate !== '') sectionScore--; }
 
-                        // Account Scoring
                         const sAcct = cellData.acct;
                         if (solRow) {
                              sectionMaxScore++; 
@@ -1287,7 +1266,6 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
                              }
                         }
 
-                        // Dr/Cr Scoring
                         const sDr = cellData.dr.trim();
                         const cleanSolDr = (solRow && solRow.debit) ? Number(solRow.debit).toFixed(2) : "";
                         if (solRow && !solRow.isExplanation && cleanSolDr !== "") {
@@ -1302,11 +1280,9 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
                             if (sCr === cleanSolCr && sCr.match(/^\d+\.\d{2}$/)) sectionScore++;
                         } else { if (sCr !== "") sectionScore--; }
 
-                        // HTML Building
                         studentRowsHtml += `<tr class="border-b border-gray-100 bg-white"><td class="p-1.5 font-mono text-xs border-r">${cellData.date}</td><td class="p-1.5 font-mono text-xs border-r">${cellData.acct}</td><td class="p-1.5 font-mono text-xs border-r text-right">${cellData.dr}</td><td class="p-1.5 font-mono text-xs text-right">${cellData.cr}</td></tr>`;
                     }
 
-                    // Solution HTML
                     if (trans.solution) {
                         trans.solution.forEach(solRow => {
                             if (solRow.isExplanation) {
@@ -1374,17 +1350,6 @@ async function renderQuizResultPreview(activityData, user, resultData, collectio
                     <h2 class="text-xl font-semibold mt-1">${activityData.activityname}</h2>
                 </div>
                 
-                <div class="bg-blue-50 p-4 border-b border-gray-200 text-sm md:text-base">
-                    <div class="flex flex-col md:flex-row justify-between mb-2">
-                        <div><strong>Class Number:</strong> ${user.CN || 'N/A'}</div>
-                        <div><strong>Date:</strong> ${dateTaken}</div>
-                    </div>
-                    <div class="flex flex-col md:flex-row justify-between">
-                        <div><strong>Name:</strong> ${user.LastName}, ${user.FirstName}</div>
-                        <div><strong>Section:</strong> ${activityData.section}</div>
-                    </div>
-                </div>
-
                 <div class="bg-yellow-50 p-4 border-b border-yellow-200 flex justify-between items-center">
                     <div class="text-sm text-yellow-800">
                         <i class="fas fa-info-circle mr-1"></i> Scores are calculated live.
