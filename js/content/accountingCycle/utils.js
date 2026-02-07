@@ -57,7 +57,10 @@ const getAccountRank = (accountName) => {
         if (n.includes('building')) return 150;
         if (n.includes('accumulated') && n.includes('building')) return 151;
         if (n.includes('equipment') || n.includes('machinery') || n.includes('vehicle')) return 160;
-        if (n.includes('accumulated')) return 161; // General Accum Dep
+        if (n.includes('accumulated') && n.includes('equipment') || n.includes('machinery')) return 161;
+        if (n.includes('furniture') || n.includes('fixtures') || n.includes('vehicle')) return 162;
+        if (n.includes('accumulated') && n.includes('furniture') || n.includes('furniture')) return 163;
+        if (n.includes('accumulated')) return 180; // General Accum Dep
         return 199; // Other Assets
     }
 
