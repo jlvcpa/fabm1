@@ -266,8 +266,11 @@ async function generateQuizContent(activityData, savedState = null) {
         return { html: '<div class="p-8 text-center text-gray-500">No test sections defined.</div>', data: [] };
     }
 
+    // --- START TABS HTML ---
     tabsHtml = `<div class="bg-white border-b border-gray-300 flex items-center px-2 overflow-x-auto whitespace-nowrap shrink-0 z-20 sticky top-0 shadow-sm">`;
     
+    // 1. Tab Buttons Left
+    tabsHtml += `<div class="flex items-center">`;
     activityData.testQuestions.forEach((section, index) => {
         const isActive = index === 0 ? 'border-blue-800 text-blue-800 bg-blue-50' : 'border-transparent text-gray-600 hover:text-blue-600';
         tabsHtml += `
@@ -276,7 +279,31 @@ async function generateQuizContent(activityData, savedState = null) {
             </button>
         `;
     });
+    tabsHtml += `</div>`;
 
+    // 2. Center Info Panel (Timers & Dates)
+    tabsHtml += `<div class="flex-1 flex justify-center items-center px-2">`;
+    activityData.testQuestions.forEach((section, index) => {
+        const isHidden = index === 0 ? '' : 'hidden';
+        const startTime = section.dateTimeStart ? new Date(section.dateTimeStart) : new Date(activityData.dateTimeStart);
+        const expireTime = section.dateTimeExpire ? new Date(section.dateTimeExpire) : new Date(activityData.dateTimeExpire);
+
+        tabsHtml += `
+            <div id="section-timer-info-${index}" class="section-timer-info bg-yellow-50 border border-yellow-200 rounded px-4 py-1 flex flex-row items-center gap-6 shadow-sm ${isHidden}">
+                <div class="flex flex-col text-xs text-yellow-900">
+                    <span><strong>Start:</strong> ${startTime.toLocaleString()}</span>
+                    <span><strong>Due:</strong> ${expireTime.toLocaleString()}</span>
+                </div>
+                <div class="font-bold text-red-600 text-lg flex items-center">
+                    <i class="fas fa-hourglass-half mr-2"></i>
+                    <span id="timer-display-${index}">--:--:--</span>
+                </div>
+            </div>
+        `;
+    });
+    tabsHtml += `</div>`;
+
+    // 3. Right Save Buttons
     tabsHtml += `
         <div class="ml-auto pl-4 py-2 flex gap-2">
             <button type="button" id="btn-save-progress" class="bg-blue-600 text-white text-sm font-bold px-4 py-1.5 rounded shadow hover:bg-blue-700 transition whitespace-nowrap">
@@ -287,6 +314,7 @@ async function generateQuizContent(activityData, savedState = null) {
             </button>
         </div>
     </div>`;
+    // --- END TABS HTML ---
 
     sectionsHtml = `<div class="w-full max-w-7xl mx-auto p-2 md:p-4">`; 
 
@@ -299,22 +327,31 @@ async function generateQuizContent(activityData, savedState = null) {
 
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
-        // Section Timer
-        const startTime = section.dateTimeStart ? new Date(section.dateTimeStart) : new Date(activityData.dateTimeStart);
-        const expireTime = section.dateTimeExpire ? new Date(section.dateTimeExpire) : new Date(activityData.dateTimeExpire);
-        
-        sectionsHtml += `
-            <div class="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4 flex flex-col md:flex-row justify-between items-center text-sm text-yellow-800 shadow-sm">
-                <div class="flex gap-4">
-                    <span><strong>Start:</strong> ${startTime.toLocaleString()}</span>
-                    <span><strong>Due:</strong> ${expireTime.toLocaleString()}</span>
-                </div>
-                <div class="mt-2 md:mt-0 font-bold text-red-600 text-lg flex items-center">
-                    <i class="fas fa-hourglass-half mr-2"></i>
-                    <span id="timer-display-${index}">--:--:--</span>
+        // -- STICKY HEADER IMPLEMENTATION --
+        const instructionText = (section.type === 'Journalizing') ? '' : section.instructions; // Journaling has specific instructions per question usually, but we set a default here
+        const lockIcon = ''; // handled per question or if section locked logic exists
+
+        // Sticky Header placed BELOW tabs (top-14 is approx height of tab bar)
+        const stickyHeaderHtml = `
+            <div class="sticky top-14 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
+                <div class="flex flex-col gap-.5 text-xs text-gray-700">
+                    <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
+                        <span class="font-bold text-blue-800">Type:</span> ${section.type}
+                    </h3>
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
+                    </div>
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Instruction:</span> ${section.instructions}
+                    </div>
+                    <div class="border-b pb-1">
+                        <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
+                    </div>
                 </div>
             </div>
         `;
+        
+        sectionsHtml += stickyHeaderHtml;
 
         let questions = [];
         const count = parseInt(section.noOfQuestions) || 5;
@@ -383,7 +420,6 @@ async function generateQuizContent(activityData, savedState = null) {
             const uiId = `s${index}_q${qIdx}`;
             
             const disabledAttr = q.isSaved ? 'disabled' : '';
-            const lockIcon = q.isSaved ? '<i class="fas fa-lock text-gray-400 ml-2" title="Answer Saved"></i>' : '';
             const dimClass = q.isSaved ? 'bg-gray-100 cursor-not-allowed' : 'bg-white';
             
             let savedValue = null;
@@ -403,36 +439,17 @@ async function generateQuizContent(activityData, savedState = null) {
                 instructions: q.instructions || null
             });
 
-            const instructionText = (section.type === 'Journalizing' && q.instructions) ? q.instructions : section.instructions;
-            
-            const stickyHeader = `
-                <div class="sticky top-0 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
-                    <div class="flex flex-col gap-.5 text-xs text-gray-700">
-                        <h3 class="text-lg font-semibold border-b pb-1 text-blue-900">
-                            <span class="font-bold text-blue-800">Type:</span> ${section.type} ${lockIcon}
-                        </h3>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Topic:</span> ${section.topics}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Instruction:</span> ${instructionText}
-                        </div>
-                        <div class="border-b pb-1">
-                            <span class="font-bold text-blue-800">Rubric:</span> ${section.gradingRubrics || 'N/A'}
-                        </div>
-                    </div>
-                </div>
-            `;
-
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
+                // Tracker Button Generation
+                // NOTE: Highlighting logic is handled dynamically, but we set initial state here
                 const trackerClass = q.isSaved 
                     ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center"
-                    : (qIdx===0 ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700');
+                    : (qIdx===0 ? 'tracker-btn w-9 h-9 m-0.5 rounded-full border bg-blue-600 text-white border-blue-600 font-bold flex items-center justify-center ring-2 ring-blue-300' : 'tracker-btn w-9 h-9 m-0.5 rounded-full border bg-white text-gray-700 border-gray-300 font-bold flex items-center justify-center hover:bg-blue-100');
 
                 trackerHtml += `
-                    <button type="button" class="${trackerClass} w-9 h-9 m-0.5 rounded-full border text-sm font-bold flex items-center justify-center hover:bg-blue-100 focus:outline-none" data-target-question="${uiId}" ${q.isSaved ? 'data-is-answered="true"' : ''}>
+                    <button type="button" class="${trackerClass}" data-target-question="${uiId}" ${q.isSaved ? 'data-is-answered="true"' : ''}>
                         ${qIdx + 1}
                     </button>
                 `;
@@ -544,16 +561,17 @@ async function generateQuizContent(activityData, savedState = null) {
                         </div>
                     `;
                 });
+                
+                // For Journalizing, we reuse the Sticky Header logic if it was not set above, 
+                // but we already set the sticky header at the section level. 
+                // So here we only display content.
 
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
                         <div class="bg-white rounded shadow-sm border border-gray-200 flex flex-col md:flex-row overflow-hidden">
                              <div class="flex-1 p-0 md:p-0 border-b md:border-b-0 md:border-r border-gray-200 flex flex-col">
-                                 ${stickyHeader}
-                                 
                                  <div class="p-4 md:p-2 flex-1">
                                      ${transContent}
-                                     
                                      ${questions.length > 1 ? `
                                      <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end space-x-2">
                                           <button type="button" class="nav-prev-btn px-3 py-1 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50">Previous Question</button>
@@ -667,6 +685,7 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
     // Tab Logic
     const tabs = document.querySelectorAll('.tab-btn');
     const sections = document.querySelectorAll('.test-section-panel');
+    const timerInfos = document.querySelectorAll('.section-timer-info');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -678,8 +697,15 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
             tab.classList.add('border-blue-800', 'text-blue-800', 'bg-blue-50');
 
             const targetId = tab.dataset.target;
+            const index = targetId.split('-')[2];
+
             sections.forEach(sec => sec.classList.add('hidden'));
             document.getElementById(targetId).classList.remove('hidden');
+
+            // Switch Timer Display in Header
+            timerInfos.forEach(info => info.classList.add('hidden'));
+            const targetTimer = document.getElementById(`section-timer-info-${index}`);
+            if(targetTimer) targetTimer.classList.remove('hidden');
         });
     });
 
@@ -706,21 +732,27 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                     if (i === index) q.classList.remove('hidden');
                     else q.classList.add('hidden');
                 });
+                
+                // Update Tracker Styling
                 trackers.forEach((t, i) => {
+                    // Reset base classes
+                    t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border font-bold flex items-center justify-center focus:outline-none transition-colors";
+                    
                     if (i === index) {
-                        if (t.dataset.isAnswered === "true") {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center ring-2 ring-blue-400";
-                        } else {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-blue-600 bg-blue-600 text-white font-bold flex items-center justify-center ring-2 ring-blue-300";
-                        }
+                        // CURRENT QUESTION - Highlight Blue
+                        t.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'ring-2', 'ring-blue-300');
                     } else {
+                        // Not Current
                         if (t.dataset.isAnswered === "true") {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center";
+                             // Answered - Green
+                             t.classList.add('bg-green-100', 'text-green-700', 'border-green-500');
                         } else {
-                             t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-gray-300 bg-white text-gray-700 font-bold flex items-center justify-center hover:bg-blue-100";
+                             // Default - White/Gray
+                             t.classList.add('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-blue-100');
                         }
                     }
                 });
+                
                 currentIndex = index;
             }
             
@@ -792,6 +824,9 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
+                    
+                    // Note: Real-time update logic only updates colors if NOT current active question
+                    // The 'showQuestion' function handles logic for the active state
                     if (!trackerBtn.classList.contains('bg-blue-600')) {
                         if (isQuestionAnswered) {
                             trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center";
@@ -856,7 +891,16 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
 
 // --- SAVE PROGRESS (Reference Based) ---
 async function saveProgress(activityData, questionData, user) {
-    if(!confirm("Save progress? Saved answers cannot be edited later.")) return;
+    // PREVENT ANTI-CHEAT VIOLATION: Stop monitoring before alert dialogs
+    if (currentAntiCheat) {
+        currentAntiCheat.stopMonitoring();
+    }
+    
+    if(!confirm("Save progress? Saved answers cannot be edited later.")) {
+        // Resume monitoring if user cancels save
+        if (currentAntiCheat) currentAntiCheat.startMonitoring();
+        return;
+    }
 
     const form = document.getElementById('quiz-form');
     const formData = new FormData(form);
@@ -906,14 +950,14 @@ async function saveProgress(activityData, questionData, user) {
                  const inputs = document.querySelectorAll(`input[name^="${q.uiId}"]`);
                  let currentRow = {};
                  inputs.forEach(input => {
-                     const name = input.name;
-                     const parts = name.split('_'); 
-                     const tIdx = parts[2];
-                     const rIdx = parts[3];
-                     const field = parts[4];
-                     const key = `${tIdx}_${rIdx}`;
-                     if(!currentRow[key]) currentRow[key] = {};
-                     currentRow[key][field] = input.value;
+                      const name = input.name;
+                      const parts = name.split('_'); 
+                      const tIdx = parts[2];
+                      const rIdx = parts[3];
+                      const field = parts[4];
+                      const key = `${tIdx}_${rIdx}`;
+                      if(!currentRow[key]) currentRow[key] = {};
+                      currentRow[key][field] = input.value;
                  });
                  value = currentRow; hasValue = true;
              }
@@ -1019,16 +1063,16 @@ async function submitQuiz(activityData, questionData, user, isFinal = false) {
                      const inputs = document.querySelectorAll(`input[name^="${q.uiId}"]`);
                      let currentRow = {};
                      inputs.forEach(input => {
-                         const name = input.name;
-                         const parts = name.split('_'); 
-                         const tIdx = parts[2];
-                         const rIdx = parts[3];
-                         const field = parts[4];
-                         const key = `${tIdx}_${rIdx}`;
-                         if(!currentRow[key]) currentRow[key] = {};
-                         currentRow[key][field] = input.value;
-                     });
-                     val = currentRow;
+                          const name = input.name;
+                          const parts = name.split('_'); 
+                          const tIdx = parts[2];
+                          const rIdx = parts[3];
+                          const field = parts[4];
+                          const key = `${tIdx}_${rIdx}`;
+                          if(!currentRow[key]) currentRow[key] = {};
+                          currentRow[key][field] = input.value;
+                      });
+                      val = currentRow;
                  }
              }
         }
