@@ -880,7 +880,7 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
             submitBtn.disabled = true;
             submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
             submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
-            submitBtn.innerHTML = "Finish All Questions";
+            submitBtn.innerHTML = "Submit and Finish";
         }
     }
 
