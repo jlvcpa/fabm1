@@ -320,7 +320,7 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
     
     const result = validateStep02(transactions, data);
 
-    // REMOVE 'FALSE &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
+    // REMOVE 'false &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div>
          ${false && showFeedback && html`
