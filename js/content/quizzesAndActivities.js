@@ -26,7 +26,7 @@ const db = getFirestore(app);
 let sectionIntervals = []; 
 let currentAntiCheat = null;
 
-// --- GLOBAL QUESTION MAP (Needed here for gap filling logic) ---
+// --- GLOBAL QUESTION MAP (Source of Truth) ---
 const globalQuestionMap = new Map();
 function buildQuestionMap() {
     if (globalQuestionMap.size > 0) return;
@@ -181,7 +181,7 @@ async function renderQuizRunner(data, user, customRunner = null) {
 
     if (isAccountingCycle && customRunner && typeof customRunner === 'function') {
         if (container._reactRoot) {
-             // Reuse existing root logic if needed (React specific)
+             // Reuse existing root logic if needed
         } else {
              container.innerHTML = '';
         }
@@ -328,10 +328,6 @@ async function generateQuizContent(activityData, savedState = null) {
         sectionsHtml += `<div id="test-section-${index}" class="test-section-panel w-full ${isHidden}" data-section-type="${section.type}">`;
 
         // -- STICKY HEADER IMPLEMENTATION --
-        const instructionText = (section.type === 'Journalizing') ? '' : section.instructions; // Journaling has specific instructions per question usually, but we set a default here
-        const lockIcon = ''; // handled per question or if section locked logic exists
-
-        // Sticky Header placed BELOW tabs (top-14 is approx height of tab bar)
         const stickyHeaderHtml = `
             <div class="sticky top-14 bg-blue-50 border-b border-blue-200 px-4 py-2 z-10 shadow-sm mb-4">
                 <div class="flex flex-col gap-.5 text-xs text-gray-700">
@@ -386,9 +382,12 @@ async function generateQuizContent(activityData, savedState = null) {
             // 1. Try to load SAVED question for this specific slot
             if (savedState && savedState.questionsTaken && savedState.questionsTaken[uiId]) {
                 const savedRef = savedState.questionsTaken[uiId];
+                
+                // FORCE LOOKUP: We primarily trust the Live Source Map now
                 if (savedRef.dbId && globalQuestionMap.has(savedRef.dbId)) {
                     selectedQ = { ...globalQuestionMap.get(savedRef.dbId) };
                 } else {
+                    // Fallback to saved ref if source is missing (e.g. deleted question)
                     selectedQ = {
                         id: savedRef.id || "legacy",
                         question: savedRef.questionText,
@@ -442,8 +441,6 @@ async function generateQuizContent(activityData, savedState = null) {
             if (section.type !== "Journalizing") {
                 const hiddenClass = qIdx === 0 ? '' : 'hidden';
                 
-                // Tracker Button Generation
-                // NOTE: Highlighting logic is handled dynamically, but we set initial state here
                 const trackerClass = q.isSaved 
                     ? "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center"
                     : (qIdx===0 ? 'tracker-btn w-9 h-9 m-0.5 rounded-full border bg-blue-600 text-white border-blue-600 font-bold flex items-center justify-center ring-2 ring-blue-300' : 'tracker-btn w-9 h-9 m-0.5 rounded-full border bg-white text-gray-700 border-gray-300 font-bold flex items-center justify-center hover:bg-blue-100');
@@ -561,10 +558,6 @@ async function generateQuizContent(activityData, savedState = null) {
                         </div>
                     `;
                 });
-                
-                // For Journalizing, we reuse the Sticky Header logic if it was not set above, 
-                // but we already set the sticky header at the section level. 
-                // So here we only display content.
 
                 questionsHtml += `
                     <div id="${uiId}" class="question-block w-full ${jHiddenClass}" data-is-journal="true">
@@ -735,19 +728,13 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 
                 // Update Tracker Styling
                 trackers.forEach((t, i) => {
-                    // Reset base classes
                     t.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border font-bold flex items-center justify-center focus:outline-none transition-colors";
-                    
                     if (i === index) {
-                        // CURRENT QUESTION - Highlight Blue
                         t.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'ring-2', 'ring-blue-300');
                     } else {
-                        // Not Current
                         if (t.dataset.isAnswered === "true") {
-                             // Answered - Green
                              t.classList.add('bg-green-100', 'text-green-700', 'border-green-500');
                         } else {
-                             // Default - White/Gray
                              t.classList.add('bg-white', 'text-gray-700', 'border-gray-300', 'hover:bg-blue-100');
                         }
                     }
@@ -824,9 +811,6 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                 const trackerBtn = document.querySelector(`button[data-target-question="${q.uiId}"]`);
                 if (trackerBtn) {
                     trackerBtn.dataset.isAnswered = isQuestionAnswered ? "true" : "false";
-                    
-                    // Note: Real-time update logic only updates colors if NOT current active question
-                    // The 'showQuestion' function handles logic for the active state
                     if (!trackerBtn.classList.contains('bg-blue-600')) {
                         if (isQuestionAnswered) {
                             trackerBtn.className = "tracker-btn w-9 h-9 m-0.5 rounded-full border border-green-500 bg-green-100 text-green-700 font-bold flex items-center justify-center";
@@ -880,7 +864,7 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
             submitBtn.disabled = true;
             submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
             submitBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'cursor-pointer');
-            submitBtn.innerHTML = "Submit and Finish";
+            submitBtn.innerHTML = "Finish All Questions";
         }
     }
 
@@ -889,15 +873,13 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
     saveBtn.addEventListener('click', () => saveProgress(activityData, questionData, user));
 }
 
-// --- SAVE PROGRESS (Reference Based) ---
+// --- SAVE PROGRESS (REF-ONLY MODE) ---
 async function saveProgress(activityData, questionData, user) {
-    // PREVENT ANTI-CHEAT VIOLATION: Stop monitoring before alert dialogs
     if (currentAntiCheat) {
         currentAntiCheat.stopMonitoring();
     }
     
     if(!confirm("Save progress? Saved answers cannot be edited later.")) {
-        // Resume monitoring if user cancels save
         if (currentAntiCheat) currentAntiCheat.startMonitoring();
         return;
     }
@@ -965,14 +947,13 @@ async function saveProgress(activityData, questionData, user) {
 
         if (hasValue) {
             answers[q.uiId] = value;
+            // NOTE: We intentionally do NOT save correctAnswer, options, etc. here.
+            // This forces the app to look them up from the source code later.
             questionsTaken[q.uiId] = {
                 dbId: q.dbId,
-                questionText: q.questionText,
-                correctAnswer: q.correctAnswer,
-                explanation: q.explanation,
-                options: q.options || null,
-                transactions: q.transactions || null,
-                instructions: q.instructions || null
+                questionText: q.questionText, // Kept for reference/safety
+                type: q.type
+                // REMOVED: correctAnswer, explanation, options, instructions
             };
         }
     });
@@ -1004,7 +985,7 @@ async function saveProgress(activityData, questionData, user) {
     }
 }
 
-// --- SUBMIT QUIZ (FINAL) ---
+// --- SUBMIT QUIZ (REF-ONLY MODE) ---
 async function submitQuiz(activityData, questionData, user, isFinal = false) {
     if(!confirm("Are you sure you want to submit? This is final.")) return;
     
@@ -1021,15 +1002,12 @@ async function submitQuiz(activityData, questionData, user, isFinal = false) {
     const questionsTaken = {};
 
     questionData.forEach(q => {
+        // NOTE: We intentionally do NOT save correctAnswer, options, etc. here.
         questionsTaken[q.uiId] = {
             dbId: q.dbId, 
             questionText: q.questionText,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation,
-            type: q.type,
-            options: q.options || null,
-            transactions: q.transactions || null,
-            instructions: q.instructions || null 
+            type: q.type
+            // REMOVED: correctAnswer, explanation, options, instructions
         };
 
         let val = null;
@@ -1080,7 +1058,6 @@ async function submitQuiz(activityData, questionData, user, isFinal = false) {
         answers[q.uiId] = val;
     });
 
-    // Provisional Scores (for DB record only)
     const sectionScores = {};
     activityData.testQuestions.forEach((section, index) => {
         sectionScores[index] = { score: 0, maxScore: 0, percentage: 0, letterGrade: 'N/A' };
