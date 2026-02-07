@@ -322,12 +322,12 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
 
     return html`
         <div>
-            ${showFeedback && html`
+            ${/* showFeedback && html`
                 <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 mb-4 flex justify-between items-center shadow-sm">
                     <span className="font-bold">Validation Results:</span>
                     <span className="font-mono font-bold text-lg">Score: ${result.score} of ${result.maxScore} - (${result.letterGrade})</span>
                 </div>
-            `}
+            `*/"}
             <div className="border border-gray-400 shadow-sm min-h-[200px]">
                 <div className="flex bg-gray-800 text-white border-b border-gray-400 font-bold text-sm text-center">
                     <div className="w-16 border-r p-2">Date</div>
