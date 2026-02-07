@@ -1,5 +1,3 @@
-// --- js/content/accountingCycle/steps/Step04TrialBalance.js
-
 import React, { useState } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Book, Check, X, Table, Trash2, Plus, AlertCircle } from 'https://esm.sh/lucide-react@0.263.1';
@@ -8,7 +6,6 @@ import { sortAccounts, getLetterGrade } from '../utils.js';
 const html = htm.bind(React.createElement);
 
 // --- HELPER FUNCTIONS ---
-
 const getLastDayOfMonth = (dateStr) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -20,12 +17,8 @@ const getLastDayOfMonth = (dateStr) => {
 
 // --- VALIDATION LOGIC ---
 export const validateStep04 = (transactions, data, expectedLedger) => {
-    // Safety guard
     if (!expectedLedger || !data) {
-        return { 
-            score: 0, maxScore: 0, isCorrect: false, letterGrade: 'IR', 
-            feedback: { header: {}, rows: [], totals: {} } 
-        };
+        return { score: 0, maxScore: 0, isCorrect: false, letterGrade: 'IR', feedback: { header: {}, rows: [], totals: {} } };
     }
 
     let score = 0;
@@ -36,19 +29,16 @@ export const validateStep04 = (transactions, data, expectedLedger) => {
     maxScore += 3;
     const header = data.header || {};
     
-    // A. Company Name
     const companyName = (header.company || '').trim();
     const isCompanyValid = companyName.length > 3; 
     if (isCompanyValid) score += 1;
     feedback.header.company = isCompanyValid;
 
-    // B. Document Name
     const docName = (header.doc || '').trim().toLowerCase();
     const isDocValid = docName === 'trial balance';
     if (isDocValid) score += 1;
     feedback.header.doc = isDocValid;
 
-    // C. Date
     const targetDate = getLastDayOfMonth(transactions ? transactions[0]?.date : '');
     const inputDate = (header.date || '').trim();
     const isDateValid = targetDate && inputDate.toLowerCase() === targetDate.toLowerCase();
@@ -60,7 +50,6 @@ export const validateStep04 = (transactions, data, expectedLedger) => {
     const totals = data.totals || { dr: '', cr: '' };
     const expectedAccounts = Object.keys(expectedLedger);
     
-    // Calculate Expected Totals & Map for Lookup
     let expTotalDr = 0;
     let expTotalCr = 0;
     const expBalances = {};
@@ -72,12 +61,11 @@ export const validateStep04 = (transactions, data, expectedLedger) => {
             expBalances[acc] = { amount: absNet, side: net >= 0 ? 'dr' : 'cr' };
             if (net >= 0) expTotalDr += net;
             else expTotalCr += Math.abs(net);
-            maxScore += 2; // 1 for Acc Name, 1 for Amount
+            maxScore += 2;
         }
     });
 
-    // Max Score for Totals
-    maxScore += 2;
+    maxScore += 2; // For totals
 
     const processedAccounts = new Set();
 
@@ -92,12 +80,10 @@ export const validateStep04 = (transactions, data, expectedLedger) => {
             const matchedKey = Object.keys(expBalances).find(k => k.toLowerCase() === userAcc.toLowerCase());
             
             if (matchedKey && !processedAccounts.has(matchedKey)) {
-                // Point 1: Account Name Match
                 score += 1;
                 rowFeedback.acc = true;
                 processedAccounts.add(matchedKey);
 
-                // Point 2: Correct Amount AND Side
                 const exp = expBalances[matchedKey];
                 const isDrCorrect = exp.side === 'dr' && Math.abs(userDr - exp.amount) <= 1 && userCr === 0;
                 const isCrCorrect = exp.side === 'cr' && Math.abs(userCr - exp.amount) <= 1 && userDr === 0;
@@ -111,7 +97,6 @@ export const validateStep04 = (transactions, data, expectedLedger) => {
         feedback.rows[idx] = rowFeedback;
     });
 
-    // 3. TOTALS VALIDATION (Compare USER INPUT to EXPECTED SUMS)
     const userTotalDrInput = Number(totals.dr) || 0;
     const userTotalCrInput = Number(totals.cr) || 0;
 
@@ -123,7 +108,6 @@ export const validateStep04 = (transactions, data, expectedLedger) => {
     
     feedback.totals = { dr: isTotalDrCorrect, cr: isTotalCrCorrect };
 
-    // Grade Calculation using Utility
     const letterGrade = getLetterGrade(score, maxScore);
 
     return { score, maxScore, isCorrect: score === maxScore, letterGrade, feedback };
@@ -140,7 +124,6 @@ const StatusIcon = ({ correct, show }) => {
 
 const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSubsequentYear }) => {
     const [expanded, setExpanded] = useState(true);
-    // Safety check: ensure validAccounts is an array before sorting
     const accountsSafe = Array.isArray(validAccounts) ? validAccounts : [];
     const sortedAccounts = sortAccounts(accountsSafe);
 
@@ -235,7 +218,7 @@ const LedgerSourceView = ({ transactions, validAccounts, beginningBalances, isSu
 };
 
 const TrialBalanceForm = ({ data, onChange, showFeedback, isReadOnly, validationResult }) => {
-    // FIX: Fallback to empty object if data is null to prevent crash
+    // Safety check to ensure data is an object before accessing properties
     const safeData = data || {};
     const rows = safeData.rows || Array(15).fill({ account: '', dr: '', cr: '' });
     const header = safeData.header || { company: '', doc: '', date: '' };
@@ -370,12 +353,7 @@ const TrialBalanceForm = ({ data, onChange, showFeedback, isReadOnly, validation
     `;
 };
 
-// --- FIX: UPDATED MAIN COMPONENT ---
-// We remove the explicit destructuring of `validAccounts`, `beginningBalances`, `expectedLedger`
-// and instead extract them from `activityData` because generic `steps.js` passes `activityData` as a single object.
-
 export default function Step04TrialBalance({ activityData, data, onChange, showFeedback, isReadOnly }) {
-    // 1. Extract Data from activityData Prop
     const transactions = activityData?.transactions || [];
     const validAccounts = activityData?.validAccounts || [];
     const beginningBalances = activityData?.beginningBalances || null;
@@ -388,12 +366,14 @@ export default function Step04TrialBalance({ activityData, data, onChange, showF
 
     const result = validationResult || {};
 
-    // FIX: Update handleChange to construct the full data object before calling onChange.
-    // This ensures the parent state receives the complete object structure (rows, header, totals)
-    // rather than just a key/value pair which can corrupt the state to a non-array/non-object.
+    // IMPORTANT FIX: 
+    // We create a deep copy of the current 'data' object (or default empty object).
+    // We merge the new 'key' (header, rows, or totals) into it.
+    // We send the ENTIRE object to the parent 'onChange'.
     const handleChange = (key, val) => {
-        const newData = { ...(data || {}), [key]: val };
-        onChange(newData);
+        const currentData = data || {};
+        const newData = { ...currentData, [key]: val };
+        onChange(newData); 
     };
 
     return html`
