@@ -165,13 +165,13 @@ export default function Step01Analysis({
     const result = validateStep01(transactions, data);
 
     return html`
-       // <div className="flex flex-col gap-4">
-       //     ${/* showFeedback && html`
+        <div className="flex flex-col gap-4">
+       //     ${showFeedback && html`
        //     <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 flex justify-between items-center shadow-sm">
        //         <span className="font-bold">Validation Results:</span>
        //         <span className="font-mono font-bold text-lg">Score: ${result.score} of ${result.maxScore} - (${result.letterGrade})</span>
        //     </div>
-       // `}
+       //   `}
 
 
             <div className="overflow-x-auto min-h-[200px]">
