@@ -650,6 +650,8 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
     }
 
     // Per-Section Timers
+    let hasSubmittedOnExpire = false;
+
     activityData.testQuestions.forEach((section, index) => {
         const timerDisplay = document.getElementById(`timer-display-${index}`);
         const exp = section.dateTimeExpire ? new Date(section.dateTimeExpire).getTime() : new Date(activityData.dateTimeExpire).getTime();
@@ -663,6 +665,14 @@ function initializeQuizManager(activityData, questionData, user, savedState) {
                     timerDisplay.innerHTML = "EXPIRED";
                     timerDisplay.parentElement.classList.add('text-red-800');
                 }
+                
+                // AUTO SUBMIT TRIGGER
+                if (!hasSubmittedOnExpire) {
+                    hasSubmittedOnExpire = true;
+                    // Pass 'true' for force submit to skip confirmation
+                    submitQuiz(activityData, questionData, user, true, true);
+                }
+                
             } else {
                 const h = Math.floor((dist % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const m = Math.floor((dist % (1000 * 60 * 60)) / (1000 * 60));
@@ -947,13 +957,10 @@ async function saveProgress(activityData, questionData, user) {
 
         if (hasValue) {
             answers[q.uiId] = value;
-            // NOTE: We intentionally do NOT save correctAnswer, options, etc. here.
-            // This forces the app to look them up from the source code later.
             questionsTaken[q.uiId] = {
                 dbId: q.dbId,
-                questionText: q.questionText, // Kept for reference/safety
+                questionText: q.questionText,
                 type: q.type
-                // REMOVED: correctAnswer, explanation, options, instructions
             };
         }
     });
@@ -985,9 +992,11 @@ async function saveProgress(activityData, questionData, user) {
     }
 }
 
-// --- SUBMIT QUIZ (REF-ONLY MODE) ---
-async function submitQuiz(activityData, questionData, user, isFinal = false) {
-    if(!confirm("Are you sure you want to submit? This is final.")) return;
+// --- SUBMIT QUIZ (REF-ONLY MODE with FORCE Option) ---
+// ADDED: forceSubmit parameter for timer expiry
+async function submitQuiz(activityData, questionData, user, isFinal = false, forceSubmit = false) {
+    // MODIFIED: Skip confirmation if forceSubmit is true
+    if(!forceSubmit && !confirm("Are you sure you want to submit? This is final.")) return;
     
     if(currentAntiCheat) {
         currentAntiCheat.stopMonitoring();
@@ -1002,12 +1011,10 @@ async function submitQuiz(activityData, questionData, user, isFinal = false) {
     const questionsTaken = {};
 
     questionData.forEach(q => {
-        // NOTE: We intentionally do NOT save correctAnswer, options, etc. here.
         questionsTaken[q.uiId] = {
             dbId: q.dbId, 
             questionText: q.questionText,
             type: q.type
-            // REMOVED: correctAnswer, explanation, options, instructions
         };
 
         let val = null;
