@@ -298,7 +298,7 @@ export default function Step05Worksheet({ ledgerData: propLedger, adjustments: p
     return html`
         <div className="w-full">
             
-            ${/* renderBanner()*/"}
+            ${/* renderBanner()*/ null}
 
             <div className="border rounded-lg shadow-md bg-white overflow-x-auto custom-scrollbar">
                 <table className="w-full text-xs min-w-[1200px] border-collapse table-fixed">
