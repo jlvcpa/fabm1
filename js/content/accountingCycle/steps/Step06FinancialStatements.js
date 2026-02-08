@@ -1255,6 +1255,7 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
         }
     };
 
+    // REMOVE 'false &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col h-[calc(100vh-140px)]">
             ${(false && showFeedback || isReadOnly) && validationResult && html`
