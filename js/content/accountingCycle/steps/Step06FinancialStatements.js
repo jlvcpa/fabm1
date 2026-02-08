@@ -396,10 +396,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                     if (!matchContra) {
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
-                                    
-                                    // FIX: Removed the dangerous "length === 1" fallback here.
-                                    // This prevents the system from assigning a random contra asset to a property 
-                                    // that shouldn't have one (like Land), which was causing NBV errors.
 
                                     if (matchContra) {
                                         // Ensure expAccum is positive
@@ -408,8 +404,21 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                         // Fallback: Use user's input (as positive) if no system match found
                                         expAccum = Math.abs(parseUserValue(block.accum)); 
                                     }
-                                    // Calculate Net Book Value using positive numbers (Cost - Accum)
-                                    expNet = expCost - expAccum;
+                                    
+                                    // --- FIX: CALCULATE NBV BASED ON USER INPUTS ---
+                                    // Instead of deriving the expected Net Book Value from the source Cost - Source Accum,
+                                    // we now calculate it based on what the user typed for Cost and Accum.
+                                    // This means if Cost is wrong, but the Math (Cost - Accum) is correct, the NBV is marked correct.
+                                    
+                                    const userCost = parseUserValue(block.cost);
+                                    const userAccum = parseUserValue(block.accum);
+                                    
+                                    // If user hasn't typed anything yet, default to expected math, otherwise use their math.
+                                    if (userCost !== 0 || userAccum !== 0) {
+                                         expNet = userCost - Math.abs(userAccum);
+                                    } else {
+                                         expNet = expCost - expAccum;
+                                    }
 
                                 } else {
                                     // Asset not found, rely on user math
