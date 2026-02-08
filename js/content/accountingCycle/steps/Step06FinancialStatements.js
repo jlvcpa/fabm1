@@ -259,11 +259,11 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
 
     const scoreSection = (userRows, expectedItems) => {
         expectedItems.forEach(exp => {
-            maxScore += 2; // 1 for Label, 1 for Amount
+            maxScore += 2; 
             const match = userRows.find(r => r.label && r.label.toLowerCase().trim() === exp.name.toLowerCase().trim());
             if (match) {
-                score += 1; // Correct Label
-                if (checkField(match.amount, exp.amount)) score += 1; // Correct Amount
+                score += 1; 
+                if (checkField(match.amount, exp.amount)) score += 1; 
             }
         });
     };
@@ -296,9 +296,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     let expCOGS = 0;
     const cogsAcc = Math.abs(getBal('Cost of Goods Sold'));
     if (cogsAcc > 0) {
-        expCOGS = cogsAcc; // Perpetual logic
+        expCOGS = cogsAcc; // Perpetual
     } else {
-        expCOGS = expTGAS - expEndInv; // Periodic logic
+        expCOGS = expTGAS - expEndInv; // Periodic
     }
 
     scoreField(isData.sales, expSales);
@@ -306,7 +306,6 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     if(expSalesRet > 0 || isData.salesRet) scoreField(isData.salesRet, expSalesRet);
     scoreField(isData.netSales, expNetSales);
     
-    // --- SCORE FIX: Only add Periodic Calculation points if System is Periodic ---
     if (!isPerpetual) { 
         scoreField(isData.begInv, expBegInv);
         scoreField(isData.purchases, expPurch);
@@ -319,7 +318,6 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         scoreField(isData.endInv, expEndInv);
     }
     
-    // Always score COGS and Gross Income
     scoreField(isData.cogs, expCOGS); 
     scoreField(isData.grossIncome, expNetSales - expCOGS);
 
@@ -426,18 +424,11 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         return !ppeKeywords.some(kw => name.includes(kw));
     });
     
-    // Scoring for Other Non-Current Assets removed per instructions
-    // scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
-    
     scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
 
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
     
-    // Scoring for Non-Current Liabilities removed per instructions
-    // scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
-    // scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
-
     const isCorrect = score === maxScore && maxScore > 0;
     const letterGrade = getLetterGrade(score, maxScore);
     
@@ -608,9 +599,18 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
 
+                                    // --- FALLBACK LOGIC ---
+                                    if (!matchContra && expectedData.contraAssets.length === 1 && !matchAsset.name.toLowerCase().includes('land')) {
+                                        matchContra = expectedData.contraAssets[0];
+                                    }
+
                                     if (matchContra) {
                                         expAccum = Math.abs(matchContra.amount);
                                     } else {
+                                        expAccum = 0;
+                                    }
+                                    
+                                    if (matchAsset.name.toLowerCase().includes('land')) {
                                         expAccum = 0;
                                     }
                                     
@@ -1255,7 +1255,6 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
         }
     };
 
-    // REMOVE 'false &&' IN  ${false && showFeedback && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col h-[calc(100vh-140px)]">
             ${(false && showFeedback || isReadOnly) && validationResult && html`
