@@ -1,4 +1,4 @@
-// --- js/content/accountingCycle/steps/Step06FinancialStatements.js ---
+// --- js/content/accountingCycle/steps/Step06FinancialStatements.js ----
 
 import React, { useState, useMemo, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
