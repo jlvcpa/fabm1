@@ -609,7 +609,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     // Values for Validation
     const expSales = Math.abs(getBal('Sales')); 
     const expSalesDisc = Math.abs(getBal('Sales Discounts')); 
-    const expSalesRet = Math.abs(getBal('Sales Returns')); 
+    const expSalesRet = Math.abs(getBal('Sales Returns and Allowances')); 
     const expNetSales = expSales - expSalesDisc - expSalesRet;
     const expPurch = Math.abs(getBal('Purchases')); 
     const expPurchDisc = Math.abs(getBal('Purchase Discounts')); 
