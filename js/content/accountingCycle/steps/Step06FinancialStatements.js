@@ -270,7 +270,20 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     if(expSalesRet > 0 || isData.salesRet) scoreField(isData.salesRet, expSalesRet);
     scoreField(isData.netSales, expNetSales);
     
-    // Only score periodic detail lines if data exists, but score COGS/Gross Profit always
+    // Score specific Periodic Inventory fields if this is a Periodic system or user entered data
+    // This ensures detailed grading for the Periodic flow: Beg Inv -> Net Purch -> TGAS -> End Inv -> COGS
+    if (cogsAcc === 0) { // If no COGS ledger account, assume Periodic detailed flow is required
+        scoreField(isData.begInv, expBegInv);
+        scoreField(isData.purchases, expPurch);
+        if(expPurchDisc > 0 || isData.purchDisc) scoreField(isData.purchDisc, expPurchDisc);
+        if(expPurchRet > 0 || isData.purchRet) scoreField(isData.purchRet, expPurchRet);
+        scoreField(isData.netPurch, expNetPurch);
+        scoreField(isData.freightIn, expFreightIn);
+        scoreField(isData.costPurch, expCostPurch);
+        scoreField(isData.tgas, expTGAS);
+        scoreField(isData.endInv, expEndInv);
+    }
+
     if (isData.cogs) scoreField(isData.cogs, expCOGS); 
     scoreField(isData.grossIncome, expNetSales - expCOGS);
 
@@ -322,11 +335,15 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         }
     });
 
-    scoreSection(bsData.otherAssets || [], expected.nonCurrentAssets.filter(a => {
-        // Filter out assets that were likely scored in Depreciable section to avoid double counting if possible
-        // Or just score them if they match. scoreSection handles finding matches.
-        return true; 
-    }));
+    // --- FIX: Filter out common PPE accounts from "Other Non-Current Assets" scoring ---
+    const ppeKeywords = ['equipment', 'machinery', 'building', 'furniture', 'fixture', 'land', 'vehicle', 'truck', 'accumulated'];
+    const otherNonCurrentExpectation = expected.nonCurrentAssets.filter(a => {
+        const name = a.name.toLowerCase();
+        return !ppeKeywords.some(kw => name.includes(kw));
+    });
+
+    scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
+    
     scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
 
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
@@ -438,7 +455,10 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
 
     const updateData = (updates) => onChange({ ...data, ...updates });
     const curAssets = data?.curAssets || [{ label: '', amount: '' }];
-    const otherAssets = data?.otherAssets || [{ label: '', amount: '' }];
+    
+    // --- FIX: Initialize otherAssets as empty array to avoid placeholder X marks ---
+    const otherAssets = data?.otherAssets || [];
+    
     const depAssets = data?.depAssets || []; 
     const curLiabs = data?.curLiabs || [{ label: '', amount: '' }];
     const nonCurLiabs = data?.nonCurLiabs || [{ label: '', amount: '' }];
@@ -495,6 +515,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                     expCost = matchAsset.amount;
                                     
                                     let matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
+                                    
                                     if (!matchContra) {
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
