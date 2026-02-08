@@ -106,6 +106,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         });
     }
     
+    // --- 1. Build Expected Object (Categorized) ---
     const expected = {
         revenues: [], expenses: [], currentAssets: [], nonCurrentAssets: [], 
         contraAssets: [], otherAssets: [], liabilities: [], currentLiabilities: [], 
@@ -199,6 +200,27 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     const derivedNI = expected.totals.endCap - (expected.equity.begBal || 0) - (expected.equity.investments || 0) + (expected.equity.drawings || 0);
     expected.totals.ni = derivedNI;
 
+    // --- 2. Helper Functions for Scoring ---
+    const getBal = (accName) => {
+        const lowerName = accName.toLowerCase();
+        let bal = 0;
+        const key = Object.keys(ledgerData).find(k => k.toLowerCase() === lowerName);
+        if (key) bal += (ledgerData[key].debit || 0) - (ledgerData[key].credit || 0);
+        if(adjustments) {
+            adjustments.forEach(a => {
+                if(a.drAcc && a.drAcc.toLowerCase() === lowerName) bal += a.amount;
+                if(a.crAcc && a.crAcc.toLowerCase() === lowerName) bal -= a.amount;
+            });
+        }
+        return bal;
+    };
+    
+    const getUnadjustedBal = (accName) => {
+        const lowerName = accName.toLowerCase();
+        const key = Object.keys(ledgerData).find(k => k.toLowerCase() === lowerName);
+        return key ? (ledgerData[key].debit || 0) - (ledgerData[key].credit || 0) : 0;
+    };
+
     const scoreSection = (userRows, expectedItems) => {
         expectedItems.forEach(exp => {
             maxScore += 2;
@@ -215,20 +237,103 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         if (checkField(userVal, expectedVal)) score += 1;
     };
 
+    // --- 3. EXECUTE SCORING ---
+
+    // A. Income Statement (Score standard fields regardless of format)
     const isData = userAnswers.is || {};
+    
+    const expSales = Math.abs(getBal('Sales'));
+    const expSalesDisc = Math.abs(getBal('Sales Discounts'));
+    const expSalesRet = Math.abs(getBal('Sales Returns and Allowances'));
+    const expNetSales = expSales - expSalesDisc - expSalesRet;
+    const expPurch = Math.abs(getBal('Purchases'));
+    const expPurchDisc = Math.abs(getBal('Purchase Discounts'));
+    const expPurchRet = Math.abs(getBal('Purchase Returns and Allowances'));
+    const expNetPurch = expPurch - expPurchDisc - expPurchRet;
+    const expFreightIn = Math.abs(getBal('Freight In'));
+    const expCostPurch = expNetPurch + expFreightIn;
+    const expBegInv = Math.abs(getUnadjustedBal('Merchandise Inventory') || getUnadjustedBal('Inventory'));
+    const expTGAS = expBegInv + expCostPurch;
+    const expEndInv = Math.abs(getBal('Merchandise Inventory') || getBal('Inventory'));
+    
+    // Logic for COGS (Periodic vs Perpetual balance)
+    let expCOGS = 0;
+    const cogsAcc = Math.abs(getBal('Cost of Goods Sold'));
+    if (cogsAcc > 0) {
+        expCOGS = cogsAcc; // Perpetual
+    } else {
+        expCOGS = expTGAS - expEndInv; // Periodic
+    }
+
+    scoreField(isData.sales, expSales);
+    if(expSalesDisc > 0 || isData.salesDisc) scoreField(isData.salesDisc, expSalesDisc);
+    if(expSalesRet > 0 || isData.salesRet) scoreField(isData.salesRet, expSalesRet);
+    scoreField(isData.netSales, expNetSales);
+    
+    // Only score periodic detail lines if data exists, but score COGS/Gross Profit always
+    if (isData.cogs) scoreField(isData.cogs, expCOGS); 
+    scoreField(isData.grossIncome, expNetSales - expCOGS);
+
+    scoreSection(isData.opExpenses || isData.expenses || [], expected.expenses);
+    scoreField(isData.totalOpExpenses || isData.totalExpenses, expected.totals.exp);
     scoreField(isData.netIncomeAfterTax, expected.totals.ni); 
 
+    // B. SCE Scoring
     const sceData = userAnswers.sce || {};
+    scoreField(sceData.begCapital, expected.equity.begBal);
+    
+    const expAdditions = investments + (expected.totals.ni > 0 ? expected.totals.ni : 0);
+    const expDeductions = (expected.equity.drawings || 0) + (expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0);
+    
+    scoreField(sceData.totalAdditions, expAdditions);
+    scoreField(sceData.totalCapDuring, expected.equity.begBal + expAdditions);
+    scoreField(sceData.totalDeductions, expDeductions);
     scoreField(sceData.endCapital, expected.totals.endCap);
 
+    // C. Balance Sheet Scoring
     const bsData = userAnswers.bs || {};
     scoreField(bsData.totalAssets, expected.totals.assets);
     scoreField(bsData.totalLiabs, expected.totals.liabs);
     scoreField(bsData.totalLiabEquity, expected.totals.liabEquity);
+    scoreField(bsData.endCapital, expected.totals.endCap);
     
     scoreSection(bsData.curAssets || [], expected.currentAssets);
+    scoreField(bsData.totalCurAssets, expected.totals.curAssets);
+
+    // Score Depreciable Assets (Cost, Accum, Net)
+    const depAssets = bsData.depAssets || [];
+    depAssets.forEach(block => {
+        if(!block.asset) return;
+        const keyword = block.asset.toLowerCase().split(' ')[0];
+        const matchAsset = expected.nonCurrentAssets.find(a => a.name.toLowerCase().includes(keyword));
+        
+        if (matchAsset) {
+            maxScore += 3; // Cost, Accum, Net
+            const expCost = matchAsset.amount;
+            let matchContra = expected.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
+            if(!matchContra) matchContra = expected.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
+            
+            const expAccum = matchContra ? Math.abs(matchContra.amount) : 0;
+            const expNet = expCost - expAccum; 
+
+            if(checkField(block.cost, expCost)) score += 1;
+            if(checkField(block.accum, expAccum)) score += 1;
+            if(checkField(block.net, expNet)) score += 1;
+        }
+    });
+
+    scoreSection(bsData.otherAssets || [], expected.nonCurrentAssets.filter(a => {
+        // Filter out assets that were likely scored in Depreciable section to avoid double counting if possible
+        // Or just score them if they match. scoreSection handles finding matches.
+        return true; 
+    }));
+    scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
+
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
+    scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
+    
     scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
+    scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
 
     const isCorrect = score === maxScore && maxScore > 0;
     const letterGrade = getLetterGrade(score, maxScore);
@@ -390,7 +495,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                     expCost = matchAsset.amount;
                                     
                                     let matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
-                                    
                                     if (!matchContra) {
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
@@ -401,7 +505,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                         expAccum = 0;
                                     }
                                     
-                                    // STRICT: Net Book Value must match Source Data exactly (8000).
+                                    // STRICT: Net Book Value must match Source Data exactly.
                                     expNet = expCost - expAccum;
 
                                 } else {
