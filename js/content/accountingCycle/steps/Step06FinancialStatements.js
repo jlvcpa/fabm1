@@ -391,9 +391,30 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 const matchAsset = expectedData.nonCurrentAssets.find(a => a.name.toLowerCase().includes(keyword));
                                 if (matchAsset) {
                                     expCost = matchAsset.amount;
-                                    const matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
-                                    expAccum = matchContra ? matchContra.amount : 0;
-                                    expNet = expCost - expAccum;
+                                    
+                                    // 1. Strict match: asset name included in contra name?
+                                    let matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
+                                    
+                                    // 2. Generic match: Is there an "Accumulated Depreciation" account?
+                                    if (!matchContra) {
+                                         matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
+                                    }
+                                    
+                                    // 3. Fallback: If only 1 contra asset exists in total, assume it's this one
+                                    if (!matchContra && expectedData.contraAssets.length === 1) {
+                                         matchContra = expectedData.contraAssets[0];
+                                    }
+
+                                    if (matchContra) {
+                                        expAccum = matchContra.amount;
+                                        expNet = expCost - expAccum;
+                                    } else {
+                                        // Asset found but Contra NOT found (and multiple candidates exist or none).
+                                        // Fallback to User's entered accumulation value to avoid forcing "0" and incorrect "X".
+                                        // We trust user's accumulation and just verify the Net math.
+                                        expAccum = parseUserValue(block.accum); 
+                                        expNet = expCost - expAccum;
+                                    }
                                 } else {
                                     expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                                 }
