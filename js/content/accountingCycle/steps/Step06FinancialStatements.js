@@ -701,14 +701,13 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     
     // Calculate Expenses
     const totalDebits = calculatedTotals.isDr; 
-    // Note: In Periodic, COGS isn't an account in the trial balance, it's calculated.
-    // So we subtract the known debit items involved in COGS to find the remaining Operating Expenses.
-    // However, since we are calculating expOpExp from the Total IS Debit Column (which includes Beg Inv, Purchases, Freight),
-    // we must subtract those specific costs to isolate Op Expenses.
     
     // Total Debits in IS Column typically includes: Beg Inv + Purchases + Freight In + Sales Disc/Ret + Op Expenses
-    // Therefore: Op Exp = Total Debits - (Beg Inv + Purchases + Freight In + Sales Disc/Ret)
-    const costDebits = expBegInv + expPurch + expFreightIn + expSalesDisc + expSalesRet;
+    // BUT calculatedTotals.isDr ONLY sums account types 'Revenue' and 'Expense'.
+    // Inventory is 'Asset'. So calculatedTotals.isDr DOES NOT INCLUDE Beg Inv.
+    // Therefore: Op Exp = Total Debits - (Purchases + Freight In + Sales Disc/Ret)
+    
+    const costDebits = expPurch + expFreightIn + expSalesDisc + expSalesRet; // FIXED: Removed expBegInv from subtraction
     const expOpExp = totalDebits - costDebits;
     
     const expOpIncome = expGross - expOpExp; 
@@ -783,10 +782,13 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                     <table className="w-full mb-1"><tbody>${expenseRows.map((r,i) => html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating / Non-operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('expenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('expenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">${!isReadOnly && html`<button onClick=${()=>deleteRow('expenses',i)}><${Trash2} size=${12}/></button>`}</td></tr>`)}</tbody></table><button onClick=${()=>addRow('expenses')} class=${btnStyle}><${Plus} size=${12}/> Add Expense Row</button>
                     ${renderRow('Total Expenses', 'totalExpenses', expOpExp, false, 'pl-0 font-bold')}
                 ` : html`
-                    <div className="mt-4 font-bold text-gray-800">Less: Operating Expenses</div>
+                    <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        const exp = Object.entries(ledger).find(([k,v]) => k.toLowerCase() === r.label.toLowerCase() && getAccountType(k) === 'Expense');
-                        const isCorrect = exp && checkField(r.amount, (exp[1].debit || 0) - (exp[1].credit || 0));
+                        const matchKey = Object.keys(ledger).find(k => k.toLowerCase() === r.label.trim().toLowerCase());
+                        const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
+                        const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
+                        const isCorrect = isExpense && checkField(r.amount, adjustedBal);
+                        
                         return html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
@@ -893,8 +895,11 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                 ` : html`
                     <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        const exp = Object.entries(ledger).find(([k,v]) => k.toLowerCase() === r.label.toLowerCase() && getAccountType(k) === 'Expense');
-                        const isCorrect = exp && checkField(r.amount, (exp[1].debit || 0) - (exp[1].credit || 0));
+                        const matchKey = Object.keys(ledger).find(k => k.toLowerCase() === r.label.trim().toLowerCase());
+                        const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
+                        const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
+                        const isCorrect = isExpense && checkField(r.amount, adjustedBal);
+
                         return html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
