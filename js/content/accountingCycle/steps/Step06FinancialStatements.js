@@ -409,10 +409,9 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                         expAccum = matchContra.amount;
                                         expNet = expCost - expAccum;
                                     } else {
-                                        // Asset found but Contra NOT found (and multiple candidates exist or none).
-                                        // Fallback to User's entered accumulation value to avoid forcing "0" and incorrect "X".
-                                        // We trust user's accumulation and just verify the Net math.
-                                        expAccum = parseUserValue(block.accum); 
+                                        // Asset found but Contra NOT found. 
+                                        // Trust user input for Accum and just validate the Net calculation.
+                                        expAccum = Math.abs(parseUserValue(block.accum)); 
                                         expNet = expCost - expAccum;
                                     }
                                 } else {
@@ -432,6 +431,8 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 </div>
                                 <div className="flex justify-between mb-1 text-gray-600">
                                     <span className="pl-4 flex-1">Less: <input type="text" className="inline-block bg-transparent outline-none w-3/4 italic" placeholder="[Accum. Depr.]" value=${block.contra} onChange=${(e)=>handleArrChange('depAssets', i, 'contra', e.target.value)} disabled=${isReadOnly}/></span>
+                                    
+                                    {/* KEY CHANGE: isDeduction={false} allows positive input. Math.abs in calculation handles the subtraction. */}
                                     <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction={false} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 <div className="flex justify-between font-bold">
