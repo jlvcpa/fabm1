@@ -389,33 +389,25 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 if (matchAsset) {
                                     expCost = matchAsset.amount;
                                     
-                                    // 1. Strict match
                                     let matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
                                     
-                                    // 2. Generic match
                                     if (!matchContra) {
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
 
                                     if (matchContra) {
-                                        // Ensure expAccum is positive
                                         expAccum = Math.abs(matchContra.amount);
                                     } else {
-                                        // STRICT: If system knows the Asset but has no Contra, expected Accum is 0.
                                         expAccum = 0;
                                     }
                                     
-                                    // STRICT GRADING: Net Book Value must match Source Data exactly.
+                                    // STRICT: Net Book Value must match Source Data exactly (8000).
                                     expNet = expCost - expAccum;
 
                                 } else {
-                                    // Asset not found in answer key.
-                                    // Rely on user math to prevent "Double Penalty" on a row that arguably shouldn't exist.
-                                    // Or we could force 0. But standard practice for "Extra Rows" is usually lenient on math.
                                     expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                                 }
                             } else {
-                                // No asset name
                                 expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                             }
                             
@@ -434,7 +426,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 </div>
                                 <div className="flex justify-between font-bold">
                                     <span className="pl-8">Net Book Value</span>
-                                    <div className="w-full"><${FeedbackInput} value=${block.net} onChange=${(e)=>handleArrChange('depAssets', i, 'net', e.target.value)} expected={expNet} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
+                                    <div className="w-full"><${FeedbackInput} value=${block.net} onChange=${(e)=>handleArrChange('depAssets', i, 'net', e.target.value)} expected=${expNet} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 ${!isReadOnly 
                                     ? html`<button onClick=${()=>deleteRow('depAssets', i)} className="absolute top-1 right-[-20px] text-red-400 opacity-0 group-hover:opacity-100"><${Trash2} size=${12}/></button>`
@@ -468,6 +460,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     </div>
                 `}
 
+                {/* Rest of the component code (Liabilities, etc.) remains the same */}
                 <div className="flex justify-between items-center py-2 font-bold border-t-2 border-black border-double border-b-4 mt-2 mb-6">
                     <span className="pl-2">Total Assets</span>
                     <div className="w-full"><${FeedbackInput} value=${data?.totalAssets} onChange=${(e)=>updateData({ totalAssets: e.target.value })} expected=${expTotals.assets} showFeedback=${showFeedback} isReadOnly=${isReadOnly}/></div>
