@@ -48,7 +48,6 @@ const checkField = (userVal, expectedVal, isDeduction = false) => {
 };
 
 // --- HELPER: Safe Account Retrieval ---
-// Finds an account key that matches "drawings" or "withdrawal" to avoid syntax errors with apostrophes
 const getAccountByKeyword = (ledger, keywords) => {
     if (!ledger) return null;
     const key = Object.keys(ledger).find(k => {
@@ -194,11 +193,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     }
     expected.equity.investments = investments;
 
-    // Recalculate End Cap strictly based on BS Equation (Assets - Liabs)
     expected.totals.endCap = expected.totals.assets - expected.totals.liabs;
     expected.totals.liabEquity = expected.totals.liabs + expected.totals.endCap;
 
-    // Derive NI from Equity Equation to fix Periodic Inventory issues
     const derivedNI = expected.totals.endCap - (expected.equity.begBal || 0) - (expected.equity.investments || 0) + (expected.equity.drawings || 0);
     expected.totals.ni = derivedNI;
 
@@ -400,20 +397,18 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
                                     
-                                    // 3. Fallback
-                                    if (!matchContra && expectedData.contraAssets.length === 1) {
-                                         matchContra = expectedData.contraAssets[0];
-                                    }
+                                    // FIX: Removed the dangerous "length === 1" fallback here.
+                                    // This prevents the system from assigning a random contra asset to a property 
+                                    // that shouldn't have one (like Land), which was causing NBV errors.
 
                                     if (matchContra) {
-                                        // --- CRITICAL FIX: FORCE POSITIVE VALUE FROM SOURCE DATA ---
-                                        // This ensures math is always 40000 - 600, not 40000 - (-600)
+                                        // Ensure expAccum is positive
                                         expAccum = Math.abs(matchContra.amount);
                                     } else {
-                                        // Fallback: Use user's input (as positive)
+                                        // Fallback: Use user's input (as positive) if no system match found
                                         expAccum = Math.abs(parseUserValue(block.accum)); 
                                     }
-                                    // Calculate Net Book Value using positive numbers
+                                    // Calculate Net Book Value using positive numbers (Cost - Accum)
                                     expNet = expCost - expAccum;
 
                                 } else {
@@ -436,7 +431,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 <div className="flex justify-between mb-1 text-gray-600">
                                     <span className="pl-4 flex-1">Less: <input type="text" className="inline-block bg-transparent outline-none w-3/4 italic" placeholder="[Accum. Depr.]" value=${block.contra} onChange=${(e)=>handleArrChange('depAssets', i, 'contra', e.target.value)} disabled=${isReadOnly}/></span>
                                     
-                                    <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction={false} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
+                                    <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction=${false} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 <div className="flex justify-between font-bold">
                                     <span className="pl-8">Net Book Value</span>
@@ -589,7 +584,6 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
         expNetInc = calculatedTotals.isCr - calculatedTotals.isDr;
     }
 
-    // --- FIX: Use helper to find Drawings account safely ---
     const drawingsAcc = getAccountByKeyword(ledger, ['drawings', 'withdrawal']);
     const expDrawings = (drawingsAcc?.debit || 0) - (drawingsAcc?.credit || 0);
 
@@ -681,7 +675,6 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
-    // --- FIX: Build comprehensive list of accounts from Ledger AND Adjustments ---
     const allAccounts = useMemo(() => {
         const s = new Set(Object.keys(ledger));
         if(adjustments && Array.isArray(adjustments)) {
@@ -693,13 +686,10 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
         return Array.from(s);
     }, [ledger, adjustments]);
 
-    // 1. Helper for ADJUSTED Balance (Ledger + Adjustments)
-    // Used for Sales, Purchases, Expenses, and ENDING Inventory
     const getBal = (accName) => { 
         const lowerName = accName.toLowerCase();
         let bal = 0;
         
-        // Use helper to find safe key if needed, or exact match
         const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
         if (ledgerKey) {
             bal += (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
@@ -714,8 +704,6 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
         return bal; 
     };
 
-    // 2. Helper for UNADJUSTED Balance (Ledger ONLY)
-    // Used specifically for BEGINNING Inventory
     const getUnadjustedBal = (accName) => {
         const lowerName = accName.toLowerCase();
         const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
@@ -725,7 +713,6 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
         return 0;
     };
     
-    // Values for Validation
     const expSales = Math.abs(getBal('Sales')); 
     const expSalesDisc = Math.abs(getBal('Sales Discounts')); 
     const expSalesRet = Math.abs(getBal('Sales Returns and Allowances')); 
@@ -737,27 +724,17 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     const expFreightIn = Math.abs(getBal('Freight In')); 
     const expCostPurch = expNetPurch + expFreightIn;
 
-    // --- FIX START ---
-    // Beg Inv = Unadjusted Ledger Balance
     const expBegInv = Math.abs(getUnadjustedBal('Merchandise Inventory') || getUnadjustedBal('Inventory')); 
     const expTGAS = expBegInv + expCostPurch;
     
-    // End Inv = Adjusted Balance (Ledger + Adjustments)
     const expEndInv = Math.abs(getBal('Merchandise Inventory') || getBal('Inventory')); 
-    // --- FIX END ---
     
     const expCOGS = expTGAS - expEndInv; 
     const expGross = expNetSales - expCOGS;
     
-    // Calculate Expenses
     const totalDebits = calculatedTotals.isDr; 
     
-    // Total Debits in IS Column typically includes: Beg Inv + Purchases + Freight In + Sales Disc/Ret + Op Expenses
-    // BUT calculatedTotals.isDr ONLY sums account types 'Revenue' and 'Expense'.
-    // Inventory is 'Asset'. So calculatedTotals.isDr DOES NOT INCLUDE Beg Inv.
-    // Therefore: Op Exp = Total Debits - (Purchases + Freight In + Sales Disc/Ret)
-    
-    const costDebits = expPurch + expFreightIn + expSalesDisc + expSalesRet; // FIXED: Removed expBegInv from subtraction
+    const costDebits = expPurch + expFreightIn + expSalesDisc + expSalesRet; 
     const expOpExp = totalDebits - costDebits;
     
     const expOpIncome = expGross - expOpExp; 
@@ -834,7 +811,6 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ` : html`
                     <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        // --- FIX: Search in allAccounts (Ledger + Adjustments) ---
                         const matchKey = allAccounts.find(k => k.toLowerCase() === r.label.trim().toLowerCase());
                         const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
                         const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
@@ -861,7 +837,6 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
-    // --- FIX: Build comprehensive list of accounts from Ledger AND Adjustments ---
     const allAccounts = useMemo(() => {
         const s = new Set(Object.keys(ledger));
         if(adjustments && Array.isArray(adjustments)) {
@@ -958,7 +933,6 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                 ` : html`
                     <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        // --- FIX: Search in allAccounts (Ledger + Adjustments) ---
                         const matchKey = allAccounts.find(k => k.toLowerCase() === r.label.trim().toLowerCase());
                         const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
                         const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
