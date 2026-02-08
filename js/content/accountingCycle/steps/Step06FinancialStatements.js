@@ -130,6 +130,10 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     let score = 0;
     let maxScore = 0;
     
+    const config = activityData?.config || {};
+    const inventorySystem = config.inventorySystem || 'Periodic';
+    const isPerpetual = inventorySystem === 'Perpetual';
+
     const s = new Set(Object.keys(ledgerData || {}));
     if(adjustments && Array.isArray(adjustments)) {
         adjustments.forEach(adj => { 
@@ -292,9 +296,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     let expCOGS = 0;
     const cogsAcc = Math.abs(getBal('Cost of Goods Sold'));
     if (cogsAcc > 0) {
-        expCOGS = cogsAcc; // Perpetual
+        expCOGS = cogsAcc; // Perpetual logic
     } else {
-        expCOGS = expTGAS - expEndInv; // Periodic
+        expCOGS = expTGAS - expEndInv; // Periodic logic
     }
 
     scoreField(isData.sales, expSales);
@@ -302,8 +306,8 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     if(expSalesRet > 0 || isData.salesRet) scoreField(isData.salesRet, expSalesRet);
     scoreField(isData.netSales, expNetSales);
     
-    // Detailed Periodic COGS Flow
-    if (cogsAcc === 0) { 
+    // --- SCORE FIX: Only add Periodic Calculation points if System is Periodic ---
+    if (!isPerpetual) { 
         scoreField(isData.begInv, expBegInv);
         scoreField(isData.purchases, expPurch);
         if(expPurchDisc > 0 || isData.purchDisc) scoreField(isData.purchDisc, expPurchDisc);
@@ -314,8 +318,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         scoreField(isData.tgas, expTGAS);
         scoreField(isData.endInv, expEndInv);
     }
-
-    if (isData.cogs) scoreField(isData.cogs, expCOGS); 
+    
+    // Always score COGS and Gross Income
+    scoreField(isData.cogs, expCOGS); 
     scoreField(isData.grossIncome, expNetSales - expCOGS);
 
     scoreSection(isData.opExpenses || isData.expenses || [], expected.expenses);
@@ -323,27 +328,18 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreField(isData.netIncomeAfterTax, expected.totals.ni); 
 
     // B. SCE Scoring
-    // B. SCE Scoring
     const sceData = userAnswers.sce || {};
     scoreField(sceData.begCapital, expected.equity.begBal);
     
-    // --- NEW: Score the Addition Details (Investment, Net Income) ---
     const additions = sceData.additions || [];
-    // We don't have a perfect "expected array" for labels here because logic is dynamic, 
-    // but we can check if the Amounts match the expected Investment or Net Income.
-    // Strategy: Check if the user entered rows that match expected Investment or Net Income amounts.
-    
     let investmentFound = false;
     let netIncomeFound = false;
     
     additions.forEach(row => {
-        // If row has value, we count it as a "slot" worth 1 point for value
-        // Note: Label matching is tricky here since user types freely, so we usually just grade the Amount.
         const val = parseUserValue(row.amount);
         if (val > 0) {
-            maxScore += 1; // It's an active row, so it's worth a point
+            maxScore += 1; 
             
-            // Check if this value matches Investment or Net Income
             const matchesInv = Math.abs(val - investments) < 1;
             const matchesNI = Math.abs(val - (expected.totals.ni > 0 ? expected.totals.ni : 0)) < 1;
             
@@ -361,7 +357,6 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreField(sceData.totalAdditions, expAdditions);
     scoreField(sceData.totalCapDuring, expected.equity.begBal + expAdditions);
 
-    // --- NEW: Score the Deduction Details (Drawings, Net Loss) ---
     const deductions = sceData.deductions || [];
     let drawingsFound = false;
     let netLossFound = false;
@@ -369,7 +364,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     deductions.forEach(row => {
         const val = parseUserValue(row.amount);
         if (val > 0) {
-             maxScore += 1; // Active row worth 1 point
+             maxScore += 1; 
 
              const expDrawings = expected.equity.drawings || 0;
              const expNetLoss = expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0;
@@ -409,7 +404,8 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         const matchAsset = expected.nonCurrentAssets.find(a => a.name.toLowerCase().includes(keyword));
         
         if (matchAsset) {
-     //       maxScore += 3; // Cost, Accum, Net
+            // maxScore += 3; // Depreciable assets scoring removed per instructions
+
             const expCost = matchAsset.amount;
             let matchContra = expected.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
             if(!matchContra) matchContra = expected.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
@@ -417,28 +413,28 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
             const expAccum = matchContra ? Math.abs(matchContra.amount) : 0;
             const expNet = expCost - expAccum; 
 
-      //      if(checkField(block.cost, expCost)) score += 1;
-      //      if(checkField(block.accum, expAccum)) score += 1;
-      //      if(checkField(block.net, expNet)) score += 1;
+            // if(checkField(block.cost, expCost)) score += 1;
+            // if(checkField(block.accum, expAccum)) score += 1;
+            // if(checkField(block.net, expNet)) score += 1;
         }
     });
 
     // --- FIX: Filter out common PPE accounts from "Other Non-Current Assets" scoring ---
-    // This prevents expectation duplication
     const ppeKeywords = ['equipment', 'machinery', 'building', 'furniture', 'fixture', 'accumulated', 'depreciation'];
     const otherNonCurrentExpectation = expected.nonCurrentAssets.filter(a => {
         const name = a.name.toLowerCase();
         return !ppeKeywords.some(kw => name.includes(kw));
     });
-
-    //scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
+    
+    // Scoring for Other Non-Current Assets removed per instructions
+    // scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
     
     scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
 
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
     
-    // --- NON-CURRENT LIABILITIES SCORING REMOVED AS REQUESTED ---
+    // Scoring for Non-Current Liabilities removed per instructions
     // scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
     // scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
 
@@ -551,7 +547,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
     
     const depAssets = data?.depAssets || []; 
     const curLiabs = data?.curLiabs || [{ label: '', amount: '' }];
-    const nonCurLiabs = data?.nonCurLiabs || [{ label: '', amount: '' }];
+    const nonCurLiabs = data?.nonCurLiabs || []; // Default empty like otherAssets
 
     const handleArrChange = (arrKey, idx, field, val) => {
         const arr = [...(data?.[arrKey] || [])];
@@ -618,7 +614,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                         expAccum = 0;
                                     }
                                     
-                                    // STRICT: Net Book Value must match Source Data exactly.
                                     expNet = expCost - expAccum;
 
                                 } else {
@@ -634,16 +629,16 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                             <div key=${i} className="mb-2 bg-gray-50 p-2 rounded relative group">
                                 <div className="flex justify-between mb-1">
                                     <input type="text" className="bg-transparent w-full outline-none font-bold text-gray-800" placeholder="[Property/Equipment Account]" value=${block.asset} onChange=${(e)=>handleArrChange('depAssets', i, 'asset', e.target.value)} disabled=${isReadOnly}/>
-                                    <div className="w-24 relative"><${FeedbackInput} value=${block.cost} onChange=${(e)=>handleArrChange('depAssets', i, 'cost', e.target.value)} expected=${expCost} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="Cost" required=${true} /></div>
+                                    <div className="w-24 relative"><${FeedbackInput} value=${block.cost} onChange=${(e)=>handleArrChange('depAssets', i, 'cost', e.target.value)} expected=${expCost} showFeedback={false} isReadOnly=${isReadOnly} placeholder="Cost" required=${true} /></div>
                                 </div>
                                 <div className="flex justify-between mb-1 text-gray-600">
                                     <span className="pl-4 flex-1">Less: <input type="text" className="inline-block bg-transparent outline-none w-3/4 italic" placeholder="[Accum. Depr.]" value=${block.contra} onChange=${(e)=>handleArrChange('depAssets', i, 'contra', e.target.value)} disabled=${isReadOnly}/></span>
                                     
-                                    <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction=${false} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
+                                    <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction={false} showFeedback={false} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 <div className="flex justify-between font-bold">
                                     <span className="pl-8">Net Book Value</span>
-                                    <div className="w-full"><${FeedbackInput} value=${block.net} onChange=${(e)=>handleArrChange('depAssets', i, 'net', e.target.value)} expected=${expNet} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
+                                    <div className="w-full"><${FeedbackInput} value=${block.net} onChange=${(e)=>handleArrChange('depAssets', i, 'net', e.target.value)} expected=${expNet} showFeedback={false} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 ${!isReadOnly 
                                     ? html`<button onClick=${()=>deleteRow('depAssets', i)} className="absolute top-1 right-[-20px] text-red-400 opacity-0 group-hover:opacity-100"><${Trash2} size=${12}/></button>`
@@ -654,7 +649,6 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                         ${!isReadOnly && html`<button onClick=${()=>addRow('depAssets', {asset:'', cost:'', contra:'', accum:'', net:''})} className=${btnStyle}><${Plus} size=${12}/> Add Depreciable Asset Row</button>`}
                         
                         ${otherAssets.map((r, i) => {
-                            // Filter logic already applied in validateStep06, but we check match here for individual checks
                             const ppeKeywords = ['equipment', 'machinery', 'building', 'furniture', 'fixture', 'accumulated', 'depreciation'];
                             const otherNonCurrentExpectation = expectedData?.nonCurrentAssets.filter(a => {
                                 const name = a.name.toLowerCase();
@@ -667,13 +661,13 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1 mt-2">
                                 <div className="flex-1 pl-4">
-                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('otherAssets', i, 'label', e.target.value)} expectedOptions=${otherNonCurrentExpectation} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Land / Other asset account]"/>
+                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('otherAssets', i, 'label', e.target.value)} expectedOptions=${otherNonCurrentExpectation} showFeedback={false} isReadOnly=${isReadOnly} placeholder="[Land / Other asset account]"/>
                                 </div>
                                 <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('otherAssets', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                                 <div className="w-6 text-center">
                                     ${!isReadOnly 
                                         ? html`<button onClick=${()=>deleteRow('otherAssets', i)}><${Trash2} size=${12} class="text-gray-400 hover:text-red-500"/></button>`
-                                        : (showFeedback && html`<span>${isCorrect ? html`<${Check} size=${12} className="text-green-600"/>` : html`<${X} size=${12} className="text-red-500"/>`}</span>`)
+                                        : null
                                     }
                                 </div>
                             </div>
@@ -725,11 +719,10 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     <div className="pl-2 border-l-2 border-blue-100 mb-4">
                          ${nonCurLiabs.map((r, i) => {
                             const exp = expectedData?.nonCurrentLiabilities?.find(l => l.name.toLowerCase().trim() === (r.label || '').toLowerCase().trim());
-                            const isCorrect = exp && checkField(r.amount, exp.amount);
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
                                 <div className="flex-1 pl-4">
-                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback=${false} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
+                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback={false} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
                                 </div>
                                 <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                                 <div className="w-6 text-center">
@@ -743,7 +736,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                         ${!isReadOnly && html`<button onClick=${()=>addRow('nonCurLiabs', {label:'', amount:''})} className=${btnStyle}><${Plus} size=${12}/> Add Non-current Liability Row</button>`}
                          <div className="flex justify-between items-center py-1 font-semibold border-t border-black mt-1">
                             <span className="pl-8">Total Non-current Liabilities</span>
-                            <div className="w-full"><${FeedbackInput} value=${data?.totalNonCurLiabs} onChange=${(e)=>updateData({ totalNonCurLiabs: e.target.value })} expected=${expTotals.nonCurLiabs} showFeedback=${false} isReadOnly=${isReadOnly}/></div>
+                            <div className="w-full"><${FeedbackInput} value=${data?.totalNonCurLiabs} onChange=${(e)=>updateData({ totalNonCurLiabs: e.target.value })} expected=${expTotals.nonCurLiabs} showFeedback={false} isReadOnly=${isReadOnly}/></div>
                         </div>
                     </div>
                 `}
