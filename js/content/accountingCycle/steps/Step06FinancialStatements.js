@@ -1058,6 +1058,9 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     `;
 };
 
+/* -----------------------------------------
+   MerchPerpetualIS (temporarily disabled)
+----------------------------------------- 
 // --- MerchPerpetualIS (Updated getBal) ---
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
@@ -1182,6 +1185,9 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
         </div>
     `;
 };
+*/
+  
+
 
 // --- MAIN EXPORT ---
 
