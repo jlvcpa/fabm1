@@ -839,6 +839,7 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
+    // --- FIX: Use ALL accounts (Ledger + Adjustments) for dropdown options ---
     const allAccounts = useMemo(() => {
         const s = new Set(Object.keys(ledger));
         if(adjustments && Array.isArray(adjustments)) {
@@ -981,7 +982,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
                         
                         return html`<tr key=${i}><td className="p-1 pl-4">
-                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${expectedTotals && calculatedTotals.ledger ? Object.keys(calculatedTotals.ledger).map(k=>({name:k})) : []} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
+                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${allAccounts.map(k=>({name:k}))} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
                         </td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
@@ -1003,6 +1004,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
+    // --- FIX: Use ALL accounts (Ledger + Adjustments) for dropdown options ---
     const allAccounts = useMemo(() => {
         const s = new Set(Object.keys(ledger));
         if(adjustments && Array.isArray(adjustments)) {
@@ -1105,7 +1107,7 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
 
                         return html`<tr key=${i}><td className="p-1 pl-4">
-                             <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${expectedTotals && calculatedTotals.ledger ? Object.keys(calculatedTotals.ledger).map(k=>({name:k})) : []} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
+                             <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${allAccounts.map(k=>({name:k}))} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
                         </td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
