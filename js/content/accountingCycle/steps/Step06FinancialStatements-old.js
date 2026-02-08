@@ -323,14 +323,71 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreField(isData.netIncomeAfterTax, expected.totals.ni); 
 
     // B. SCE Scoring
+    // B. SCE Scoring
     const sceData = userAnswers.sce || {};
     scoreField(sceData.begCapital, expected.equity.begBal);
     
-    const expAdditions = investments + (expected.totals.ni > 0 ? expected.totals.ni : 0);
-    const expDeductions = (expected.equity.drawings || 0) + (expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0);
+    // --- NEW: Score the Addition Details (Investment, Net Income) ---
+    const additions = sceData.additions || [];
+    // We don't have a perfect "expected array" for labels here because logic is dynamic, 
+    // but we can check if the Amounts match the expected Investment or Net Income.
+    // Strategy: Check if the user entered rows that match expected Investment or Net Income amounts.
     
+    let investmentFound = false;
+    let netIncomeFound = false;
+    
+    additions.forEach(row => {
+        // If row has value, we count it as a "slot" worth 1 point for value
+        // Note: Label matching is tricky here since user types freely, so we usually just grade the Amount.
+        const val = parseUserValue(row.amount);
+        if (val > 0) {
+            maxScore += 1; // It's an active row, so it's worth a point
+            
+            // Check if this value matches Investment or Net Income
+            const matchesInv = Math.abs(val - investments) < 1;
+            const matchesNI = Math.abs(val - (expected.totals.ni > 0 ? expected.totals.ni : 0)) < 1;
+            
+            if (matchesInv && !investmentFound) {
+                score += 1; 
+                investmentFound = true;
+            } else if (matchesNI && !netIncomeFound) {
+                score += 1;
+                netIncomeFound = true;
+            }
+        }
+    });
+
+    const expAdditions = investments + (expected.totals.ni > 0 ? expected.totals.ni : 0);
     scoreField(sceData.totalAdditions, expAdditions);
     scoreField(sceData.totalCapDuring, expected.equity.begBal + expAdditions);
+
+    // --- NEW: Score the Deduction Details (Drawings, Net Loss) ---
+    const deductions = sceData.deductions || [];
+    let drawingsFound = false;
+    let netLossFound = false;
+
+    deductions.forEach(row => {
+        const val = parseUserValue(row.amount);
+        if (val > 0) {
+             maxScore += 1; // Active row worth 1 point
+
+             const expDrawings = expected.equity.drawings || 0;
+             const expNetLoss = expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0;
+
+             const matchesDraw = Math.abs(val - expDrawings) < 1;
+             const matchesLoss = Math.abs(val - expNetLoss) < 1;
+
+             if (matchesDraw && !drawingsFound) {
+                 score += 1;
+                 drawingsFound = true;
+             } else if (matchesLoss && !netLossFound) {
+                 score += 1;
+                 netLossFound = true;
+             }
+        }
+    });
+
+    const expDeductions = (expected.equity.drawings || 0) + (expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0);
     scoreField(sceData.totalDeductions, expDeductions);
     scoreField(sceData.endCapital, expected.totals.endCap);
 
@@ -374,15 +431,16 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         return !ppeKeywords.some(kw => name.includes(kw));
     });
 
-    scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
+    //scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
     
     scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
 
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
     
-    scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
-    scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
+    // --- NON-CURRENT LIABILITIES SCORING REMOVED AS REQUESTED ---
+    // scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
+    // scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
 
     const isCorrect = score === maxScore && maxScore > 0;
     const letterGrade = getLetterGrade(score, maxScore);
@@ -671,13 +729,13 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
                                 <div className="flex-1 pl-4">
-                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
+                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback=${false} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
                                 </div>
                                 <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                                 <div className="w-6 text-center">
                                     ${!isReadOnly 
                                         ? html`<button onClick=${()=>deleteRow('nonCurLiabs', i)}><${Trash2} size=${12} class="text-gray-400 hover:text-red-500"/></button>`
-                                        : (showFeedback && html`<span>${isCorrect ? html`<${Check} size=${12} className="text-green-600"/>` : html`<${X} size=${12} className="text-red-500"/>`}</span>`)
+                                        : null
                                     }
                                 </div>
                             </div>
@@ -685,7 +743,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                         ${!isReadOnly && html`<button onClick=${()=>addRow('nonCurLiabs', {label:'', amount:''})} className=${btnStyle}><${Plus} size=${12}/> Add Non-current Liability Row</button>`}
                          <div className="flex justify-between items-center py-1 font-semibold border-t border-black mt-1">
                             <span className="pl-8">Total Non-current Liabilities</span>
-                            <div className="w-full"><${FeedbackInput} value=${data?.totalNonCurLiabs} onChange=${(e)=>updateData({ totalNonCurLiabs: e.target.value })} expected=${expTotals.nonCurLiabs} showFeedback=${showFeedback} isReadOnly=${isReadOnly}/></div>
+                            <div className="w-full"><${FeedbackInput} value=${data?.totalNonCurLiabs} onChange=${(e)=>updateData({ totalNonCurLiabs: e.target.value })} expected=${expTotals.nonCurLiabs} showFeedback=${false} isReadOnly=${isReadOnly}/></div>
                         </div>
                     </div>
                 `}
@@ -839,6 +897,7 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
+    // --- FIX: Use ALL accounts (Ledger + Adjustments) for dropdown options ---
     const allAccounts = useMemo(() => {
         const s = new Set(Object.keys(ledger));
         if(adjustments && Array.isArray(adjustments)) {
@@ -981,7 +1040,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
                         
                         return html`<tr key=${i}><td className="p-1 pl-4">
-                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${expectedTotals && calculatedTotals.ledger ? Object.keys(calculatedTotals.ledger).map(k=>({name:k})) : []} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
+                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${allAccounts.map(k=>({name:k}))} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
                         </td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
@@ -1003,6 +1062,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
+    // --- FIX: Use ALL accounts (Ledger + Adjustments) for dropdown options ---
     const allAccounts = useMemo(() => {
         const s = new Set(Object.keys(ledger));
         if(adjustments && Array.isArray(adjustments)) {
@@ -1105,7 +1165,7 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
 
                         return html`<tr key=${i}><td className="p-1 pl-4">
-                             <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${expectedTotals && calculatedTotals.ledger ? Object.keys(calculatedTotals.ledger).map(k=>({name:k})) : []} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
+                             <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${allAccounts.map(k=>({name:k}))} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
                         </td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
