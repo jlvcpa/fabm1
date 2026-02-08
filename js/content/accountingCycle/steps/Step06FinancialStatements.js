@@ -409,7 +409,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         const matchAsset = expected.nonCurrentAssets.find(a => a.name.toLowerCase().includes(keyword));
         
         if (matchAsset) {
-            maxScore += 3; // Cost, Accum, Net
+     //       maxScore += 3; // Cost, Accum, Net
             const expCost = matchAsset.amount;
             let matchContra = expected.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
             if(!matchContra) matchContra = expected.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
@@ -417,9 +417,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
             const expAccum = matchContra ? Math.abs(matchContra.amount) : 0;
             const expNet = expCost - expAccum; 
 
-            if(checkField(block.cost, expCost)) score += 1;
-            if(checkField(block.accum, expAccum)) score += 1;
-            if(checkField(block.net, expNet)) score += 1;
+      //      if(checkField(block.cost, expCost)) score += 1;
+      //      if(checkField(block.accum, expAccum)) score += 1;
+      //      if(checkField(block.net, expNet)) score += 1;
         }
     });
 
