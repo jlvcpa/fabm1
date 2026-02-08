@@ -644,6 +644,18 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
+    // --- FIX: Build comprehensive list of accounts from Ledger AND Adjustments ---
+    const allAccounts = useMemo(() => {
+        const s = new Set(Object.keys(ledger));
+        if(adjustments && Array.isArray(adjustments)) {
+             adjustments.forEach(adj => { 
+                 if (adj.drAcc) s.add(adj.drAcc); 
+                 if (adj.crAcc) s.add(adj.crAcc); 
+             });
+        }
+        return Array.from(s);
+    }, [ledger, adjustments]);
+
     // 1. Helper for ADJUSTED Balance (Ledger + Adjustments)
     // Used for Sales, Purchases, Expenses, and ENDING Inventory
     const getBal = (accName) => { 
@@ -784,7 +796,8 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ` : html`
                     <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        const matchKey = Object.keys(ledger).find(k => k.toLowerCase() === r.label.trim().toLowerCase());
+                        // --- FIX: Search in allAccounts (Ledger + Adjustments) ---
+                        const matchKey = allAccounts.find(k => k.toLowerCase() === r.label.trim().toLowerCase());
                         const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
                         const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
@@ -809,6 +822,18 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
 // --- MerchPerpetualIS (Updated getBal) ---
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
+
+    // --- FIX: Build comprehensive list of accounts from Ledger AND Adjustments ---
+    const allAccounts = useMemo(() => {
+        const s = new Set(Object.keys(ledger));
+        if(adjustments && Array.isArray(adjustments)) {
+             adjustments.forEach(adj => { 
+                 if (adj.drAcc) s.add(adj.drAcc); 
+                 if (adj.crAcc) s.add(adj.crAcc); 
+             });
+        }
+        return Array.from(s);
+    }, [ledger, adjustments]);
 
     const getBal = (accName) => { 
         const lowerName = accName.toLowerCase();
@@ -895,7 +920,8 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                 ` : html`
                     <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        const matchKey = Object.keys(ledger).find(k => k.toLowerCase() === r.label.trim().toLowerCase());
+                        // --- FIX: Search in allAccounts (Ledger + Adjustments) ---
+                        const matchKey = allAccounts.find(k => k.toLowerCase() === r.label.trim().toLowerCase());
                         const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
                         const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
