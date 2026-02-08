@@ -695,7 +695,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 <div className="border-t border-black mt-1 mb-2"></div>
                 ${renderRow('Net Sales', 'netSales', expNetSales, false, 'pl-4 font-bold')}
 
-                <div className="mt-4 mb-2 font-bold text-gray-800">Cost of Goods Sold</div>
+                <div className="mt-4 mb-2 font-bold text-gray-800">Less: Cost of Goods Sold</div>
                 ${renderRow('[Inventory Account - beginning]', 'begInv', expBegInv, false, 'pl-4', '[Beg Inv]', true, 'begInvLabel')}
                 ${renderRow('[Purchases Account]', 'purchases', expPurch, false, 'pl-4', '[Purchases]', true, 'purchasesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showPurchDetails: !data.showPurchDetails})}>${data.showPurchDetails ? '- Hide' : '+ Show'} Purchase Discounts / Allowances Row</div>
@@ -711,7 +711,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('Total Goods Available for Sale', 'tgas', expTGAS, false, 'pl-4 font-bold')}
                 ${renderRow('Less: [Inventory Account - ending]', 'endInv', expEndInv, false, 'pl-4', '[End Inv]', true, 'endInvLabel')}
                 <div className="border-b border-black mb-2"></div>
-                ${renderRow('Cost of Goods Sold', 'cogs', expCOGS, true, 'pl-0 font-bold text-red-700')}
+                ${renderRow('Cost of Goods Sold', 'cogs', expCOGS, false, 'pl-0 font-bold text-red-700')}
                 
                 <div className="border-b-2 border-black mb-4"></div>
                 ${renderRow('GROSS INCOME', 'grossIncome', expGross, false, 'pl-0 font-bold')}
