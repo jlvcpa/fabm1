@@ -381,8 +381,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
     
-    scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
-    scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
+    // --- SCORING EXCLUDED FOR NON-CURRENT LIABILITIES AS REQUESTED ---
+    // scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
+    // scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
 
     const isCorrect = score === maxScore && maxScore > 0;
     const letterGrade = getLetterGrade(score, maxScore);
@@ -667,17 +668,16 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     <div className="pl-2 border-l-2 border-blue-100 mb-4">
                          ${nonCurLiabs.map((r, i) => {
                             const exp = expectedData?.nonCurrentLiabilities?.find(l => l.name.toLowerCase().trim() === (r.label || '').toLowerCase().trim());
-                            const isCorrect = exp && checkField(r.amount, exp.amount);
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
                                 <div className="flex-1 pl-4">
-                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
+                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback=${false} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
                                 </div>
                                 <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                                 <div className="w-6 text-center">
                                     ${!isReadOnly 
                                         ? html`<button onClick=${()=>deleteRow('nonCurLiabs', i)}><${Trash2} size=${12} class="text-gray-400 hover:text-red-500"/></button>`
-                                        : (showFeedback && html`<span>${isCorrect ? html`<${Check} size=${12} className="text-green-600"/>` : html`<${X} size=${12} className="text-red-500"/>`}</span>`)
+                                        : null
                                     }
                                 </div>
                             </div>
@@ -685,7 +685,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                         ${!isReadOnly && html`<button onClick=${()=>addRow('nonCurLiabs', {label:'', amount:''})} className=${btnStyle}><${Plus} size=${12}/> Add Non-current Liability Row</button>`}
                          <div className="flex justify-between items-center py-1 font-semibold border-t border-black mt-1">
                             <span className="pl-8">Total Non-current Liabilities</span>
-                            <div className="w-full"><${FeedbackInput} value=${data?.totalNonCurLiabs} onChange=${(e)=>updateData({ totalNonCurLiabs: e.target.value })} expected=${expTotals.nonCurLiabs} showFeedback=${showFeedback} isReadOnly=${isReadOnly}/></div>
+                            <div className="w-full"><${FeedbackInput} value=${data?.totalNonCurLiabs} onChange=${(e)=>updateData({ totalNonCurLiabs: e.target.value })} expected=${expTotals.nonCurLiabs} showFeedback=${false} isReadOnly=${isReadOnly}/></div>
                         </div>
                     </div>
                 `}
