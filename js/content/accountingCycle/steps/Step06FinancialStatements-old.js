@@ -1,9 +1,8 @@
-// --- js/content/accountingCycle/steps/Step06FinancialStatements.js ---
+// --- js/content/accountingCycle/steps/Step06FinancialStatements.js ----
 
 import React, { useState, useMemo, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { Table, Trash2, Plus, AlertCircle, Check, X, ChevronDown, ChevronRight } from 'https://esm.sh/lucide-react@0.263.1';
-// Import helpers from your existing utils file
 import { getAccountType, sortAccounts, getLetterGrade } from '../utils.js';
 
 const html = htm.bind(React.createElement);
@@ -55,7 +54,6 @@ const btnStyle = "mt-2 text-xs text-blue-900 font-medium hover:underline flex it
 const FeedbackInput = ({ value, onChange, expected, isDeduction, showFeedback, isReadOnly, placeholder, required }) => {
     let isCorrect = checkField(value, expected, isDeduction);
     
-    // If field is explicitly required (like asset cost), blank is wrong even if we aren't strict about 0s elsewhere
     if (required && (!value || value.toString().trim() === '')) {
         isCorrect = false;
     }
@@ -90,10 +88,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     let score = 0;
     let maxScore = 0;
     
-    // 1. Calculate Expected Data (The Truth)
-    const s = new Set(Object.keys(ledgerData || {})); // Safety check
-    
-    // Safety check for adjustments array
+    const s = new Set(Object.keys(ledgerData || {}));
     if(adjustments && Array.isArray(adjustments)) {
         adjustments.forEach(adj => { 
             if(adj.drAcc) s.add(adj.drAcc); 
@@ -118,9 +113,9 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         }
         const atbNet = lBal + (aDr - aCr); 
         
-        if (Math.abs(atbNet) < 0.01) return; // Skip zero balance accounts
+        if (Math.abs(atbNet) < 0.01) return;
 
-        const type = getAccountType(acc); // Uses imported util
+        const type = getAccountType(acc);
         const val = Math.abs(atbNet);
 
         if (type === 'Revenue') {
@@ -141,7 +136,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
                 expected.totals.curAssets += val;
             } else if (isContra) {
                 expected.contraAssets.push({ name: acc, amount: val }); 
-                expected.totals.nonCurAssets -= val; // Contras reduce non-current assets
+                expected.totals.nonCurAssets -= val;
             } else {
                 expected.nonCurrentAssets.push({ name: acc, amount: val });
                 expected.totals.nonCurAssets += val;
@@ -172,7 +167,6 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     let investments = 0;
     if(activityData && activityData.transactions) {
         activityData.transactions.forEach(t => {
-            // Check solution for credits to Capital (handles both data structures)
             const lines = t.solution || t.credits || [];
             if (t.solution) {
                  t.solution.forEach(line => {
@@ -189,9 +183,13 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     }
     expected.equity.investments = investments;
 
-    // Recalculate End Cap strictly
+    // Recalculate End Cap strictly based on BS Equation (Assets - Liabs)
     expected.totals.endCap = expected.totals.assets - expected.totals.liabs;
     expected.totals.liabEquity = expected.totals.liabs + expected.totals.endCap;
+
+    // Derive NI from Equity Equation to fix Periodic Inventory issues
+    const derivedNI = expected.totals.endCap - (expected.equity.begBal || 0) - (expected.equity.investments || 0) + (expected.equity.drawings || 0);
+    expected.totals.ni = derivedNI;
 
     const scoreSection = (userRows, expectedItems) => {
         expectedItems.forEach(exp => {
@@ -209,27 +207,23 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         if (checkField(userVal, expectedVal)) score += 1;
     };
 
-    // 2. Score Income Statement
     const isData = userAnswers.is || {};
     scoreField(isData.netIncomeAfterTax, expected.totals.ni); 
 
-    // 3. Score SCE
     const sceData = userAnswers.sce || {};
     scoreField(sceData.endCapital, expected.totals.endCap);
 
-    // 4. Score Balance Sheet
     const bsData = userAnswers.bs || {};
     scoreField(bsData.totalAssets, expected.totals.assets);
     scoreField(bsData.totalLiabs, expected.totals.liabs);
     scoreField(bsData.totalLiabEquity, expected.totals.liabEquity);
     
-    // Detailed scoring sections for Balance Sheet
     scoreSection(bsData.curAssets || [], expected.currentAssets);
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
 
     const isCorrect = score === maxScore && maxScore > 0;
-    const letterGrade = getLetterGrade(score, maxScore); // Uses imported util
+    const letterGrade = getLetterGrade(score, maxScore);
     
     return { score, maxScore, letterGrade, isCorrect, expected }; 
 };
@@ -238,19 +232,19 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
 // --- COMPONENT: Source View (Read-Only) ---
 const WorksheetSourceView = ({ ledgerData, adjustments }) => {
     const mergedAccounts = useMemo(() => { 
-        const s = new Set(Object.keys(ledgerData || {})); // Safety
+        const s = new Set(Object.keys(ledgerData || {}));
         if(adjustments && Array.isArray(adjustments)) {
              adjustments.forEach(adj => { 
                  if(adj.drAcc) s.add(adj.drAcc); 
                  if(adj.crAcc) s.add(adj.crAcc); 
              });
         }
-        return sortAccounts(Array.from(s)); // Uses imported util
+        return sortAccounts(Array.from(s));
     }, [ledgerData, adjustments]);
 
     const data = useMemo(() => {
         return mergedAccounts.map(acc => {
-            if(!acc) return {}; // Skip empty
+            if(!acc) return {}; 
 
             const ledgerBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
             const tbDr = ledgerBal > 0 ? ledgerBal : 0; const tbCr = ledgerBal < 0 ? Math.abs(ledgerBal) : 0;
@@ -260,7 +254,7 @@ const WorksheetSourceView = ({ ledgerData, adjustments }) => {
             }
             const atbNet = (tbDr - tbCr) + (aDr - aCr);
             const atbDr = atbNet > 0 ? atbNet : 0; const atbCr = atbNet < 0 ? Math.abs(atbNet) : 0;
-            const type = getAccountType(acc); // Uses imported util
+            const type = getAccountType(acc); 
             const isIS = type === 'Revenue' || type === 'Expense';
             const isDr = isIS ? atbDr : 0; const isCr = isIS ? atbCr : 0; 
             const bsDr = !isIS ? atbDr : 0; const bsCr = !isIS ? atbCr : 0;
@@ -485,14 +479,11 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
 };
 
 // --- SCE COMPONENT ---
-// --- UPDATED: Fix the undefined ledger error by using calculatedTotals instead of activityData.ledger ---
 const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, activityData, expectedTotals }) => {
-    // FIX: Safely access nested config/balances
     const { isSubsequentYear } = activityData?.config || {};
     const beginningBalances = activityData?.beginningBalances;
     const transactions = activityData?.transactions;
     
-    // FIX: Destructure ledger from calculatedTotals prop, NOT activityData
     const { ledger } = calculatedTotals;
 
     let expBegCap = 0;
@@ -518,9 +509,13 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
         });
     }
     
-    const expNetInc = calculatedTotals.isCr - calculatedTotals.isDr; 
-    // FIX: Safely access ledger for Drawings
-    // Ensure ledger is defined before accessing properties
+    let expNetInc = 0;
+    if (expectedTotals && typeof expectedTotals.ni === 'number') {
+        expNetInc = expectedTotals.ni;
+    } else {
+        expNetInc = calculatedTotals.isCr - calculatedTotals.isDr;
+    }
+
     const drawingsAcc = ledger ? ledger['Owner, Drawings'] : null;
     const expDrawings = (drawingsAcc?.debit || 0) - (drawingsAcc?.credit || 0);
 
@@ -586,34 +581,74 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 };
 
 
-// ... [MerchPeriodicIS & MerchPerpetualIS are unchanged] ...
+// --- MerchPeriodicIS (Fixed Inventory Sources) ---
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
-    const getBal = (accName) => { const acc = Object.keys(ledger).find(k => k.toLowerCase() === accName.toLowerCase()); if (!acc) return 0; return (ledger[acc].debit || 0) - (ledger[acc].credit || 0); };
+
+    // 1. Helper for ADJUSTED Balance (Ledger + Adjustments)
+    // Used for Sales, Purchases, Expenses, and ENDING Inventory
+    const getBal = (accName) => { 
+        const lowerName = accName.toLowerCase();
+        let bal = 0;
+        
+        const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
+        if (ledgerKey) {
+            bal += (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
+        }
+
+        if(adjustments && Array.isArray(adjustments)) {
+             adjustments.forEach(adj => {
+                 if (adj.drAcc && adj.drAcc.toLowerCase() === lowerName) bal += adj.amount;
+                 if (adj.crAcc && adj.crAcc.toLowerCase() === lowerName) bal -= adj.amount;
+             });
+        }
+        return bal; 
+    };
+
+    // 2. Helper for UNADJUSTED Balance (Ledger ONLY)
+    // Used specifically for BEGINNING Inventory
+    const getUnadjustedBal = (accName) => {
+        const lowerName = accName.toLowerCase();
+        const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
+        if (ledgerKey) {
+            return (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
+        }
+        return 0;
+    };
     
     // Values for Validation
     const expSales = Math.abs(getBal('Sales')); 
     const expSalesDisc = Math.abs(getBal('Sales Discounts')); 
-    const expSalesRet = Math.abs(getBal('Sales Returns')); 
+    const expSalesRet = Math.abs(getBal('Sales Returns and Allowances')); 
     const expNetSales = expSales - expSalesDisc - expSalesRet;
     const expPurch = Math.abs(getBal('Purchases')); 
     const expPurchDisc = Math.abs(getBal('Purchase Discounts')); 
-    const expPurchRet = Math.abs(getBal('Purchase Returns')); 
+    const expPurchRet = Math.abs(getBal('Purchase Returns and Allowances')); 
     const expNetPurch = expPurch - expPurchDisc - expPurchRet;
     const expFreightIn = Math.abs(getBal('Freight In')); 
     const expCostPurch = expNetPurch + expFreightIn;
-    const expBegInv = Math.abs(getBal('Merchandise Inventory')); 
+
+    // --- FIX START ---
+    // Beg Inv = Unadjusted Ledger Balance
+    const expBegInv = Math.abs(getUnadjustedBal('Merchandise Inventory') || getUnadjustedBal('Inventory')); 
     const expTGAS = expBegInv + expCostPurch;
     
-    let expEndInv = 0; 
-    if(adjustments && Array.isArray(adjustments)) {
-        adjustments.forEach(a => { if (a.drAcc === 'Merchandise Inventory') expEndInv = a.amount; });
-    }
+    // End Inv = Adjusted Balance (Ledger + Adjustments)
+    const expEndInv = Math.abs(getBal('Merchandise Inventory') || getBal('Inventory')); 
+    // --- FIX END ---
     
     const expCOGS = expTGAS - expEndInv; 
     const expGross = expNetSales - expCOGS;
     
+    // Calculate Expenses
     const totalDebits = calculatedTotals.isDr; 
+    // Note: In Periodic, COGS isn't an account in the trial balance, it's calculated.
+    // So we subtract the known debit items involved in COGS to find the remaining Operating Expenses.
+    // However, since we are calculating expOpExp from the Total IS Debit Column (which includes Beg Inv, Purchases, Freight),
+    // we must subtract those specific costs to isolate Op Expenses.
+    
+    // Total Debits in IS Column typically includes: Beg Inv + Purchases + Freight In + Sales Disc/Ret + Op Expenses
+    // Therefore: Op Exp = Total Debits - (Beg Inv + Purchases + Freight In + Sales Disc/Ret)
     const costDebits = expBegInv + expPurch + expFreightIn + expSalesDisc + expSalesRet;
     const expOpExp = totalDebits - costDebits;
     
@@ -654,19 +689,19 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('[Sales Account]', 'sales', expSales, false, 'pl-4', '0.00', true, 'salesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showSalesDetails: !data.showSalesDetails})}>${data.showSalesDetails ? '- Hide' : '+ Show'} Sales Discounts / Allowances Row</div>
                 ${data.showSalesDetails && html`
-                    ${renderRow('Less: Sales Discounts', 'salesDisc', expSalesDisc, true, 'pl-8')}
-                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', expSalesRet, true, 'pl-8')}
+                    ${renderRow('Less: Sales Discounts', 'salesDisc', expSalesDisc, false, 'pl-8')}
+                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', expSalesRet, false, 'pl-8')}
                 `}
                 <div className="border-t border-black mt-1 mb-2"></div>
                 ${renderRow('Net Sales', 'netSales', expNetSales, false, 'pl-4 font-bold')}
 
-                <div className="mt-4 mb-2 font-bold text-gray-800">Cost of Goods Sold</div>
+                <div className="mt-4 mb-2 font-bold text-gray-800">Less: Cost of Goods Sold</div>
                 ${renderRow('[Inventory Account - beginning]', 'begInv', expBegInv, false, 'pl-4', '[Beg Inv]', true, 'begInvLabel')}
                 ${renderRow('[Purchases Account]', 'purchases', expPurch, false, 'pl-4', '[Purchases]', true, 'purchasesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showPurchDetails: !data.showPurchDetails})}>${data.showPurchDetails ? '- Hide' : '+ Show'} Purchase Discounts / Allowances Row</div>
                 ${data.showPurchDetails && html`
-                      ${renderRow('Less: Purchase Discounts', 'purchDisc', expPurchDisc, true, 'pl-12')}
-                      ${renderRow('Less: Purchase Returns', 'purchRet', expPurchRet, true, 'pl-12')}
+                      ${renderRow('Less: Purchase Discounts', 'purchDisc', expPurchDisc, false, 'pl-12')}
+                      ${renderRow('Less: Purchase Returns And Allowances', 'purchRet', expPurchRet, false, 'pl-12')}
                 `}
                 ${renderRow('Net Purchases', 'netPurch', expNetPurch, false, 'pl-8 font-semibold')}
                 ${renderRow('[Freight-in / Transportation In]', 'freightIn', expFreightIn, false, 'pl-8', '[Freight In]', true, 'freightInLabel')}
@@ -674,9 +709,9 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('Total Cost of Goods Purchased', 'costPurch', expCostPurch, false, 'pl-4 font-semibold')}
                 <div className="border-t border-black mt-1 mb-1"></div>
                 ${renderRow('Total Goods Available for Sale', 'tgas', expTGAS, false, 'pl-4 font-bold')}
-                ${renderRow('[Inventory Account - ending]', 'endInv', -expEndInv, true, 'pl-4', '[End Inv]', true, 'endInvLabel')}
+                ${renderRow('Less: [Inventory Account - ending]', 'endInv', expEndInv, false, 'pl-4', '[End Inv]', true, 'endInvLabel')}
                 <div className="border-b border-black mb-2"></div>
-                ${renderRow('Cost of Goods Sold', 'cogs', -expCOGS, true, 'pl-0 font-bold text-red-700')}
+                ${renderRow('Cost of Goods Sold', 'cogs', expCOGS, false, 'pl-0 font-bold text-red-700')}
                 
                 <div className="border-b-2 border-black mb-4"></div>
                 ${renderRow('GROSS INCOME', 'grossIncome', expGross, false, 'pl-0 font-bold')}
@@ -690,7 +725,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                     <table className="w-full mb-1"><tbody>${expenseRows.map((r,i)=>html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating / Non-operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('expenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('expenses',i,e.target.value)} disabled=${isReadOnly}/></td><td><button onClick=${()=>deleteRow('expenses',i)}><${Trash2} size=${12}/></button></td></tr>`)}</tbody></table><button onClick=${()=>addRow('expenses')} class=${btnStyle}><${Plus} size=${12}/> Add Expense Row</button>
                     ${renderRow('Total Expenses', 'totalExpenses', expOpExp, false, 'pl-0 font-bold')}
                 ` : html`
-                    <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
+                    <div className="mt-4 font-bold text-gray-800">Less: Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i)=>html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td><button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button></td></tr>`)}</tbody></table><button onClick=${()=>addRow('opExpenses')} class=${btnStyle}><${Plus} size=${12}/> Add Expense Row</button>
                     ${renderRow('Total Operating Expenses', 'totalOpExpenses', expOpExp, false, 'pl-4 font-semibold')}
                     <div className="mt-6 border-t-2 border-black pt-2">
@@ -702,14 +737,35 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     `;
 };
 
+// --- MerchPerpetualIS (Updated getBal) ---
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
-    const { ledger } = calculatedTotals;
-    const getBal = (accName) => { const acc = Object.keys(ledger).find(k => k.toLowerCase() === accName.toLowerCase()); if (!acc) return 0; return (ledger[acc].debit || 0) - (ledger[acc].credit || 0); };
+    const { ledger, adjustments } = calculatedTotals;
+
+    // --- FIX: Include Adjustments in getBal ---
+    const getBal = (accName) => { 
+        const lowerName = accName.toLowerCase();
+        let bal = 0;
+        
+        // 1. From Ledger
+        const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
+        if (ledgerKey) {
+            bal += (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
+        }
+
+        // 2. From Adjustments
+        if(adjustments && Array.isArray(adjustments)) {
+             adjustments.forEach(adj => {
+                 if (adj.drAcc && adj.drAcc.toLowerCase() === lowerName) bal += adj.amount;
+                 if (adj.crAcc && adj.crAcc.toLowerCase() === lowerName) bal -= adj.amount;
+             });
+        }
+        return bal; 
+    };
 
     // Perpetual Values
     const expSales = Math.abs(getBal('Sales')); 
     const expSalesDisc = Math.abs(getBal('Sales Discounts')); 
-    const expSalesRet = Math.abs(getBal('Sales Returns')); 
+    const expSalesRet = Math.abs(getBal('Sales Returns and Allowances')); 
     const expNetSales = expSales - expSalesDisc - expSalesRet;
     const expCOGS = Math.abs(getBal('Cost of Goods Sold')); 
     const expGross = expNetSales - expCOGS;
@@ -754,13 +810,13 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                 ${renderRow('[Sales Account]', 'sales', expSales, false, 'pl-4', '0.00', true, 'salesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showSalesDetails: !data.showSalesDetails})}>${data.showSalesDetails ? '- Hide' : '+ Show'} Sales Discounts / Allowances Row</div>
                 ${data.showSalesDetails && html`
-                    ${renderRow('Less: Sales Discounts', 'salesDisc', -expSalesDisc, true, 'pl-8')}
-                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', -expSalesRet, true, 'pl-8')}
+                    ${renderRow('Less: Sales Discounts', 'salesDisc', expSalesDisc, false, 'pl-8')}
+                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', expSalesRet, false, 'pl-8')}
                 `}
                 <div className="border-t border-black mt-1 mb-2"></div>
                 ${renderRow('Net Sales', 'netSales', expNetSales, false, 'pl-4 font-bold')}
 
-                ${renderRow('Cost of Goods Sold', 'cogs', -expCOGS, true, 'pl-4', '0.00', true, 'cogsLabel')}
+                ${renderRow('Cost of Goods Sold', 'cogs', expCOGS, true, 'pl-4', '0.00', true, 'cogsLabel')}
                 
                 <div className="border-b-2 border-black mb-4"></div>
                 ${renderRow('GROSS INCOME', 'grossIncome', expGross, false, 'pl-0 font-bold')}
@@ -788,16 +844,11 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
 
 // --- MAIN EXPORT ---
 
-// UPDATED: Now accepts props from BOTH sources (app.js and steps.js)
 export default function Step06FinancialStatements({ ledgerData: propLedger, adjustments: propAdjustments, activityData, data, onChange, showFeedback, isReadOnly }) {
     
-    // --- SMART DATA SELECTION ---
-    // If props are passed directly (Practice Mode), use them.
-    // If not, try to extract them from activityData (Task Mode).
     const ledgerData = propLedger || activityData?.ledger || {};
     const adjustments = propAdjustments || activityData?.adjustments || [];
     
-    // Fix: Safely access config properties, defaulting if activityData is missing or incomplete
     const config = activityData?.config || {};
     const { fsFormat, includeCashFlows, businessType, inventorySystem } = { 
         fsFormat: 'Multi', 
@@ -809,7 +860,6 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
     const isMerch = businessType === 'Merchandising' || businessType === 'Manufacturing';
     const isPerpetual = inventorySystem === 'Perpetual';
 
-    // Calculated totals for validation logic (if needed in main)
     const calculatedTotals = { 
         ...useMemo(() => {
             const s = new Set(Object.keys(ledgerData)); 
@@ -821,7 +871,7 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
             }
             let isDr = 0; let isCr = 0;
             Array.from(s).forEach(acc => {
-                if(!acc) return; // safety
+                if(!acc) return;
                 const lBal = (ledgerData[acc]?.debit || 0) - (ledgerData[acc]?.credit || 0);
                 let aDr = 0; let aCr = 0;
                 if(adjustments && Array.isArray(adjustments)) {
@@ -832,7 +882,6 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
                 const type = getAccountType(acc);
                 if (type === 'Revenue' || type === 'Expense') { isDr += atbDr; isCr += atbCr; }
             });
-            // --- CRITICAL FIX: Return 'ledger' here so it can be used in child components ---
             return { isDr, isCr, ledger: ledgerData, adjustments };
         }, [ledgerData, adjustments])
     };
@@ -841,13 +890,10 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
     const handleBSChange = (key, val) => onChange('bs', { ...data.bs, [key]: val });
     const handleSCFChange = (key, val) => onChange('scf', { ...data.scf, [key]: val });
 
-    // Derive ending capital from SCE data to pass to Balance Sheet for validation
     const sceEndingCapital = parseUserValue(data.sce?.endCapital);
 
-    // Calculate Banner Results and Get Expected Totals
     const validationResult = useMemo(() => {
         if (!showFeedback && !isReadOnly) return null;
-        // Pass the correct activityData object (either the prop or a constructed one if missing)
         const safeActivityData = activityData || { transactions: [], beginningBalances: null, config: {} };
         return validateStep06(ledgerData, adjustments, safeActivityData, data);
     }, [ledgerData, adjustments, activityData, data, showFeedback, isReadOnly]);
@@ -863,12 +909,10 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
             isReadOnly,
             showFeedback,
             calculatedTotals,
-            expectedTotals // Pass expected totals for scoring IS
+            expectedTotals 
         };
         
         if (!isMerch) {
-            // Placeholder for Service business components if they existed in your original code
-            // Assuming default to Merch Periodic if not Service
              return html`<${MerchPeriodicIS} type=${fsFormat} ...${props} />`;
         } else {
             return isPerpetual 
@@ -877,7 +921,6 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
         }
     };
 
-    // REMOVE false && IN  ${(false && showFeedback || isReadOnly) && validationResult && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col h-[calc(100vh-140px)]">
             ${(false && showFeedback || isReadOnly) && validationResult && html`
