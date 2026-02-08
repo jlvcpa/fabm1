@@ -58,9 +58,10 @@ const getAccountByKeyword = (ledger, keywords) => {
 };
 
 const inputClass = (isError) => `w-full text-right p-1 text-xs outline-none border-b border-gray-300 bg-transparent focus:border-blue-500 font-mono pr-6 ${isError ? 'bg-red-50 text-red-600 font-bold' : ''}`;
+const labelInputClass = (isError) => `w-full text-left p-1 text-xs outline-none bg-transparent focus:border-blue-500 font-medium ${isError ? 'text-red-600 font-bold' : 'text-gray-800'}`;
 const btnStyle = "mt-2 text-xs text-blue-900 font-medium hover:underline flex items-center gap-1 cursor-pointer";
 
-// --- COMPONENT: Input with Feedback Icon ---
+// --- COMPONENT: Input with Feedback Icon (For Amounts) ---
 const FeedbackInput = ({ value, onChange, expected, isDeduction, showFeedback, isReadOnly, placeholder, required }) => {
     let isCorrect = checkField(value, expected, isDeduction);
     
@@ -86,6 +87,37 @@ const FeedbackInput = ({ value, onChange, expected, isDeduction, showFeedback, i
                     ${isValid 
                         ? html`<${Check} size=${14} className="text-green-600"/>` 
                         : html`<${X} size=${14} className="text-red-500"/>`
+                    }
+                </span>
+            `}
+        </div>
+    `;
+};
+
+// --- COMPONENT: Input with Feedback Icon (For Labels/Accounts) ---
+const FeedbackLabel = ({ value, onChange, expectedOptions, showFeedback, isReadOnly, placeholder }) => {
+    // Check if the user's label matches any name in the expected list
+    const isValid = expectedOptions && value && expectedOptions.some(opt => opt.name.toLowerCase().trim() === value.toLowerCase().trim());
+    
+    // Only show X if feedback is on AND the user typed something but it didn't match. 
+    // Or if strict, show X if missing. Assuming if they added a row, they intend to fill it.
+    const isError = showFeedback && !isValid; 
+
+    return html`
+        <div className="relative w-full flex items-center">
+            <input 
+                type="text" 
+                className=${labelInputClass(isError)} 
+                value=${value || ''} 
+                onChange=${onChange} 
+                disabled=${isReadOnly} 
+                placeholder=${placeholder}
+            />
+            ${showFeedback && html`
+                <span className="pointer-events-none pl-1">
+                    ${isValid 
+                        ? html`<${Check} size=${14} className="text-green-600"/>` 
+                        : (value ? html`<${X} size=${14} className="text-red-500"/>` : '')
                     }
                 </span>
             `}
@@ -223,11 +255,11 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
 
     const scoreSection = (userRows, expectedItems) => {
         expectedItems.forEach(exp => {
-            maxScore += 2;
+            maxScore += 2; // 1 for Label, 1 for Amount
             const match = userRows.find(r => r.label && r.label.toLowerCase().trim() === exp.name.toLowerCase().trim());
             if (match) {
-                score += 1; 
-                if (checkField(match.amount, exp.amount)) score += 1;
+                score += 1; // Correct Label
+                if (checkField(match.amount, exp.amount)) score += 1; // Correct Amount
             }
         });
     };
@@ -270,9 +302,8 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     if(expSalesRet > 0 || isData.salesRet) scoreField(isData.salesRet, expSalesRet);
     scoreField(isData.netSales, expNetSales);
     
-    // Score specific Periodic Inventory fields if this is a Periodic system or user entered data
-    // This ensures detailed grading for the Periodic flow: Beg Inv -> Net Purch -> TGAS -> End Inv -> COGS
-    if (cogsAcc === 0) { // If no COGS ledger account, assume Periodic detailed flow is required
+    // Detailed Periodic COGS Flow
+    if (cogsAcc === 0) { 
         scoreField(isData.begInv, expBegInv);
         scoreField(isData.purchases, expPurch);
         if(expPurchDisc > 0 || isData.purchDisc) scoreField(isData.purchDisc, expPurchDisc);
@@ -336,7 +367,8 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     });
 
     // --- FIX: Filter out common PPE accounts from "Other Non-Current Assets" scoring ---
-    const ppeKeywords = ['equipment', 'machinery', 'building', 'furniture', 'fixture', 'land', 'vehicle', 'truck', 'accumulated'];
+    // This prevents expectation duplication
+    const ppeKeywords = ['equipment', 'machinery', 'building', 'furniture', 'fixture', 'accumulated', 'depreciation'];
     const otherNonCurrentExpectation = expected.nonCurrentAssets.filter(a => {
         const name = a.name.toLowerCase();
         return !ppeKeywords.some(kw => name.includes(kw));
@@ -484,7 +516,9 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     const isCorrect = exp && checkField(r.amount, exp.amount);
                     return html`
                     <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
-                        <div className="flex-1 pl-4"><input type="text" className="w-full bg-transparent outline-none" placeholder="[Current asset account]" value=${r.label} onChange=${(e)=>handleArrChange('curAssets', i, 'label', e.target.value)} disabled=${isReadOnly}/></div>
+                        <div className="flex-1 pl-4">
+                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('curAssets', i, 'label', e.target.value)} expectedOptions=${expectedData?.currentAssets} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Current asset account]"/>
+                        </div>
                         <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('curAssets', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                         <div className="w-6 text-center">
                             ${!isReadOnly 
@@ -562,11 +596,21 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                         ${!isReadOnly && html`<button onClick=${()=>addRow('depAssets', {asset:'', cost:'', contra:'', accum:'', net:''})} className=${btnStyle}><${Plus} size=${12}/> Add Depreciable Asset Row</button>`}
                         
                         ${otherAssets.map((r, i) => {
-                            const exp = expectedData?.nonCurrentAssets?.find(a => a.name.toLowerCase().trim() === (r.label || '').toLowerCase().trim());
+                            // Filter logic already applied in validateStep06, but we check match here for individual checks
+                            const ppeKeywords = ['equipment', 'machinery', 'building', 'furniture', 'fixture', 'accumulated', 'depreciation'];
+                            const otherNonCurrentExpectation = expectedData?.nonCurrentAssets.filter(a => {
+                                const name = a.name.toLowerCase();
+                                return !ppeKeywords.some(kw => name.includes(kw));
+                            });
+
+                            const exp = otherNonCurrentExpectation?.find(a => a.name.toLowerCase().trim() === (r.label || '').toLowerCase().trim());
                             const isCorrect = exp && checkField(r.amount, exp.amount);
+                            
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1 mt-2">
-                                <div className="flex-1 pl-4"><input type="text" className="w-full bg-transparent outline-none" placeholder="[Land / Other asset account]" value=${r.label} onChange=${(e)=>handleArrChange('otherAssets', i, 'label', e.target.value)} disabled=${isReadOnly}/></div>
+                                <div className="flex-1 pl-4">
+                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('otherAssets', i, 'label', e.target.value)} expectedOptions=${otherNonCurrentExpectation} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Land / Other asset account]"/>
+                                </div>
                                 <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('otherAssets', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                                 <div className="w-6 text-center">
                                     ${!isReadOnly 
@@ -597,7 +641,9 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     const isCorrect = exp && checkField(r.amount, exp.amount);
                     return html`
                     <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
-                        <div className="flex-1 pl-4"><input type="text" className="w-full bg-transparent outline-none" placeholder="[Current liability account]" value=${r.label} onChange=${(e)=>handleArrChange('curLiabs', i, 'label', e.target.value)} disabled=${isReadOnly}/></div>
+                        <div className="flex-1 pl-4">
+                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('curLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.currentLiabilities} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Current liability account]"/>
+                        </div>
                         <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('curLiabs', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                         <div className="w-6 text-center">
                             ${!isReadOnly 
@@ -624,7 +670,9 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                             const isCorrect = exp && checkField(r.amount, exp.amount);
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
-                                <div className="flex-1 pl-4"><input type="text" className="w-full bg-transparent outline-none" placeholder="[Non-current liability account]" value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} disabled=${isReadOnly}/></div>
+                                <div className="flex-1 pl-4">
+                                    <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'label', e.target.value)} expectedOptions=${expectedData?.nonCurrentLiabilities} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Non-current liability account]"/>
+                                </div>
                                 <div className="w-24"><input type="text" className="w-full text-right bg-transparent outline-none" placeholder="0" value=${r.amount} onChange=${(e)=>handleArrChange('nonCurLiabs', i, 'amount', e.target.value)} disabled=${isReadOnly}/></div>
                                 <div className="w-6 text-center">
                                     ${!isReadOnly 
@@ -932,7 +980,9 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                         const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
                         
-                        return html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
+                        return html`<tr key=${i}><td className="p-1 pl-4">
+                            <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${expectedTotals && calculatedTotals.ledger ? Object.keys(calculatedTotals.ledger).map(k=>({name:k})) : []} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
+                        </td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
                             : (showFeedback && html`<span>${isCorrect ? html`<${Check} size=${12} className="text-green-600"/>` : html`<${X} size=${12} className="text-red-500"/>`}</span>`)
@@ -1054,7 +1104,9 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                         const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
                         const isCorrect = isExpense && checkField(r.amount, adjustedBal);
 
-                        return html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
+                        return html`<tr key=${i}><td className="p-1 pl-4">
+                             <${FeedbackLabel} value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} expectedOptions=${expectedTotals && calculatedTotals.ledger ? Object.keys(calculatedTotals.ledger).map(k=>({name:k})) : []} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="[Operating Expense Account]"/>
+                        </td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
                             : (showFeedback && html`<span>${isCorrect ? html`<${Check} size=${12} className="text-green-600"/>` : html`<${X} size=${12} className="text-red-500"/>`}</span>`)
