@@ -392,34 +392,36 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 if (matchAsset) {
                                     expCost = matchAsset.amount;
                                     
-                                    // 1. Strict match: asset name included in contra name?
+                                    // 1. Strict match
                                     let matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().includes(keyword));
                                     
-                                    // 2. Generic match: Is there an "Accumulated Depreciation" account?
+                                    // 2. Generic match
                                     if (!matchContra) {
                                          matchContra = expectedData.contraAssets.find(c => c.name.toLowerCase().trim() === 'accumulated depreciation');
                                     }
                                     
-                                    // 3. Fallback: If only 1 contra asset exists in total, assume it's this one
+                                    // 3. Fallback
                                     if (!matchContra && expectedData.contraAssets.length === 1) {
                                          matchContra = expectedData.contraAssets[0];
                                     }
 
                                     if (matchContra) {
-                                        expAccum = matchContra.amount;
+                                        // --- CRITICAL FIX: FORCE POSITIVE VALUE FROM SOURCE DATA ---
+                                        // This ensures math is always 40000 - 600, not 40000 - (-600)
+                                        expAccum = Math.abs(matchContra.amount);
                                     } else {
-                                        // Fallback: Use user's input (as positive) if no source data found
+                                        // Fallback: Use user's input (as positive)
                                         expAccum = Math.abs(parseUserValue(block.accum)); 
                                     }
-                                    // FIX 2: Ensure expNet is always (Cost - Positive Accumulated Depreciation)
+                                    // Calculate Net Book Value using positive numbers
                                     expNet = expCost - expAccum;
 
                                 } else {
-                                    // Asset not found in source data, use user's numbers for math check
+                                    // Asset not found, rely on user math
                                     expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                                 }
                             } else {
-                                // No asset name entered, use user's numbers for math check
+                                // No asset name, rely on user math
                                 expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                             }
                             
@@ -433,7 +435,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 </div>
                                 <div className="flex justify-between mb-1 text-gray-600">
                                     <span className="pl-4 flex-1">Less: <input type="text" className="inline-block bg-transparent outline-none w-3/4 italic" placeholder="[Accum. Depr.]" value=${block.contra} onChange=${(e)=>handleArrChange('depAssets', i, 'contra', e.target.value)} disabled=${isReadOnly}/></span>
-                                                                      
+                                    
                                     <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction={false} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 <div className="flex justify-between font-bold">
