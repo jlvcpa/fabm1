@@ -381,7 +381,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreSection(bsData.curLiabs || [], expected.currentLiabilities);
     scoreField(bsData.totalCurLiabs, expected.totals.curLiabs);
     
-    // --- SCORING EXCLUDED FOR NON-CURRENT LIABILITIES AS REQUESTED ---
+    // --- NON-CURRENT LIABILITIES SCORING REMOVED AS REQUESTED ---
     // scoreSection(bsData.nonCurLiabs || [], expected.nonCurrentLiabilities);
     // scoreField(bsData.totalNonCurLiabs, expected.totals.nonCurLiabs);
 
@@ -668,6 +668,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                     <div className="pl-2 border-l-2 border-blue-100 mb-4">
                          ${nonCurLiabs.map((r, i) => {
                             const exp = expectedData?.nonCurrentLiabilities?.find(l => l.name.toLowerCase().trim() === (r.label || '').toLowerCase().trim());
+                            const isCorrect = exp && checkField(r.amount, exp.amount);
                             return html`
                             <div key=${i} className="flex justify-between items-center border-b border-gray-100 py-1">
                                 <div className="flex-1 pl-4">
