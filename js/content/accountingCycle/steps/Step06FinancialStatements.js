@@ -407,17 +407,19 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
 
                                     if (matchContra) {
                                         expAccum = matchContra.amount;
-                                        expNet = expCost - expAccum;
                                     } else {
-                                        // Asset found but Contra NOT found. 
-                                        // Trust user input for Accum and just validate the Net calculation.
+                                        // Fallback: Use user's input (as positive) if no source data found
                                         expAccum = Math.abs(parseUserValue(block.accum)); 
-                                        expNet = expCost - expAccum;
                                     }
+                                    // FIX 2: Ensure expNet is always (Cost - Positive Accumulated Depreciation)
+                                    expNet = expCost - expAccum;
+
                                 } else {
+                                    // Asset not found in source data, use user's numbers for math check
                                     expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                                 }
                             } else {
+                                // No asset name entered, use user's numbers for math check
                                 expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                             }
                             
@@ -432,6 +434,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                 <div className="flex justify-between mb-1 text-gray-600">
                                     <span className="pl-4 flex-1">Less: <input type="text" className="inline-block bg-transparent outline-none w-3/4 italic" placeholder="[Accum. Depr.]" value=${block.contra} onChange=${(e)=>handleArrChange('depAssets', i, 'contra', e.target.value)} disabled=${isReadOnly}/></span>
                                     
+                                    {/* FIX 1: isDeduction={false} allows positive input. */}
                                     <div className="w-24 relative"><${FeedbackInput} value=${block.accum} onChange=${(e)=>handleArrChange('depAssets', i, 'accum', e.target.value)} expected=${expAccum} isDeduction={false} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="0" required=${true} /></div>
                                 </div>
                                 <div className="flex justify-between font-bold">
