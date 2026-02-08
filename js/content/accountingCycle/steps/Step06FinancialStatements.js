@@ -502,7 +502,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
 
                 <div className="font-bold text-gray-700 mt-4 mb-1">Owner's Equity</div>
                 <div className="flex justify-between items-center py-1">
-                    <span className="pl-4 text-gray-500 italic">[Owner, Capital Ending]</span>
+                    <span className="pl-4 text-gray-500 italic">[Owner's Capital Ending]</span>
                     <div className="w-full"><${FeedbackInput} value=${data?.endCapital} onChange=${(e)=>updateData({ endCapital: e.target.value })} expected=${sceEndingCapital} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="From SCE..."/></div>
                 </div>
 
