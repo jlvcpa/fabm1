@@ -877,9 +877,10 @@ export default function Step06FinancialStatements({ ledgerData: propLedger, adju
         }
     };
 
+    // REMOVE false && IN  ${(false && showFeedback || isReadOnly) && validationResult && html` TO UNHIDE THE BANNER
     return html`
         <div className="flex flex-col h-[calc(100vh-140px)]">
-            ${(showFeedback || isReadOnly) && validationResult && html`
+            ${(false && showFeedback || isReadOnly) && validationResult && html`
                 <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-2 mb-4 flex justify-between items-center shadow-sm w-full flex-shrink-0">
                     <span className="font-bold flex items-center gap-2"><${AlertCircle} size=${18}/> Results:</span>
                     <span className="font-mono font-bold text-lg">Score: ${validationResult.score || 0} of ${validationResult.maxScore || 0} - (${validationResult.letterGrade || 'IR'})</span>
