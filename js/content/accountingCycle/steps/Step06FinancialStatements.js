@@ -745,7 +745,7 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
     // Perpetual Values
     const expSales = Math.abs(getBal('Sales')); 
     const expSalesDisc = Math.abs(getBal('Sales Discounts')); 
-    const expSalesRet = Math.abs(getBal('Sales Returns')); 
+    const expSalesRet = Math.abs(getBal('Sales Returns and Allowances')); 
     const expNetSales = expSales - expSalesDisc - expSalesRet;
     const expCOGS = Math.abs(getBal('Cost of Goods Sold')); 
     const expGross = expNetSales - expCOGS;
