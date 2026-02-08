@@ -681,7 +681,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showPurchDetails: !data.showPurchDetails})}>${data.showPurchDetails ? '- Hide' : '+ Show'} Purchase Discounts / Allowances Row</div>
                 ${data.showPurchDetails && html`
                       ${renderRow('Less: Purchase Discounts', 'purchDisc', expPurchDisc, true, 'pl-12')}
-                      ${renderRow('Less: Purchase Returns', 'purchRet', expPurchRet, true, 'pl-12')}
+                      ${renderRow('Less: Purchase Returns And Allowances', 'purchRet', expPurchRet, true, 'pl-12')}
                 `}
                 ${renderRow('Net Purchases', 'netPurch', expNetPurch, false, 'pl-8 font-semibold')}
                 ${renderRow('[Freight-in / Transportation In]', 'freightIn', expFreightIn, false, 'pl-8', '[Freight In]', true, 'freightInLabel')}
