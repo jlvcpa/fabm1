@@ -790,13 +790,13 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                 ${renderRow('[Sales Account]', 'sales', expSales, false, 'pl-4', '0.00', true, 'salesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showSalesDetails: !data.showSalesDetails})}>${data.showSalesDetails ? '- Hide' : '+ Show'} Sales Discounts / Allowances Row</div>
                 ${data.showSalesDetails && html`
-                    ${renderRow('Less: Sales Discounts', 'salesDisc', -expSalesDisc, true, 'pl-8')}
-                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', -expSalesRet, true, 'pl-8')}
+                    ${renderRow('Less: Sales Discounts', 'salesDisc', expSalesDisc, true, 'pl-8')}
+                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', expSalesRet, true, 'pl-8')}
                 `}
                 <div className="border-t border-black mt-1 mb-2"></div>
                 ${renderRow('Net Sales', 'netSales', expNetSales, false, 'pl-4 font-bold')}
 
-                ${renderRow('Cost of Goods Sold', 'cogs', -expCOGS, true, 'pl-4', '0.00', true, 'cogsLabel')}
+                ${renderRow('Cost of Goods Sold', 'cogs', expCOGS, true, 'pl-4', '0.00', true, 'cogsLabel')}
                 
                 <div className="border-b-2 border-black mb-4"></div>
                 ${renderRow('GROSS INCOME', 'grossIncome', expGross, false, 'pl-0 font-bold')}
