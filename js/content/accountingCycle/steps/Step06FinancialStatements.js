@@ -401,31 +401,21 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
                                         // Ensure expAccum is positive
                                         expAccum = Math.abs(matchContra.amount);
                                     } else {
-                                        // Fallback: Use user's input (as positive) if no system match found
-                                        expAccum = Math.abs(parseUserValue(block.accum)); 
+                                        // STRICT: If system knows the Asset but has no Contra, expected Accum is 0.
+                                        expAccum = 0;
                                     }
                                     
-                                    // --- FIX: CALCULATE NBV BASED ON USER INPUTS ---
-                                    // Instead of deriving the expected Net Book Value from the source Cost - Source Accum,
-                                    // we now calculate it based on what the user typed for Cost and Accum.
-                                    // This means if Cost is wrong, but the Math (Cost - Accum) is correct, the NBV is marked correct.
-                                    
-                                    const userCost = parseUserValue(block.cost);
-                                    const userAccum = parseUserValue(block.accum);
-                                    
-                                    // If user hasn't typed anything yet, default to expected math, otherwise use their math.
-                                    if (userCost !== 0 || userAccum !== 0) {
-                                         expNet = userCost - Math.abs(userAccum);
-                                    } else {
-                                         expNet = expCost - expAccum;
-                                    }
+                                    // STRICT GRADING: Net Book Value must match Source Data exactly.
+                                    expNet = expCost - expAccum;
 
                                 } else {
-                                    // Asset not found, rely on user math
+                                    // Asset not found in answer key.
+                                    // Rely on user math to prevent "Double Penalty" on a row that arguably shouldn't exist.
+                                    // Or we could force 0. But standard practice for "Extra Rows" is usually lenient on math.
                                     expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                                 }
                             } else {
-                                // No asset name, rely on user math
+                                // No asset name
                                 expNet = parseUserValue(block.cost) - Math.abs(parseUserValue(block.accum));
                             }
                             
