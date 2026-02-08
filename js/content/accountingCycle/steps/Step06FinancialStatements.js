@@ -553,7 +553,7 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
         expNetInc = calculatedTotals.isCr - calculatedTotals.isDr;
     }
 
-    const drawingsAcc = ledger ? ledger['Owner, Drawings'] : null;
+    const drawingsAcc = ledger ? ledger['Owner's Drawings'] : null;
     const expDrawings = (drawingsAcc?.debit || 0) - (drawingsAcc?.credit || 0);
 
     const expTotalAdditions = expInvestment + (expNetInc > 0 ? expNetInc : 0);
