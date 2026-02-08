@@ -47,6 +47,17 @@ const checkField = (userVal, expectedVal, isDeduction = false) => {
     return true;
 };
 
+// --- HELPER: Safe Account Retrieval ---
+// Finds an account key that matches "drawings" or "withdrawal" to avoid syntax errors with apostrophes
+const getAccountByKeyword = (ledger, keywords) => {
+    if (!ledger) return null;
+    const key = Object.keys(ledger).find(k => {
+        const lower = k.toLowerCase();
+        return keywords.some(kw => lower.includes(kw.toLowerCase()));
+    });
+    return key ? ledger[key] : null;
+};
+
 const inputClass = (isError) => `w-full text-right p-1 text-xs outline-none border-b border-gray-300 bg-transparent focus:border-blue-500 font-mono pr-6 ${isError ? 'bg-red-50 text-red-600 font-bold' : ''}`;
 const btnStyle = "mt-2 text-xs text-blue-900 font-medium hover:underline flex items-center gap-1 cursor-pointer";
 
@@ -155,7 +166,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
             }
             expected.totals.liabs += val;
             
-        } else if (acc.includes('Drawings') || acc.includes('Dividends')) {
+        } else if (acc.toLowerCase().includes('drawing') || acc.toLowerCase().includes('withdrawal') || acc.includes('Dividends')) {
             expected.equity.drawings = (expected.equity.drawings || 0) + val;
         } else if (type === 'Equity' && !acc.includes('Income Summary')) {
             expected.equity.capitalAccount = acc;
@@ -502,7 +513,7 @@ const BalanceSheet = ({ data, onChange, isReadOnly, showFeedback, sceEndingCapit
 
                 <div className="font-bold text-gray-700 mt-4 mb-1">Owner's Equity</div>
                 <div className="flex justify-between items-center py-1">
-                    <span className="pl-4 text-gray-500 italic">[Owner's Capital Ending]</span>
+                    <span className="pl-4 text-gray-500 italic">[Owner, Capital Ending]</span>
                     <div className="w-full"><${FeedbackInput} value=${data?.endCapital} onChange=${(e)=>updateData({ endCapital: e.target.value })} expected=${sceEndingCapital} showFeedback=${showFeedback} isReadOnly=${isReadOnly} placeholder="From SCE..."/></div>
                 </div>
 
@@ -553,7 +564,8 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
         expNetInc = calculatedTotals.isCr - calculatedTotals.isDr;
     }
 
-    const drawingsAcc = ledger ? ledger['Owner's Drawings'] : null;
+    // --- FIX: Use helper to find Drawings account safely ---
+    const drawingsAcc = getAccountByKeyword(ledger, ['drawings', 'withdrawal']);
     const expDrawings = (drawingsAcc?.debit || 0) - (drawingsAcc?.credit || 0);
 
     const expTotalAdditions = expInvestment + (expNetInc > 0 ? expNetInc : 0);
@@ -662,6 +674,7 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
         const lowerName = accName.toLowerCase();
         let bal = 0;
         
+        // Use helper to find safe key if needed, or exact match
         const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
         if (ledgerKey) {
             bal += (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
