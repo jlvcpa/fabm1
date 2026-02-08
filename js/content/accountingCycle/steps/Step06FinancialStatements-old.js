@@ -47,6 +47,17 @@ const checkField = (userVal, expectedVal, isDeduction = false) => {
     return true;
 };
 
+// --- HELPER: Safe Account Retrieval ---
+// Finds an account key that matches "drawings" or "withdrawal" to avoid syntax errors with apostrophes
+const getAccountByKeyword = (ledger, keywords) => {
+    if (!ledger) return null;
+    const key = Object.keys(ledger).find(k => {
+        const lower = k.toLowerCase();
+        return keywords.some(kw => lower.includes(kw.toLowerCase()));
+    });
+    return key ? ledger[key] : null;
+};
+
 const inputClass = (isError) => `w-full text-right p-1 text-xs outline-none border-b border-gray-300 bg-transparent focus:border-blue-500 font-mono pr-6 ${isError ? 'bg-red-50 text-red-600 font-bold' : ''}`;
 const btnStyle = "mt-2 text-xs text-blue-900 font-medium hover:underline flex items-center gap-1 cursor-pointer";
 
@@ -155,7 +166,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
             }
             expected.totals.liabs += val;
             
-        } else if (acc.includes('Drawings') || acc.includes('Dividends')) {
+        } else if (acc.toLowerCase().includes('drawing') || acc.toLowerCase().includes('withdrawal') || acc.includes('Dividends')) {
             expected.equity.drawings = (expected.equity.drawings || 0) + val;
         } else if (type === 'Equity' && !acc.includes('Income Summary')) {
             expected.equity.capitalAccount = acc;
@@ -553,7 +564,8 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
         expNetInc = calculatedTotals.isCr - calculatedTotals.isDr;
     }
 
-    const drawingsAcc = ledger ? ledger['Owner, Drawings'] : null;
+    // --- FIX: Use helper to find Drawings account safely ---
+    const drawingsAcc = getAccountByKeyword(ledger, ['drawings', 'withdrawal']);
     const expDrawings = (drawingsAcc?.debit || 0) - (drawingsAcc?.credit || 0);
 
     const expTotalAdditions = expInvestment + (expNetInc > 0 ? expNetInc : 0);
@@ -644,12 +656,25 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
+    // --- FIX: Build comprehensive list of accounts from Ledger AND Adjustments ---
+    const allAccounts = useMemo(() => {
+        const s = new Set(Object.keys(ledger));
+        if(adjustments && Array.isArray(adjustments)) {
+             adjustments.forEach(adj => { 
+                 if (adj.drAcc) s.add(adj.drAcc); 
+                 if (adj.crAcc) s.add(adj.crAcc); 
+             });
+        }
+        return Array.from(s);
+    }, [ledger, adjustments]);
+
     // 1. Helper for ADJUSTED Balance (Ledger + Adjustments)
     // Used for Sales, Purchases, Expenses, and ENDING Inventory
     const getBal = (accName) => { 
         const lowerName = accName.toLowerCase();
         let bal = 0;
         
+        // Use helper to find safe key if needed, or exact match
         const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
         if (ledgerKey) {
             bal += (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
@@ -701,14 +726,13 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     
     // Calculate Expenses
     const totalDebits = calculatedTotals.isDr; 
-    // Note: In Periodic, COGS isn't an account in the trial balance, it's calculated.
-    // So we subtract the known debit items involved in COGS to find the remaining Operating Expenses.
-    // However, since we are calculating expOpExp from the Total IS Debit Column (which includes Beg Inv, Purchases, Freight),
-    // we must subtract those specific costs to isolate Op Expenses.
     
     // Total Debits in IS Column typically includes: Beg Inv + Purchases + Freight In + Sales Disc/Ret + Op Expenses
-    // Therefore: Op Exp = Total Debits - (Beg Inv + Purchases + Freight In + Sales Disc/Ret)
-    const costDebits = expBegInv + expPurch + expFreightIn + expSalesDisc + expSalesRet;
+    // BUT calculatedTotals.isDr ONLY sums account types 'Revenue' and 'Expense'.
+    // Inventory is 'Asset'. So calculatedTotals.isDr DOES NOT INCLUDE Beg Inv.
+    // Therefore: Op Exp = Total Debits - (Purchases + Freight In + Sales Disc/Ret)
+    
+    const costDebits = expPurch + expFreightIn + expSalesDisc + expSalesRet; // FIXED: Removed expBegInv from subtraction
     const expOpExp = totalDebits - costDebits;
     
     const expOpIncome = expGross - expOpExp; 
@@ -783,10 +807,14 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                     <table className="w-full mb-1"><tbody>${expenseRows.map((r,i) => html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating / Non-operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('expenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('expenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">${!isReadOnly && html`<button onClick=${()=>deleteRow('expenses',i)}><${Trash2} size=${12}/></button>`}</td></tr>`)}</tbody></table><button onClick=${()=>addRow('expenses')} class=${btnStyle}><${Plus} size=${12}/> Add Expense Row</button>
                     ${renderRow('Total Expenses', 'totalExpenses', expOpExp, false, 'pl-0 font-bold')}
                 ` : html`
-                    <div className="mt-4 font-bold text-gray-800">Less: Operating Expenses</div>
+                    <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        const exp = Object.entries(ledger).find(([k,v]) => k.toLowerCase() === r.label.toLowerCase() && getAccountType(k) === 'Expense');
-                        const isCorrect = exp && checkField(r.amount, (exp[1].debit || 0) - (exp[1].credit || 0));
+                        // --- FIX: Search in allAccounts (Ledger + Adjustments) ---
+                        const matchKey = allAccounts.find(k => k.toLowerCase() === r.label.trim().toLowerCase());
+                        const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
+                        const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
+                        const isCorrect = isExpense && checkField(r.amount, adjustedBal);
+                        
                         return html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
@@ -807,6 +835,18 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
 // --- MerchPerpetualIS (Updated getBal) ---
 const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
+
+    // --- FIX: Build comprehensive list of accounts from Ledger AND Adjustments ---
+    const allAccounts = useMemo(() => {
+        const s = new Set(Object.keys(ledger));
+        if(adjustments && Array.isArray(adjustments)) {
+             adjustments.forEach(adj => { 
+                 if (adj.drAcc) s.add(adj.drAcc); 
+                 if (adj.crAcc) s.add(adj.crAcc); 
+             });
+        }
+        return Array.from(s);
+    }, [ledger, adjustments]);
 
     const getBal = (accName) => { 
         const lowerName = accName.toLowerCase();
@@ -893,8 +933,12 @@ const MerchPerpetualIS = ({ data, onChange, isReadOnly, showFeedback, calculated
                 ` : html`
                     <div className="mt-4 font-bold text-gray-800">Operating Expenses</div>
                     <table className="w-full mb-1"><tbody>${opExpenseRows.map((r,i) => {
-                        const exp = Object.entries(ledger).find(([k,v]) => k.toLowerCase() === r.label.toLowerCase() && getAccountType(k) === 'Expense');
-                        const isCorrect = exp && checkField(r.amount, (exp[1].debit || 0) - (exp[1].credit || 0));
+                        // --- FIX: Search in allAccounts (Ledger + Adjustments) ---
+                        const matchKey = allAccounts.find(k => k.toLowerCase() === r.label.trim().toLowerCase());
+                        const isExpense = matchKey ? getAccountType(matchKey) === 'Expense' : false;
+                        const adjustedBal = matchKey ? Math.abs(getBal(matchKey)) : 0;
+                        const isCorrect = isExpense && checkField(r.amount, adjustedBal);
+
                         return html`<tr key=${i}><td className="p-1 pl-4"><input type="text" className="w-full bg-transparent" placeholder="[Operating Expense Account]" value=${r.label} onChange=${(e)=>handleArrChange('opExpenses',i,'label',e.target.value)} disabled=${isReadOnly}/></td><td className="w-24"><input type="text" className="w-full text-right bg-transparent border-b" value=${r.amount} onChange=${(e)=>handleArrAmountChange('opExpenses',i,e.target.value)} disabled=${isReadOnly}/></td><td className="w-6 text-center">
                         ${!isReadOnly 
                             ? html`<button onClick=${()=>deleteRow('opExpenses',i)}><${Trash2} size=${12}/></button>`
