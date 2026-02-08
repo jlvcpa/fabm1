@@ -581,22 +581,21 @@ const StatementOfChangesInEquity = ({ data, onChange, isReadOnly, showFeedback, 
 };
 
 
-// --- MerchPeriodicIS (Updated getBal) ---
+// --- MerchPeriodicIS (Fixed Inventory Sources) ---
 const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedTotals, type = "Single", expectedTotals }) => {
     const { ledger, adjustments } = calculatedTotals;
 
-    // --- FIX: Include Adjustments in getBal ---
+    // 1. Helper for ADJUSTED Balance (Ledger + Adjustments)
+    // Used for Sales, Purchases, Expenses, and ENDING Inventory
     const getBal = (accName) => { 
         const lowerName = accName.toLowerCase();
         let bal = 0;
         
-        // 1. From Ledger
         const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
         if (ledgerKey) {
             bal += (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
         }
 
-        // 2. From Adjustments
         if(adjustments && Array.isArray(adjustments)) {
              adjustments.forEach(adj => {
                  if (adj.drAcc && adj.drAcc.toLowerCase() === lowerName) bal += adj.amount;
@@ -604,6 +603,17 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
              });
         }
         return bal; 
+    };
+
+    // 2. Helper for UNADJUSTED Balance (Ledger ONLY)
+    // Used specifically for BEGINNING Inventory
+    const getUnadjustedBal = (accName) => {
+        const lowerName = accName.toLowerCase();
+        const ledgerKey = Object.keys(ledger).find(k => k.toLowerCase() === lowerName);
+        if (ledgerKey) {
+            return (ledger[ledgerKey].debit || 0) - (ledger[ledgerKey].credit || 0);
+        }
+        return 0;
     };
     
     // Values for Validation
@@ -617,18 +627,28 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
     const expNetPurch = expPurch - expPurchDisc - expPurchRet;
     const expFreightIn = Math.abs(getBal('Freight In')); 
     const expCostPurch = expNetPurch + expFreightIn;
-    const expBegInv = Math.abs(getBal('Merchandise Inventory')); 
+
+    // --- FIX START ---
+    // Beg Inv = Unadjusted Ledger Balance
+    const expBegInv = Math.abs(getUnadjustedBal('Merchandise Inventory') || getUnadjustedBal('Inventory')); 
     const expTGAS = expBegInv + expCostPurch;
     
-    let expEndInv = 0; 
-    if(adjustments && Array.isArray(adjustments)) {
-        adjustments.forEach(a => { if (a.drAcc && a.drAcc.toLowerCase().includes('inventory')) expEndInv = a.amount; });
-    }
+    // End Inv = Adjusted Balance (Ledger + Adjustments)
+    const expEndInv = Math.abs(getBal('Merchandise Inventory') || getBal('Inventory')); 
+    // --- FIX END ---
     
     const expCOGS = expTGAS - expEndInv; 
     const expGross = expNetSales - expCOGS;
     
+    // Calculate Expenses
     const totalDebits = calculatedTotals.isDr; 
+    // Note: In Periodic, COGS isn't an account in the trial balance, it's calculated.
+    // So we subtract the known debit items involved in COGS to find the remaining Operating Expenses.
+    // However, since we are calculating expOpExp from the Total IS Debit Column (which includes Beg Inv, Purchases, Freight),
+    // we must subtract those specific costs to isolate Op Expenses.
+    
+    // Total Debits in IS Column typically includes: Beg Inv + Purchases + Freight In + Sales Disc/Ret + Op Expenses
+    // Therefore: Op Exp = Total Debits - (Beg Inv + Purchases + Freight In + Sales Disc/Ret)
     const costDebits = expBegInv + expPurch + expFreightIn + expSalesDisc + expSalesRet;
     const expOpExp = totalDebits - costDebits;
     
@@ -669,8 +689,8 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('[Sales Account]', 'sales', expSales, false, 'pl-4', '0.00', true, 'salesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showSalesDetails: !data.showSalesDetails})}>${data.showSalesDetails ? '- Hide' : '+ Show'} Sales Discounts / Allowances Row</div>
                 ${data.showSalesDetails && html`
-                    ${renderRow('Less: Sales Discounts', 'salesDisc', expSalesDisc, false, 'pl-8')}
-                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', expSalesRet, false, 'pl-8')}
+                    ${renderRow('Less: Sales Discounts', 'salesDisc', expSalesDisc, true, 'pl-8')}
+                    ${renderRow('Less: Sales Returns and Allowances', 'salesRet', expSalesRet, true, 'pl-8')}
                 `}
                 <div className="border-t border-black mt-1 mb-2"></div>
                 ${renderRow('Net Sales', 'netSales', expNetSales, false, 'pl-4 font-bold')}
@@ -680,8 +700,8 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('[Purchases Account]', 'purchases', expPurch, false, 'pl-4', '[Purchases]', true, 'purchasesLabel')}
                 <div className="flex items-center gap-2 pl-8 text-blue-600 mb-1 cursor-pointer hover:underline text-xs" onClick=${()=>updateData({showPurchDetails: !data.showPurchDetails})}>${data.showPurchDetails ? '- Hide' : '+ Show'} Purchase Discounts / Allowances Row</div>
                 ${data.showPurchDetails && html`
-                      ${renderRow('Less: Purchase Discounts', 'purchDisc', expPurchDisc, false, 'pl-12')}
-                      ${renderRow('Less: Purchase Returns And Allowances', 'purchRet', expPurchRet, false, 'pl-12')}
+                      ${renderRow('Less: Purchase Discounts', 'purchDisc', expPurchDisc, true, 'pl-12')}
+                      ${renderRow('Less: Purchase Returns And Allowances', 'purchRet', expPurchRet, true, 'pl-12')}
                 `}
                 ${renderRow('Net Purchases', 'netPurch', expNetPurch, false, 'pl-8 font-semibold')}
                 ${renderRow('[Freight-in / Transportation In]', 'freightIn', expFreightIn, false, 'pl-8', '[Freight In]', true, 'freightInLabel')}
@@ -689,9 +709,9 @@ const MerchPeriodicIS = ({ data, onChange, isReadOnly, showFeedback, calculatedT
                 ${renderRow('Total Cost of Goods Purchased', 'costPurch', expCostPurch, false, 'pl-4 font-semibold')}
                 <div className="border-t border-black mt-1 mb-1"></div>
                 ${renderRow('Total Goods Available for Sale', 'tgas', expTGAS, false, 'pl-4 font-bold')}
-                ${renderRow('[Inventory Account - ending]', 'endInv', -expEndInv, true, 'pl-4', '[End Inv]', true, 'endInvLabel')}
+                ${renderRow('[Inventory Account - ending]', 'endInv', expEndInv, true, 'pl-4', '[End Inv]', true, 'endInvLabel')}
                 <div className="border-b border-black mb-2"></div>
-                ${renderRow('Cost of Goods Sold', 'cogs', -expCOGS, true, 'pl-0 font-bold text-red-700')}
+                ${renderRow('Cost of Goods Sold', 'cogs', expCOGS, true, 'pl-0 font-bold text-red-700')}
                 
                 <div className="border-b-2 border-black mb-4"></div>
                 ${renderRow('GROSS INCOME', 'grossIncome', expGross, false, 'pl-0 font-bold')}
