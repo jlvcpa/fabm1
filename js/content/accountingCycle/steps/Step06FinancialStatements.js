@@ -323,14 +323,71 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
     scoreField(isData.netIncomeAfterTax, expected.totals.ni); 
 
     // B. SCE Scoring
+    // B. SCE Scoring
     const sceData = userAnswers.sce || {};
     scoreField(sceData.begCapital, expected.equity.begBal);
     
-    const expAdditions = investments + (expected.totals.ni > 0 ? expected.totals.ni : 0);
-    const expDeductions = (expected.equity.drawings || 0) + (expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0);
+    // --- NEW: Score the Addition Details (Investment, Net Income) ---
+    const additions = sceData.additions || [];
+    // We don't have a perfect "expected array" for labels here because logic is dynamic, 
+    // but we can check if the Amounts match the expected Investment or Net Income.
+    // Strategy: Check if the user entered rows that match expected Investment or Net Income amounts.
     
+    let investmentFound = false;
+    let netIncomeFound = false;
+    
+    additions.forEach(row => {
+        // If row has value, we count it as a "slot" worth 1 point for value
+        // Note: Label matching is tricky here since user types freely, so we usually just grade the Amount.
+        const val = parseUserValue(row.amount);
+        if (val > 0) {
+            maxScore += 1; // It's an active row, so it's worth a point
+            
+            // Check if this value matches Investment or Net Income
+            const matchesInv = Math.abs(val - investments) < 1;
+            const matchesNI = Math.abs(val - (expected.totals.ni > 0 ? expected.totals.ni : 0)) < 1;
+            
+            if (matchesInv && !investmentFound) {
+                score += 1; 
+                investmentFound = true;
+            } else if (matchesNI && !netIncomeFound) {
+                score += 1;
+                netIncomeFound = true;
+            }
+        }
+    });
+
+    const expAdditions = investments + (expected.totals.ni > 0 ? expected.totals.ni : 0);
     scoreField(sceData.totalAdditions, expAdditions);
     scoreField(sceData.totalCapDuring, expected.equity.begBal + expAdditions);
+
+    // --- NEW: Score the Deduction Details (Drawings, Net Loss) ---
+    const deductions = sceData.deductions || [];
+    let drawingsFound = false;
+    let netLossFound = false;
+
+    deductions.forEach(row => {
+        const val = parseUserValue(row.amount);
+        if (val > 0) {
+             maxScore += 1; // Active row worth 1 point
+
+             const expDrawings = expected.equity.drawings || 0;
+             const expNetLoss = expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0;
+
+             const matchesDraw = Math.abs(val - expDrawings) < 1;
+             const matchesLoss = Math.abs(val - expNetLoss) < 1;
+
+             if (matchesDraw && !drawingsFound) {
+                 score += 1;
+                 drawingsFound = true;
+             } else if (matchesLoss && !netLossFound) {
+                 score += 1;
+                 netLossFound = true;
+             }
+        }
+    });
+
+    const expDeductions = (expected.equity.drawings || 0) + (expected.totals.ni < 0 ? Math.abs(expected.totals.ni) : 0);
     scoreField(sceData.totalDeductions, expDeductions);
     scoreField(sceData.endCapital, expected.totals.endCap);
 
@@ -374,7 +431,7 @@ export const validateStep06 = (ledgerData, adjustments, activityData, userAnswer
         return !ppeKeywords.some(kw => name.includes(kw));
     });
 
-    scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
+    //scoreSection(bsData.otherAssets || [], otherNonCurrentExpectation);
     
     scoreField(bsData.totalNonCurAssets, expected.totals.nonCurAssets);
 
