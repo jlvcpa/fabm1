@@ -472,84 +472,87 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     };
 
     return html`
-    <div className="flex flex-col h-screen bg-gray-50 font-sans">
-    <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20">
-    <div className="flex items-center gap-4 flex-shrink-0">
-    <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
-    <div>
-    <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
-    <p className="text-xs text-gray-500">Student: ${user.LastName}, ${user.FirstName}</p>
-    </div>
-    </div>
-    <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
-    ${activityDoc.tasks.map(t => {
-        const idx = activityDoc.tasks.indexOf(t);
-        const sNum = getStepNumber(t, idx);
-        const isDone = studentProgress.stepStatus[sNum]?.completed;
-        const isActive = String(t.taskId) === String(currentTaskId);
-        return html`
-        <button key=${t.taskId}
-        onClick=${() => setCurrentTaskId(t.taskId)}
-        className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex-shrink-0 whitespace-nowrap flex items-center gap-1 ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
-        >
-        ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
-        </button>
-        `;
-    })}
-    </div>
-    </header>
+        <div className="flex flex-col h-screen bg-gray-50 font-sans overflow-hidden">
+            
+            <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20 flex-shrink-0">
+                <div className="flex items-center gap-4 flex-shrink-0">
+                    <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
+                    <div>
+                        <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
+                        <p className="text-xs text-gray-500">Student: ${user.LastName}, ${user.FirstName}</p>
+                    </div>
+                </div>
+                <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
+                    ${activityDoc.tasks.map(t => {
+                        const idx = activityDoc.tasks.indexOf(t);
+                        const sNum = getStepNumber(t, idx);
+                        const isDone = studentProgress.stepStatus[sNum]?.completed;
+                        const isActive = String(t.taskId) === String(currentTaskId);
+                        return html`
+                            <button key=${t.taskId} 
+                                onClick=${() => setCurrentTaskId(t.taskId)}
+                                className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex-shrink-0 whitespace-nowrap flex items-center gap-1 ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                            >
+                                ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
+                            </button>
+                        `;
+                    })}
+                </div>
+            </header>
 
-    <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
-    <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-0.5">
-    <div className="flex justify-between items-center w-full px-2 pt-1">
-    <div>
-    <h2 className="text-xl font-bold text-gray-800 leading-tight">${activeTaskConfig.stepName}</h2>
-    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 leading-none">
-    <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
-    <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
-    ${timeLeft && !isSubmitted && html`
-    <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
-    <${Timer} size=${14}/> Remaining: ${timeLeft}
-    </span>
-    `}
-    </div>
-    </div>
-    <div className="flex items-center gap-2">
-    ${isSubmitted && scoreData && html`
-    <div className="text-right">
-    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
-    <div className="text-xl font-bold text-blue-800 flex items-center gap-2 leading-none">
-    ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
-    <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
-    </div>
-    </div>
-    `}
-    <div className="flex flex-col items-end">
-    <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
-    <${btnIcon} size=${18}/> ${btnLabel}
-    </button>
-    ${!isSubmitted && !isLocked && html`
-    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide leading-none">
-    Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
-    </span>
-    `}
-    </div>
-    </div>
-    </div>
+            <main className="flex-1 flex flex-col min-h-0 max-w-7xl mx-auto w-full">
+                
+                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-0.5 flex-shrink-0 z-10">
+                    <div className="flex justify-between items-center w-full px-2 pt-1">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800 leading-tight">${activeTaskConfig.stepName}</h2>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 leading-none">
+                                <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
+                                <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
+                                ${timeLeft && !isSubmitted && html`
+                                    <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
+                                        <${Timer} size=${14}/> Remaining: ${timeLeft}
+                                    </span>
+                                `}
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            ${isSubmitted && scoreData && html`
+                                <div className="text-right">
+                                    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
+                                    <div className="text-xl font-bold text-blue-800 flex items-center gap-2 leading-none">
+                                        ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
+                                        <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
+                                    </div>
+                                </div>
+                            `}
+                            
+                            <div className="flex flex-col items-end">
+                                <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
+                                    <${btnIcon} size=${18}/> ${btnLabel}
+                                </button>
+                                ${!isSubmitted && !isLocked && html`
+                                    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide leading-none">
+                                        Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
+                                    </span>
+                                `}
+                            </div>
+                        </div>
+                    </div>
 
-    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight"
-    dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
-    </div>
+                    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight" 
+                         dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
+                    </div>
+                </div>
 
-    </div>
-
-    <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
-    <div className="h-full overflow-y-auto custom-scrollbar">
-    <${TaskSection} key=${stepNum} ...${stepProps} />
-    </div>
-    </div>
-    </main>
-    </div>
+                <div className="flex-1 min-h-0 bg-white rounded-lg shadow-sm border border-gray-200 relative overflow-hidden flex flex-col">
+                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                        <${TaskSection} key=${stepNum} ...${stepProps} />
+                    </div>
+                </div>
+            </main>
+        </div>
     `;
 };
 
