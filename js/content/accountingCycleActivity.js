@@ -1,3 +1,5 @@
+// --- accountingCycleActivity.js ---
+
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
@@ -204,6 +206,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [questionId, setQuestionId] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
 
+    // --- REVISED INITIALIZATION EFFECT ---
     useEffect(() => {
         if(!activityDoc) return;
         const init = async () => {
@@ -224,12 +227,22 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     
                     let qId = data.questionId;
                     if (!qId) { 
+                        // If doc exists but no ID, pick one AND SAVE IT immediately
                         qId = pickRandomQuestion();
+                        setDoc(resultRef, { questionId: qId }, { merge: true }); 
                     }
                     setQuestionId(qId);
                 } else {
+                    // If doc doesn't exist, pick one, SAVE IT, and create doc
                     const qId = pickRandomQuestion();
                     setQuestionId(qId);
+                    setDoc(resultRef, { 
+                        studentName: `${user.LastName}, ${user.FirstName}`, 
+                        studentId: user.Idnumber, 
+                        section: activityDoc.section, 
+                        questionId: qId, 
+                        startedAt: new Date().toISOString() 
+                    }, { merge: true });
                 }
                 setLoading(false);
             });
@@ -397,6 +410,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             [`answers.${stepNum}`]: removeUndefined(currentAns), 
             [`stepStatus.${stepNum}`]: newStatus,
             [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore },
+            // REVISED: Ensure questionId is always saved on validation as requested
+            questionId: questionId,
             lastUpdated: new Date().toISOString()
         }, { merge: true });
     };
