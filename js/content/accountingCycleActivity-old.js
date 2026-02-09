@@ -1,18 +1,17 @@
+// --- accountingCycleActivity.js ---
 // --- js/content/accountingCycleActivity.js
 
+// 1. RESTORED MISSING LIBRARY IMPORTS
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from 'https://esm.sh/lucide-react@0.263.1';
 import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 
+// 2. YOUR ORIGINAL IMPORTS
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
-// Added ActivityHelper to imports
 import { getAccountType, sortAccounts, getLetterGrade, ActivityHelper } from './accountingCycle/utils.js';
-
-// --- NEW IMPORT: Get the Global Year from root utils ---
 import { COURSE_YEAR } from '../utils.js';
-
 import { TaskSection } from './accountingCycle/steps.js';
 
 import { validateStep01 } from './accountingCycle/steps/Step01Analysis.js';
@@ -77,70 +76,62 @@ const deriveAnalysis = (debits, credits) => {
 
 const adaptStaticDataToSimulator = (questionData) => {
     const { transactions, adjustments } = questionData;
-    const validAccounts = new Set(); 
+    const validAccounts = new Set();
 
     const normalizedTransactions = transactions.map((t, idx) => {
         const debits = []; const credits = [];
-        
         // Populate validAccounts from transaction solutions
         if (t.solution) {
             t.solution.forEach(line => {
                 if (line.account && !line.isExplanation) {
                     validAccounts.add(line.account);
                 }
-                
                 if (line.debit) debits.push({ account: line.account, amount: Number(line.debit) });
                 if (line.credit) credits.push({ account: line.account, amount: Number(line.credit) });
             });
         }
-        
         const analysis = deriveAnalysis(debits, credits);
         return { id: idx + 1, date: t.date, description: t.description, debits, credits, analysis };
     });
 
-    const ledger = {}; 
-    const addToLedger = (acc, dr, cr) => { 
+    const ledger = {};
+    const addToLedger = (acc, dr, cr) => {
         validAccounts.add(acc); // Fail-safe: Ensure accounts used in ledger are also in the list
-        if (!ledger[acc]) ledger[acc] = { debit: 0, credit: 0 }; 
-        ledger[acc].debit += dr; 
-        ledger[acc].credit += cr; 
+        if (!ledger[acc]) ledger[acc] = { debit: 0, credit: 0 };
+        ledger[acc].debit += dr;
+        ledger[acc].credit += cr;
     };
     normalizedTransactions.forEach(t => { t.debits.forEach(d => addToLedger(d.account, d.amount, 0)); t.credits.forEach(c => addToLedger(c.account, 0, c.amount)); });
 
     const normalizedAdjustments = adjustments.map((a, idx) => {
-        const drLine = a.solution.find(s => s.debit); 
+        const drLine = a.solution.find(s => s.debit);
         const crLine = a.solution.find(s => s.credit);
         const amt = drLine ? Number(drLine.debit) : 0;
-        
         // Populate validAccounts from adjustments
-        if (drLine) validAccounts.add(drLine.account); 
+        if (drLine) validAccounts.add(drLine.account);
         if (crLine) validAccounts.add(crLine.account);
-        
         return { id: `adj-${idx}`, desc: a.description, drAcc: drLine ? drLine.account : '', crAcc: crLine ? crLine.account : '', amount: amt };
     });
 
     // console.log("DEBUG: Constructed validAccounts list:", Array.from(validAccounts));
     // 1. Create the sorted list first
     const sortedList = sortAccounts(Array.from(validAccounts));
-    
     // 2. Log it to see exactly what is being sent out
     // console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
 
     return {
-        config: { 
-            businessType: 'Merchandising', 
-            inventorySystem: questionData.inventorySystem || 'Periodic', 
-            isSubsequentYear: false, 
-            deferredExpenseMethod: 'Asset', 
-            deferredIncomeMethod: 'Liability' 
+        config: {
+            businessType: 'Merchandising',
+            inventorySystem: questionData.inventorySystem || 'Periodic',
+            isSubsequentYear: false,
+            deferredExpenseMethod: 'Asset',
+            deferredIncomeMethod: 'Liability'
         },
-        transactions: normalizedTransactions, 
-        ledger: ledger, 
-        
+        transactions: normalizedTransactions,
+        ledger: ledger,
         // 3. Use the variable here
-        validAccounts: sortedList, 
-        
-        beginningBalances: null, 
+        validAccounts: sortedList,
+        beginningBalances: null,
         adjustments: normalizedAdjustments
     };
 };
@@ -152,7 +143,7 @@ const normalizeFirebaseData = (data) => {
         answers: data.answers || {},
         stepStatus: data.stepStatus || {},
         scores: data.scores || {},
-        ...data 
+        ...data
     };
 
     Object.keys(data).forEach(key => {
@@ -176,7 +167,6 @@ const removeUndefined = (obj) => {
 // --- HELPER: DATA INJECTOR (FIXED) ---
 const injectYearToQuestion = (question, year) => {
     const q = JSON.parse(JSON.stringify(question));
-    
     // Inject into Transactions Array
     if (q.transactions && Array.isArray(q.transactions)) {
         q.transactions.forEach(t => {
@@ -185,7 +175,6 @@ const injectYearToQuestion = (question, year) => {
             }
         });
     }
-    
     // Inject into Adjustments Array (if they have dates, though usually generic)
     if (q.adjustments && Array.isArray(q.adjustments)) {
         q.adjustments.forEach(a => {
@@ -194,7 +183,6 @@ const injectYearToQuestion = (question, year) => {
             }
         });
     }
-    
     return q;
 };
 
@@ -206,38 +194,51 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [questionId, setQuestionId] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
 
+    // --- REVISED INITIALIZATION EFFECT (FIXED: NO ASYNC WRAPPER) ---
     useEffect(() => {
         if(!activityDoc) return;
-        const init = async () => {
-            const resultDocId = generateResultDocId(user);
-            if (!resultDocId) return;
+        
+        const resultDocId = generateResultDocId(user);
+        if (!resultDocId) return;
 
-            const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
-            const unsubscribe = onSnapshot(resultRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const rawData = docSnap.data();
-                    const data = normalizeFirebaseData(rawData);
-                    
-                    setStudentProgress(prev => ({
-                        answers: { ...prev.answers, ...(data.answers || {}) },
-                        stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
-                        scores: { ...prev.scores, ...(data.scores || {}) }
-                    }));
-                    
-                    let qId = data.questionId;
-                    if (!qId) { 
-                        qId = pickRandomQuestion();
-                    }
-                    setQuestionId(qId);
-                } else {
-                    const qId = pickRandomQuestion();
-                    setQuestionId(qId);
+        const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
+        
+        // IMPORTANT: onSnapshot must be called directly in useEffect, and its return value (unsubscribe) must be returned by useEffect
+        const unsubscribe = onSnapshot(resultRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const rawData = docSnap.data();
+                const data = normalizeFirebaseData(rawData);
+                
+                setStudentProgress(prev => ({
+                    answers: { ...prev.answers, ...(data.answers || {}) },
+                    stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
+                    scores: { ...prev.scores, ...(data.scores || {}) }
+                }));
+                
+                let qId = data.questionId;
+                if (!qId) { 
+                    // If doc exists but no ID, pick one AND SAVE IT immediately
+                    qId = pickRandomQuestion();
+                    setDoc(resultRef, { questionId: qId }, { merge: true }); 
                 }
-                setLoading(false);
-            });
-            return () => unsubscribe();
-        };
-        init();
+                setQuestionId(qId);
+            } else {
+                // If doc doesn't exist, pick one, SAVE IT, and create doc
+                const qId = pickRandomQuestion();
+                setQuestionId(qId);
+                setDoc(resultRef, { 
+                    studentName: `${user.LastName}, ${user.FirstName}`, 
+                    studentId: user.Idnumber, 
+                    section: activityDoc.section, 
+                    questionId: qId, 
+                    startedAt: new Date().toISOString() 
+                }, { merge: true });
+            }
+            setLoading(false);
+        });
+
+        // Cleanup: Stop listening when component unmounts
+        return () => unsubscribe();
     }, [activityDoc.activityname, activityDoc.section, user.CN, user.Idnumber]);
 
     // EFFECT 1: Load Activity Data (Only runs when questionId changes)
@@ -253,7 +254,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                 setActivityData(adaptedData);
             }
         }
-    }, [questionId]); 
+    }, [questionId]);
 
     // EFFECT 2: Set Initial Task ID
     useEffect(() => {
@@ -307,10 +308,8 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             if (diff <= 0) {
                 setTimeLeft("00:00:00");
                 if (intervalId) clearInterval(intervalId);
-                
                 // Now safe to call because we ensured activityData exists
-                handleActionClick(stepNum, true); 
-                
+                handleActionClick(stepNum, true);
                 if (!isSubmitted) alert("Time Expired! Your answer has been automatically submitted.");
                 return;
             }
@@ -322,12 +321,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         };
 
         updateTimer();
-        intervalId = setInterval(updateTimer, 1000); 
-        
+        intervalId = setInterval(updateTimer, 1000);
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    // 2. Added activityData to dependencies so timer restarts once data loads
+        // 2. Added activityData to dependencies so timer restarts once data loads
     }, [activeTaskConfig, isSubmitted, stepNum, activityData]);
 
     const pickRandomQuestion = () => {
@@ -336,9 +334,9 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     };
 
     const handleSaveStep = (stepNum, newData) => {
-        setStudentProgress(prev => ({ 
-            ...prev, 
-            answers: { ...prev.answers, [stepNum]: newData } 
+        setStudentProgress(prev => ({
+            ...prev,
+            answers: { ...prev.answers, [stepNum]: newData }
         }));
     };
 
@@ -354,7 +352,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
         const currentAns = studentProgress.answers[stepNum] || {};
         let result = { score: 0, maxScore: 0 };
-        
         if (stepNum === 1) result = validateStep01(activityData.transactions, currentAns);
         else if (stepNum === 2) result = validateStep02(activityData.transactions, currentAns);
         else if (stepNum === 3) result = validateStep03(activityData, currentAns);
@@ -396,9 +393,11 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
         
         await setDoc(resultRef, {
-            [`answers.${stepNum}`]: removeUndefined(currentAns), 
+            [`answers.${stepNum}`]: removeUndefined(currentAns),
             [`stepStatus.${stepNum}`]: newStatus,
             [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore },
+            // REVISED: Ensure questionId is always saved on validation as requested
+            questionId: questionId,
             lastUpdated: new Date().toISOString()
         }, { merge: true });
     };
@@ -408,7 +407,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
     const scoreData = studentProgress.scores[stepNum];
     const attemptsLeft = studentProgress.stepStatus[stepNum]?.attempts ?? 3;
-    
     let btnLabel = "Validate Answer";
     let btnColor = "bg-blue-600 hover:bg-blue-700";
     let btnAction = () => handleActionClick(stepNum, false);
@@ -419,7 +417,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         btnColor = "bg-gray-400 cursor-not-allowed";
         btnAction = () => {};
         btnIcon = CheckCircle;
-    } else if (isLocked) { 
+    } else if (isLocked) {
         btnLabel = "Task Locked";
         btnColor = "bg-gray-300 cursor-not-allowed text-gray-500";
         btnAction = () => {};
@@ -427,32 +425,35 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     } else if (attemptsLeft <= 0) {
         btnLabel = "Submit Step";
         btnColor = "bg-green-600 hover:bg-green-700";
-        btnAction = () => handleActionClick(stepNum, true); 
+        btnAction = () => handleActionClick(stepNum, true);
         btnIcon = Save;
     }
 
-    const stepInstructions = (activeTaskConfig && activityData) 
-        ? ActivityHelper.getInstructionsHTML(
-            stepNum,
-            activeTaskConfig.stepName,
-            activityData.validAccounts,
-            activityData.config.isSubsequentYear,
-            activityData.beginningBalances,
-            activityData.config.deferredExpenseMethod,
-            activityData.config.deferredIncomeMethod,
-            activityData.config.inventorySystem
-          )
-        : (activeTaskConfig ? activeTaskConfig.instructions : '');
+    // --- DYNAMIC INSTRUCTIONS GENERATION ---
+    const stepInstructions = (activeTaskConfig && activityData)
+    ? ActivityHelper.getInstructionsHTML(
+        stepNum,
+        activeTaskConfig.stepName,
+        activityData.validAccounts,
+        activityData.config.isSubsequentYear,
+        activityData.beginningBalances,
+        activityData.config.deferredExpenseMethod,
+        activityData.config.deferredIncomeMethod,
+        activityData.config.inventorySystem,
+        activityData.ledger, // Passed ledger data
+        activityData.adjustments // Passed adjustments
+    )
+    : (activeTaskConfig ? activeTaskConfig.instructions : '');
 
     const stepProps = {
         step: { id: stepNum, title: activeTaskConfig.stepName, description: stepInstructions },
         activityData: activityData,
         answers: studentProgress.answers,
-        stepStatus: studentProgress.stepStatus, 
-        isReadOnly: isSubmitted || isEarly, 
-        isLockedBySequence: isLockedBySequence, 
-        isPerformanceTask: true, 
-        showFeedback: isSubmitted, 
+        stepStatus: studentProgress.stepStatus,
+        isReadOnly: isSubmitted || isEarly,
+        isLockedBySequence: isLockedBySequence,
+        isPerformanceTask: true,
+        showFeedback: isSubmitted,
         updateAnswerFns: {
             updateAnswer: (id, val) => handleSaveStep(stepNum, val),
             updateNestedAnswer: (id, key, subKey, val) => {
@@ -471,97 +472,90 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     };
 
     return html`
-        <div className="flex flex-col h-screen bg-gray-50 font-sans">
-            <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20">
-                <div className="flex items-center gap-4 flex-shrink-0">
-                    <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
-                    <div>
-                        <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
-                        <p className="text-xs text-gray-500">Student: ${user.LastName}, ${user.FirstName}</p>
-                    </div>
-                </div>
-                
-                <div className="flex gap-1 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
-                    ${activityDoc.tasks.map(t => {
-                        const idx = activityDoc.tasks.indexOf(t);
-                        const sNum = getStepNumber(t, idx);
-                        const isDone = studentProgress.stepStatus[sNum]?.completed;
-                        const isActive = String(t.taskId) === String(currentTaskId);
-                        return html`
-                            <button key=${t.taskId} 
-                                onClick=${() => setCurrentTaskId(t.taskId)}
-                                className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex-shrink-0 whitespace-nowrap flex items-center gap-1 ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
-                            >
-                                ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
-                            </button>
-                        `;
-                    })}
-                </div>
-            </header>
+    <div className="flex flex-col h-screen bg-gray-50 font-sans">
+    <header className="bg-white border-b shadow-sm px-6 py-3 flex justify-between items-center z-20">
+    <div className="flex items-center gap-4 flex-shrink-0">
+    <button onClick=${goBack} className="text-gray-500 hover:text-gray-800"><${ArrowLeft} size=${20}/></button>
+    <div>
+    <h1 className="font-bold text-lg text-blue-900">${activityDoc.activityname}</h1>
+    <p className="text-xs text-gray-500">Student: ${user.LastName}, ${user.FirstName}</p>
+    </div>
+    </div>
+    <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
+    ${activityDoc.tasks.map(t => {
+        const idx = activityDoc.tasks.indexOf(t);
+        const sNum = getStepNumber(t, idx);
+        const isDone = studentProgress.stepStatus[sNum]?.completed;
+        const isActive = String(t.taskId) === String(currentTaskId);
+        return html`
+        <button key=${t.taskId}
+        onClick=${() => setCurrentTaskId(t.taskId)}
+        className=${`px-3 py-1 rounded text-xs font-bold border transition-colors flex-shrink-0 whitespace-nowrap flex items-center gap-1 ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+        >
+        ${isDone && html`<${CheckCircle} size=${12} />`} Task ${t.taskId}
+        </button>
+        `;
+    })}
+    </div>
+    </header>
 
-            <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
-                
-                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-1">
-                    
-                    <div className="flex justify-between items-center w-full px-2 pt-1">
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-800 leading-tight">${activeTaskConfig.stepName}</h2>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 leading-none">
-                                <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
-                                <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
-                                
-                                ${timeLeft && !isSubmitted && html`
-                                    <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
-                                        <${Timer} size=${14}/> Remaining: ${timeLeft}
-                                    </span>
-                                `}
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                            ${isSubmitted && scoreData && html`
-                                <div className="text-right">
-                                    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
-                                    <div className="text-xl font-bold text-blue-800 flex items-center gap-2 leading-none">
-                                        ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
-                                        <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
-                                    </div>
-                                </div>
-                            `}
-                            
-                            <div className="flex flex-col items-end">
-                                <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
-                                    <${btnIcon} size=${18}/> ${btnLabel}
-                                </button>
-                                ${!isSubmitted && !isLocked && html`
-                                    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide leading-none">
-                                        Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
-                                    </span>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight" 
-                         dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
-                    </div>
+    <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
+    <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-0.5">
+    <div className="flex justify-between items-center w-full px-2 pt-1">
+    <div>
+    <h2 className="text-xl font-bold text-gray-800 leading-tight">${activeTaskConfig.stepName}</h2>
+    <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 leading-none">
+    <span className="flex items-center gap-1"><${Clock} size=${14}/> Start: ${new Date(activeTaskConfig.dateTimeStart).toLocaleString()}</span>
+    <span className="flex items-center gap-1"><${AlertTriangle} size=${14}/> Due: ${new Date(activeTaskConfig.dateTimeExpire).toLocaleString()}</span>
+    ${timeLeft && !isSubmitted && html`
+    <span className="flex items-center gap-1 font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 ml-2">
+    <${Timer} size=${14}/> Remaining: ${timeLeft}
+    </span>
+    `}
+    </div>
+    </div>
+    <div className="flex items-center gap-2">
+    ${isSubmitted && scoreData && html`
+    <div className="text-right">
+    <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Result</div>
+    <div className="text-xl font-bold text-blue-800 flex items-center gap-2 leading-none">
+    ${scoreData.score} <span className="text-sm text-gray-400 font-normal">/ ${scoreData.maxScore}</span>
+    <span className="bg-blue-100 text-blue-700 text-sm px-2 py-0.5 rounded ml-1">${getLetterGrade(scoreData.score, scoreData.maxScore)}</span>
+    </div>
+    </div>
+    `}
+    <div className="flex flex-col items-end">
+    <button onClick=${btnAction} disabled=${isSubmitted || isLocked} className=${`${btnColor} text-white px-6 py-2 rounded shadow-md font-bold transition-colors flex items-center gap-2 min-w-[160px] justify-center`}>
+    <${btnIcon} size=${18}/> ${btnLabel}
+    </button>
+    ${!isSubmitted && !isLocked && html`
+    <span className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wide leading-none">
+    Attempts Left: <span className=${attemptsLeft === 0 ? "text-red-500" : "text-blue-600"}>${attemptsLeft}</span>
+    </span>
+    `}
+    </div>
+    </div>
+    </div>
 
-                </div>
-                
-                <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
-                     <div className="h-full overflow-y-auto custom-scrollbar">
-                        <${TaskSection} key=${stepNum} ...${stepProps} />
-                    </div>
-                </div>
-            </main>
-        </div>
+    <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight"
+    dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
+    </div>
+
+    </div>
+
+    <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
+    <div className="h-full overflow-y-auto custom-scrollbar">
+    <${TaskSection} key=${stepNum} ...${stepProps} />
+    </div>
+    </div>
+    </main>
+    </div>
     `;
 };
 
 // At the bottom of accountingCycleActivity.js
 
 export async function renderAccountingCycleActivity(container, activityDoc, user, goBack) {
-    
     // --- DEBUG CHECK ---
     if (window.lastContainer && window.lastContainer !== container) {
         console.error("🔥 CRITICAL ISSUE: Parent is passing a DIFFERENT container div!");
