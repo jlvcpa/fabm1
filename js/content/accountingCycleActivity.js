@@ -1,10 +1,16 @@
+// --- accountingCycleActivity.js ---
+
+// 1. RESTORED MISSING LIBRARY IMPORTS
+import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+import htm from 'https://esm.sh/htm';
+import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+import { ArrowLeft, Save, CheckCircle, Lock, Clock, AlertTriangle, CheckSquare, Timer } from 'https://esm.sh/lucide-react@0.263.1';
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+// 2. YOUR ORIGINAL IMPORTS
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
-// Added ActivityHelper to imports
 import { getAccountType, sortAccounts, getLetterGrade, ActivityHelper } from './accountingCycle/utils.js';
-
-// --- NEW IMPORT: Get the Global Year from root utils ---
 import { COURSE_YEAR } from '../utils.js';
-
 import { TaskSection } from './accountingCycle/steps.js';
 
 import { validateStep01 } from './accountingCycle/steps/Step01Analysis.js';
