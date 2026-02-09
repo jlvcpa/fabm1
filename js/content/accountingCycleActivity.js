@@ -1,4 +1,5 @@
 // --- accountingCycleActivity.js ---
+// --- js/content/accountingCycleActivity.js
 
 // 1. RESTORED MISSING LIBRARY IMPORTS
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
