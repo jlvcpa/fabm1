@@ -1,3 +1,5 @@
+//--- js/content/quizResultPreview.js
+
 import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
 import { getLetterGrade } from "../utils.js"; 
 
