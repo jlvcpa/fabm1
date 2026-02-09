@@ -171,18 +171,26 @@ export async function renderQuizResultPreview(activityData, user, resultData, db
             //       1. MULTIPLE CHOICE RENDER
             // ==========================================
             if (section.type === "Multiple Choice") {
+                // FIX: Look for 'answer' (from your JSON) OR 'correctAnswer'
+                // We check explicitly for undefined/null so that index 0 is valid
+                const finalKey = (liveQ.answer !== undefined && liveQ.answer !== null) 
+                                 ? liveQ.answer 
+                                 : liveQ.correctAnswer;
+
                 sectionMaxScore++;
-                // LIVE GRADING
-                const isCorrect = String(studentAnswer) === String(liveQ.correctAnswer) || 
-                                  (String(studentAnswer) === "0" && (liveQ.correctAnswer === null || liveQ.correctAnswer === undefined));
+                
+                // LIVE GRADING (Fixed: No fallback to 0 if key is missing)
+                const isCorrect = (finalKey !== undefined && finalKey !== null) &&
+                                  String(studentAnswer) === String(finalKey);
                 
                 if(isCorrect) sectionScore++;
 
                 const optionsHtml = (liveQ.options || []).map((opt, optIdx) => {
                     const isSelected = String(studentAnswer) === String(optIdx);
-                    // Use Live Answer Key
-                    const isOptCorrect = String(liveQ.correctAnswer) === String(optIdx) || 
-                                         (String(optIdx) === "0" && (liveQ.correctAnswer === null || liveQ.correctAnswer === undefined));
+                    
+                    // HIGHLIGHTING (Fixed: Uses finalKey)
+                    const isOptCorrect = (finalKey !== undefined && finalKey !== null) &&
+                                         String(finalKey) === String(optIdx);
                     
                     let bgClass = "bg-white border-gray-200";
                     let icon = "";
@@ -213,7 +221,7 @@ export async function renderQuizResultPreview(activityData, user, resultData, db
                             </div>
                         </div>
                     </div>`;
-            } 
+            }
             
             // ==========================================
             //       2. PROBLEM SOLVING RENDER
