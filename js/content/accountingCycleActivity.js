@@ -1,4 +1,4 @@
-// --- accountingCycleActivity.js ---
+// --- js/content/accountingCycleActivity.js
 
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
@@ -206,51 +206,38 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [questionId, setQuestionId] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
 
-    // --- REVISED INITIALIZATION EFFECT (FIXED: NO ASYNC WRAPPER) ---
     useEffect(() => {
         if(!activityDoc) return;
-        
-        const resultDocId = generateResultDocId(user);
-        if (!resultDocId) return;
+        const init = async () => {
+            const resultDocId = generateResultDocId(user);
+            if (!resultDocId) return;
 
-        const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
-        
-        // IMPORTANT: onSnapshot must be called directly in useEffect, and its return value (unsubscribe) must be returned by useEffect
-        const unsubscribe = onSnapshot(resultRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const rawData = docSnap.data();
-                const data = normalizeFirebaseData(rawData);
-                
-                setStudentProgress(prev => ({
-                    answers: { ...prev.answers, ...(data.answers || {}) },
-                    stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
-                    scores: { ...prev.scores, ...(data.scores || {}) }
-                }));
-                
-                let qId = data.questionId;
-                if (!qId) { 
-                    // If doc exists but no ID, pick one AND SAVE IT immediately
-                    qId = pickRandomQuestion();
-                    setDoc(resultRef, { questionId: qId }, { merge: true }); 
+            const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
+            const unsubscribe = onSnapshot(resultRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const rawData = docSnap.data();
+                    const data = normalizeFirebaseData(rawData);
+                    
+                    setStudentProgress(prev => ({
+                        answers: { ...prev.answers, ...(data.answers || {}) },
+                        stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
+                        scores: { ...prev.scores, ...(data.scores || {}) }
+                    }));
+                    
+                    let qId = data.questionId;
+                    if (!qId) { 
+                        qId = pickRandomQuestion();
+                    }
+                    setQuestionId(qId);
+                } else {
+                    const qId = pickRandomQuestion();
+                    setQuestionId(qId);
                 }
-                setQuestionId(qId);
-            } else {
-                // If doc doesn't exist, pick one, SAVE IT, and create doc
-                const qId = pickRandomQuestion();
-                setQuestionId(qId);
-                setDoc(resultRef, { 
-                    studentName: `${user.LastName}, ${user.FirstName}`, 
-                    studentId: user.Idnumber, 
-                    section: activityDoc.section, 
-                    questionId: qId, 
-                    startedAt: new Date().toISOString() 
-                }, { merge: true });
-            }
-            setLoading(false);
-        });
-
-        // Cleanup: Stop listening when component unmounts
-        return () => unsubscribe();
+                setLoading(false);
+            });
+            return () => unsubscribe();
+        };
+        init();
     }, [activityDoc.activityname, activityDoc.section, user.CN, user.Idnumber]);
 
     // EFFECT 1: Load Activity Data (Only runs when questionId changes)
@@ -412,8 +399,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             [`answers.${stepNum}`]: removeUndefined(currentAns), 
             [`stepStatus.${stepNum}`]: newStatus,
             [`scores.${stepNum}`]: { score: result.score, maxScore: result.maxScore },
-            // REVISED: Ensure questionId is always saved on validation as requested
-            questionId: questionId,
             lastUpdated: new Date().toISOString()
         }, { merge: true });
     };
@@ -446,7 +431,6 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
         btnIcon = Save;
     }
 
-    // --- DYNAMIC INSTRUCTIONS GENERATION ---
     const stepInstructions = (activeTaskConfig && activityData) 
         ? ActivityHelper.getInstructionsHTML(
             stepNum,
@@ -456,9 +440,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             activityData.beginningBalances,
             activityData.config.deferredExpenseMethod,
             activityData.config.deferredIncomeMethod,
-            activityData.config.inventorySystem,
-            activityData.ledger,        // Passed ledger data
-            activityData.adjustments    // Passed adjustments
+            activityData.config.inventorySystem
           )
         : (activeTaskConfig ? activeTaskConfig.instructions : '');
 
@@ -499,7 +481,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                     </div>
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
+                <div className="flex gap-1 overflow-x-auto max-w-[60vw] md:max-w-none pb-1 items-center custom-scrollbar">
                     ${activityDoc.tasks.map(t => {
                         const idx = activityDoc.tasks.indexOf(t);
                         const sNum = getStepNumber(t, idx);
@@ -519,7 +501,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
 
             <main className="flex-1 overflow-hidden flex flex-col p-0 max-w-7xl mx-auto w-full">
                 
-                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-0.5">
+                <div className="bg-white p-0 rounded-lg shadow-sm border border-gray-200 mb-1 flex flex-col gap-1">
                     
                     <div className="flex justify-between items-center w-full px-2 pt-1">
                         <div>
@@ -559,13 +541,13 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
                             </div>
                         </div>
                     </div>
-
+                    
                     <div className="w-full px-3 p-0.5 bg-blue-50 text-blue-900 text-xs rounded-b-lg border border-blue-100 shadow-sm leading-tight" 
                          dangerouslySetInnerHTML=${{ __html: stepInstructions }}>
                     </div>
 
                 </div>
-
+                
                 <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative">
                      <div className="h-full overflow-y-auto custom-scrollbar">
                         <${TaskSection} key=${stepNum} ...${stepProps} />
