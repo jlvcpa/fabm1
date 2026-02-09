@@ -1,5 +1,3 @@
-// --- accountingCycleActivity.js ---
-
 import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
 import htm from 'https://esm.sh/htm';
 import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
@@ -119,12 +117,8 @@ const adaptStaticDataToSimulator = (questionData) => {
         return { id: `adj-${idx}`, desc: a.description, drAcc: drLine ? drLine.account : '', crAcc: crLine ? crLine.account : '', amount: amt };
     });
 
-    // console.log("DEBUG: Constructed validAccounts list:", Array.from(validAccounts));
     // 1. Create the sorted list first
     const sortedList = sortAccounts(Array.from(validAccounts));
-    
-    // 2. Log it to see exactly what is being sent out
-    // console.log("DEBUG: Sorted Accounts ready for return:", sortedList);
 
     return {
         config: { 
@@ -206,49 +200,53 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
     const [questionId, setQuestionId] = useState(null);
     const [timeLeft, setTimeLeft] = useState(null);
 
-    // --- REVISED INITIALIZATION EFFECT ---
+    // --- REVISED INITIALIZATION EFFECT (FIXED CLEANUP) ---
     useEffect(() => {
         if(!activityDoc) return;
-        const init = async () => {
-            const resultDocId = generateResultDocId(user);
-            if (!resultDocId) return;
 
-            const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
-            const unsubscribe = onSnapshot(resultRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const rawData = docSnap.data();
-                    const data = normalizeFirebaseData(rawData);
-                    
-                    setStudentProgress(prev => ({
-                        answers: { ...prev.answers, ...(data.answers || {}) },
-                        stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
-                        scores: { ...prev.scores, ...(data.scores || {}) }
-                    }));
-                    
-                    let qId = data.questionId;
-                    if (!qId) { 
-                        // If doc exists but no ID, pick one AND SAVE IT immediately
-                        qId = pickRandomQuestion();
-                        setDoc(resultRef, { questionId: qId }, { merge: true }); 
-                    }
-                    setQuestionId(qId);
-                } else {
-                    // If doc doesn't exist, pick one, SAVE IT, and create doc
-                    const qId = pickRandomQuestion();
-                    setQuestionId(qId);
-                    setDoc(resultRef, { 
-                        studentName: `${user.LastName}, ${user.FirstName}`, 
-                        studentId: user.Idnumber, 
-                        section: activityDoc.section, 
-                        questionId: qId, 
-                        startedAt: new Date().toISOString() 
-                    }, { merge: true });
+        // 1. Generate ID synchronously
+        const resultDocId = generateResultDocId(user);
+        if (!resultDocId) return;
+
+        const resultRef = doc(db, `results_${activityDoc.activityname}_${activityDoc.section}`, resultDocId);
+
+        // 2. Set up listener directly (Removed the async init wrapper causing the bug)
+        const unsubscribe = onSnapshot(resultRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const rawData = docSnap.data();
+                const data = normalizeFirebaseData(rawData);
+                
+                setStudentProgress(prev => ({
+                    answers: { ...prev.answers, ...(data.answers || {}) },
+                    stepStatus: { ...prev.stepStatus, ...(data.stepStatus || {}) },
+                    scores: { ...prev.scores, ...(data.scores || {}) }
+                }));
+                
+                let qId = data.questionId;
+                if (!qId) { 
+                    // If doc exists but no ID, pick one AND SAVE IT immediately
+                    qId = pickRandomQuestion();
+                    setDoc(resultRef, { questionId: qId }, { merge: true }); 
                 }
-                setLoading(false);
-            });
-            return () => unsubscribe();
-        };
-        init();
+                setQuestionId(qId);
+            } else {
+                // If doc doesn't exist, pick one, SAVE IT, and create doc
+                const qId = pickRandomQuestion();
+                setQuestionId(qId);
+                setDoc(resultRef, { 
+                    studentName: `${user.LastName}, ${user.FirstName}`, 
+                    studentId: user.Idnumber, 
+                    section: activityDoc.section, 
+                    questionId: qId, 
+                    startedAt: new Date().toISOString() 
+                }, { merge: true });
+            }
+            setLoading(false);
+        });
+
+        // 3. Return the unsubscribe function specifically to React
+        return () => unsubscribe();
+
     }, [activityDoc.activityname, activityDoc.section, user.CN, user.Idnumber]);
 
     // EFFECT 1: Load Activity Data (Only runs when questionId changes)
@@ -257,9 +255,7 @@ const ActivityRunner = ({ activityDoc, user, goBack }) => {
             const rawQ = merchTransactionsExamData.find(q => q.id === questionId);
             if (rawQ) {
                 // --- NEW LOGIC: INJECT YEAR ---
-                // We inject the year BEFORE adapting the data for the simulator
                 const datedQ = injectYearToQuestion(rawQ, COURSE_YEAR);
-
                 const adaptedData = adaptStaticDataToSimulator(datedQ);
                 setActivityData(adaptedData);
             }
