@@ -1,4 +1,4 @@
-// --- steps/Step02Journalizing.js ---
+// --- steps/Step02Journalizing.js ----
 // --- js/content/accountingCycle/steps/Step02Journalizing.js ---
 
 import React, { useEffect } from 'https://esm.sh/react@18.2.0';
