@@ -1,4 +1,4 @@
-// Content for Unit 2 Week 2: Merchandising Business
+// Content for Unit 2 Week 2: Merchandising Business ---
 // FIXED: We use 'export const' to create a named export.
 
 export const unit2Week2Data = {
