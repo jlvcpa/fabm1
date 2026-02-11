@@ -198,7 +198,7 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
     return html`
         <div className=${`flex h-8 items-center border-t border-gray-100 ${isDesc ? 'bg-white text-gray-600' : ''}`}>
             
-            <div className="w-16 h-full border-r relative group">
+            <div className="w-16 h-full border-r relative group shrink-0">
                 ${!isDesc && html`
                     <input type="text" 
                         className=${`w-full h-full px-1 text-xs outline-none bg-transparent text-right ${bgClass(valResult?.date)}`} 
@@ -215,7 +215,7 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
                 `}
             </div>
 
-            <div className="flex-1 h-full border-r relative">
+            <div className="flex-1 h-full border-r relative min-w-[200px]">
                 ${isDesc 
                     ? html`<div className="px-2 w-full h-full flex items-center overflow-hidden whitespace-pre-wrap text-xs font-mono absolute top-0 left-0 z-10 bg-white border-r" style=${{width: 'calc(100% + 16rem)'}}>${row.acc}</div>`
                     : (!isYearRow && html`
@@ -233,11 +233,11 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
                 }
             </div>
 
-            <div className="w-16 h-full border-r">
+            <div className="w-16 h-full border-r shrink-0">
                 ${!isDesc && !isYearRow && html`<input type="text" className="w-full h-full text-center outline-none bg-transparent" value=${row.pr || ''} onChange=${(e)=>updateRow(idx, 'pr', e.target.value)} disabled=${isReadOnly} />`}
             </div>
 
-            <div className="w-24 h-full border-r relative">
+            <div className="w-24 h-full border-r relative shrink-0">
                 ${!isDesc && !isYearRow && html`
                     <input type="number" 
                         className=${`w-full h-full pl-6 pr-1 text-right outline-none bg-transparent ${bgClass(valResult?.drAmt)}`} 
@@ -251,7 +251,7 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
                 `}
             </div>
 
-            <div className="w-24 h-full border-r relative">
+            <div className="w-24 h-full border-r relative shrink-0">
                 ${!isDesc && !isYearRow && html`
                     <input type="number" 
                         className=${`w-full h-full pl-6 pr-1 text-right outline-none bg-transparent ${bgClass(valResult?.crAmt)}`} 
@@ -265,7 +265,7 @@ const JournalRow = ({ row, idx, tIdx, updateRow, deleteRow, showFeedback, isRead
                 `}
             </div>
 
-            <div className="w-8 flex justify-center items-center">
+            <div className="w-8 flex justify-center items-center shrink-0">
                 ${!isDesc && !isYearRow && !isReadOnly && html`<button onClick=${() => deleteRow(idx)} className="text-red-400 hover:text-red-600"><${Trash2} size=${14}/></button>`}
             </div>
         </div>
@@ -329,82 +329,84 @@ export default function Step02Journalizing({ transactions = [], data, onChange, 
                     <span className="font-mono font-bold text-lg">Score: ${result.score} of ${result.maxScore} - (${result.letterGrade})</span>
                 </div>
             `}
-            <div className="border border-gray-400 shadow-sm min-h-[200px]">
-                <div className="flex bg-gray-800 text-white border-b border-gray-400 font-bold text-sm text-center">
-                    <div className="w-16 border-r p-2">Date</div>
-                    <div className="flex-1 border-r p-2">Account Titles</div>
-                    <div className="w-16 border-r p-2">PR</div>
-                    <div className="w-24 border-r p-2">Debit</div>
-                    <div className="w-24 p-2">Credit</div>
-                    <div className="w-8"></div>
-                </div>
-                ${transactions.map((t, tIdx) => {
-                    const entry = data[t.id] || {};
-                    let initialRows = entry.rows;
-                    
-                    if (!initialRows) {
-                        // --- DYNAMIC INITIALIZATION LOGIC (Runs once per empty state) ---
-                        const neededDataLines = (t.solution && t.solution.filter(l => !l.isExplanation && (l.debit || l.credit)).length) 
-                                                || (t.debits.length + t.credits.length) 
-                                                || 2;
+            <div className="border border-gray-400 shadow-sm min-h-[200px] overflow-x-auto">
+                <div className="min-w-[700px]">
+                    <div className="flex bg-gray-800 text-white border-b border-gray-400 font-bold text-sm text-center">
+                        <div className="w-16 border-r p-2 shrink-0">Date</div>
+                        <div className="flex-1 border-r p-2 min-w-[200px]">Account Titles</div>
+                        <div className="w-16 border-r p-2 shrink-0">PR</div>
+                        <div className="w-24 border-r p-2 shrink-0">Debit</div>
+                        <div className="w-24 p-2 shrink-0">Credit</div>
+                        <div className="w-8 shrink-0"></div>
+                    </div>
+                    ${transactions.map((t, tIdx) => {
+                        const entry = data[t.id] || {};
+                        let initialRows = entry.rows;
                         
-                        initialRows = [];
+                        if (!initialRows) {
+                            // --- DYNAMIC INITIALIZATION LOGIC (Runs once per empty state) ---
+                            const neededDataLines = (t.solution && t.solution.filter(l => !l.isExplanation && (l.debit || l.credit)).length) 
+                                                            || (t.debits.length + t.credits.length) 
+                                                            || 2;
+                            
+                            initialRows = [];
 
-                        if (tIdx === 0) {
-                            initialRows.push({ id: 'year', date: '', acc: '', dr: '', cr: '', pr: '' });
+                            if (tIdx === 0) {
+                                initialRows.push({ id: 'year', date: '', acc: '', dr: '', cr: '', pr: '' });
+                            }
+
+                            for (let i = 0; i < neededDataLines; i++) {
+                                initialRows.push({ id: i, date: '', acc: '', dr: '', cr: '', pr: '' });
+                            }
+
+                            initialRows.push({ 
+                                id: 'desc', 
+                                date: '', 
+                                acc: `        ${t.description}`, 
+                                dr: '', 
+                                cr: '', 
+                                pr: '', 
+                                isDescription: true 
+                            });
                         }
+                        
+                        const rows = initialRows;
+                        
+                        // --- NEW: Generate display date with year included ---
+                        const txnDate = new Date(t.date);
+                        const displayDate = txnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-                        for (let i = 0; i < neededDataLines; i++) {
-                            initialRows.push({ id: i, date: '', acc: '', dr: '', cr: '', pr: '' });
-                        }
-
-                        initialRows.push({ 
-                            id: 'desc', 
-                            date: '', 
-                            acc: `        ${t.description}`, 
-                            dr: '', 
-                            cr: '', 
-                            pr: '', 
-                            isDescription: true 
-                        });
-                    }
-                    
-                    const rows = initialRows;
-                    
-                    // --- NEW: Generate display date with year included ---
-                    const txnDate = new Date(t.date);
-                    const displayDate = txnDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-                    const updateRow = (idx, field, val) => { 
-                        const newRows = [...rows]; 
-                        if(!newRows[idx]) newRows[idx] = {}; 
-                        newRows[idx] = { ...newRows[idx], [field]: val }; 
-                        onChange(t.id, { rows: newRows }); 
-                    };
-                    
-                    const addRow = () => { 
-                        const newRows = [...rows]; 
-                        const descRow = newRows.pop(); 
-                        newRows.push({ id: Date.now(), date: '', acc: '', dr: '', cr: '', pr: '' }); 
-                        newRows.push(descRow); 
-                        onChange(t.id, { rows: newRows }); 
-                    };
-                    
-                    const deleteRow = (idx) => { 
-                        const minRows = tIdx === 0 ? 3 : 2; 
-                        if (rows.length <= minRows) return; 
-                        const newRows = rows.filter((_, i) => i !== idx); 
-                        onChange(t.id, { rows: newRows }); 
-                    };
-                    
-                    return html`
-                        <div key=${t.id} className="border-b border-gray-300 text-sm">
-                            <div className="bg-gray-50 px-2 py-1 text-xs font-bold text-gray-700 border-b border-gray-200 block no-print">${displayDate}. ${t.description}</div>
-                            ${rows.map((row, idx) => html`<${JournalRow} key=${row.id} row=${row} idx=${idx} tIdx=${tIdx} updateRow=${updateRow} deleteRow=${deleteRow} showFeedback=${showFeedback} isReadOnly=${isReadOnly} t=${t} />`)}
-                            <div className="bg-gray-50 p-1 flex justify-center border-t no-print">${!isReadOnly && html`<button onClick=${addRow} className="text-xs border border-dashed border-gray-400 rounded px-2 py-1 text-gray-600 hover:bg-white hover:text-blue-600 flex items-center gap-1 transition-colors"><${Plus} size=${12}/> Add Row</button>`}</div>
-                        </div>
-                    `;
-                })}
+                        const updateRow = (idx, field, val) => { 
+                            const newRows = [...rows]; 
+                            if(!newRows[idx]) newRows[idx] = {}; 
+                            newRows[idx] = { ...newRows[idx], [field]: val }; 
+                            onChange(t.id, { rows: newRows }); 
+                        };
+                        
+                        const addRow = () => { 
+                            const newRows = [...rows]; 
+                            const descRow = newRows.pop(); 
+                            newRows.push({ id: Date.now(), date: '', acc: '', dr: '', cr: '', pr: '' }); 
+                            newRows.push(descRow); 
+                            onChange(t.id, { rows: newRows }); 
+                        };
+                        
+                        const deleteRow = (idx) => { 
+                            const minRows = tIdx === 0 ? 3 : 2; 
+                            if (rows.length <= minRows) return; 
+                            const newRows = rows.filter((_, i) => i !== idx); 
+                            onChange(t.id, { rows: newRows }); 
+                        };
+                        
+                        return html`
+                            <div key=${t.id} className="border-b border-gray-300 text-sm">
+                                <div className="bg-gray-50 px-2 py-1 text-xs font-bold text-gray-700 border-b border-gray-200 block no-print">${displayDate}. ${t.description}</div>
+                                ${rows.map((row, idx) => html`<${JournalRow} key=${row.id} row=${row} idx=${idx} tIdx=${tIdx} updateRow=${updateRow} deleteRow=${deleteRow} showFeedback=${showFeedback} isReadOnly=${isReadOnly} t=${t} />`)}
+                                <div className="bg-gray-50 p-1 flex justify-center border-t no-print">${!isReadOnly && html`<button onClick=${addRow} className="text-xs border border-dashed border-gray-400 rounded px-2 py-1 text-gray-600 hover:bg-white hover:text-blue-600 flex items-center gap-1 transition-colors"><${Plus} size=${12}/> Add Row</button>`}</div>
+                            </div>
+                        `;
+                    })}
+                </div>
             </div>
         </div>
     `;
