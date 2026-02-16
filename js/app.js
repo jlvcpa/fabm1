@@ -8,7 +8,7 @@ import { merchTransactionPracData } from './content/questionBank/qbMerchTransact
 // --- NEW IMPORTS ---
 import { renderAccountingCycleCreator } from './content/accountingCycleCreator.js';
 import { renderAccountingCycleActivity } from './content/accountingCycleActivity.js'; 
-
+import { renderTeacherReviewDashboard } from './content/activityResultPreview.js';
 import Step05Worksheet, { validateStep05 } from './content/accountingCycle/steps/Step05Worksheet.js';
 import Step06FinancialStatements, { validateStep06 } from './content/accountingCycle/steps/Step06FinancialStatements.js';
 import React from 'https://esm.sh/react@18.2.0';
@@ -137,7 +137,7 @@ function renderSidebar(role) {
     const container = elements.navContainer();
     container.innerHTML = ''; 
 
-    // Course Outline Button
+    // --- 1. Course Outline Button ---
     const outlineBtn = document.createElement('button');
     outlineBtn.className = "w-full text-left px-6 py-2 text-slate-300 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent hover:border-blue-500 focus:outline-none whitespace-nowrap overflow-hidden";
     outlineBtn.innerHTML = '<i class="fas fa-home w-6"></i> <span class="sidebar-text-detail">Course Outline</span>';
@@ -147,7 +147,7 @@ function renderSidebar(role) {
     };
     container.appendChild(outlineBtn);
 
-    // Dynamic Terms/Units
+    // --- 2. Dynamic Terms/Units (Syllabus) ---
     courseData.terms.forEach(term => {
         const termHeader = document.createElement('div');
         termHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
@@ -255,7 +255,7 @@ function renderSidebar(role) {
         });
     });
 
-    // --- QUIZZES AND ACTIVITIES (Submenu for Everyone) ---
+    // --- 3. Quizzes & Activities (For All Users) ---
     const qaHeader = document.createElement('div');
     qaHeader.className = "px-6 py-2 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden";
     qaHeader.textContent = "Assessments";
@@ -275,9 +275,10 @@ function renderSidebar(role) {
         const icon = qaBtn.querySelector('.fa-chevron-down');
         icon.classList.toggle('rotate-180');
     };
-    container.appendChild(qaBtn);
+    container.appendChild(qaBtn); // Append the button
+    container.appendChild(qaSubmenu); // Append the submenu container
 
-    // 1. Formative and Summative (Original quizzesAndActivities.js)
+    // 3a. Formative and Summative
     const formativeBtn = document.createElement('button');
     formativeBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-yellow-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-yellow-500";
     formativeBtn.innerHTML = '<i class="fas fa-check-square text-xs"></i> <span class="text-sm">Formative & Summative</span>';
@@ -287,7 +288,7 @@ function renderSidebar(role) {
     };
     qaSubmenu.appendChild(formativeBtn);
 
-    // 2. Performance Tasks (Accounting Cycle)
+    // 3b. Performance Tasks
     const perfTaskBtn = document.createElement('button');
     perfTaskBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-indigo-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-indigo-500";
     perfTaskBtn.innerHTML = '<i class="fas fa-project-diagram text-xs"></i> <span class="text-sm">Performance Tasks</span>';
@@ -295,13 +296,10 @@ function renderSidebar(role) {
         renderPerformanceTasksPage(); // Opens list filtered for 'accounting_cycle'
         closeMobileSidebar();
     };
-    
     qaSubmenu.appendChild(perfTaskBtn);
 
-    container.appendChild(qaSubmenu);
 
-
-    // --- TEACHER TOOLS (Teachers Only) ---
+    // --- 4. Teacher Tools (Teachers Only) ---
     if (role === 'teacher') {
         const creatorHeader = document.createElement('button');
         creatorHeader.className = "w-full text-left px-6 py-3 mt-4 text-xs font-bold text-slate-500 uppercase tracking-wider sidebar-text-detail whitespace-nowrap overflow-hidden flex justify-between items-center group hover:text-slate-300 focus:outline-none";
@@ -320,9 +318,11 @@ function renderSidebar(role) {
             }
         };
 
+        // Append Header and Submenu to Container (Critical step!)
         container.appendChild(creatorHeader);
+        container.appendChild(toolsSubmenu);
         
-        // 1. Quiz & Activity Creator (Original)
+        // 4a. Quiz & Activity Creator
         const creatorBtn = document.createElement('button');
         creatorBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-green-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-green-500";
         creatorBtn.innerHTML = '<i class="fas fa-magic text-xs"></i> <span class="text-sm">Quiz Creator</span>';
@@ -332,7 +332,7 @@ function renderSidebar(role) {
         };
         toolsSubmenu.appendChild(creatorBtn);
 
-        // 2. Accounting Cycle Manager (NEW)
+        // 4b. Accounting Cycle Manager
         const accCycleBtn = document.createElement('button');
         accCycleBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-indigo-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-indigo-500";
         accCycleBtn.innerHTML = '<i class="fas fa-cogs text-xs"></i> <span class="text-sm">AC Manager</span>';
@@ -342,7 +342,7 @@ function renderSidebar(role) {
         };
         toolsSubmenu.appendChild(accCycleBtn);
 
-        // 3. Course Schedule
+        // 4c. Course Schedule
         const calendarBtn = document.createElement('button');
         calendarBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-purple-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-purple-500";
         calendarBtn.innerHTML = '<i class="fas fa-calendar-alt text-xs"></i> <span class="text-sm">Schedule</span>';
@@ -352,7 +352,7 @@ function renderSidebar(role) {
         };
         toolsSubmenu.appendChild(calendarBtn);
 
-        // 4. Question Bank Importer
+        // 4d. Question Bank Importer
         const importerBtn = document.createElement('button');
         importerBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-blue-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-blue-500";
         importerBtn.innerHTML = '<i class="fas fa-file-import text-xs"></i> <span class="text-sm">Importer</span>';
@@ -362,7 +362,15 @@ function renderSidebar(role) {
         };
         toolsSubmenu.appendChild(importerBtn);
 
-        container.appendChild(toolsSubmenu);
+        // 4e. Results Review (NEW)
+        const reviewBtn = document.createElement('button');
+        reviewBtn.className = "w-full text-left px-6 py-2 text-slate-400 hover:bg-slate-900 hover:text-orange-400 transition-colors flex items-center gap-2 border-l-2 border-transparent hover:border-orange-500";
+        reviewBtn.innerHTML = '<i class="fas fa-poll text-xs"></i> <span class="text-sm">Results Review</span>';
+        reviewBtn.onclick = () => {
+            renderTeacherResultsReviewPage();
+            closeMobileSidebar();
+        };
+        toolsSubmenu.appendChild(reviewBtn);
     }
 }
 
@@ -429,6 +437,21 @@ function renderAccCycleCreatorPage() {
     const content = elements.contentArea();
     content.innerHTML = '';
     renderAccountingCycleCreator(content);
+}
+
+// --- NEW RENDERER FOR RESULTS REVIEW ---
+function renderTeacherResultsReviewPage() {
+    elements.pageTitle().innerText = "Student Results Review";
+    const content = elements.contentArea();
+    content.innerHTML = '';
+    
+    // Create a container for the React root
+    const container = document.createElement('div');
+    container.id = "teacher-review-container";
+    container.className = "w-full h-full"; // Full height for the layout
+    content.appendChild(container);
+
+    renderTeacherReviewDashboard(container, currentUser);
 }
 
 function renderLandingPage() {
