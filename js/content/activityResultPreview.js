@@ -24,7 +24,7 @@ import Step08ClosingEntries from './accountingCycle/steps/Step08ClosingEntries.j
 import Step09PostClosingTB from './accountingCycle/steps/Step09PostClosingTB.js';
 import Step10ReversingEntries from './accountingCycle/steps/Step10ReversingEntries.js';
 
-import { adaptStaticDataToSimulator } from '../accountingCycleActivity.js';
+import { adaptStaticDataToSimulator } from './accountingCycleActivity.js';
 import { merchTransactionsExamData } from './questionBank/qbMerchTransactions.js';
 
 const html = htm.bind(React.createElement);
