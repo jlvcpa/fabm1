@@ -8,7 +8,7 @@ import { qbMerchMultipleChoice } from "./questionBank/qbMerchMultipleChoice.js";
 import { qbMerchProblemSolving } from "./questionBank/qbMerchProblemSolving.js";
 import { qbMerchJournalizing } from "./questionBank/qbMerchJournalizing.js";
 
-// --- IMPORT THE PREVIEW MODULE ---
+// --- IMPORT THE PREVIEW MODULE ----
 import { renderQuizResultPreview } from "./quizResultPreview.js";
 
 const firebaseConfig = {
