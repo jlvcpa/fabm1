@@ -48,7 +48,7 @@ export async function renderQuizzesAndActivities(containerElement, user, customR
     contentArea.innerHTML = `
         <div class="flex h-full relative overflow-hidden bg-gray-50">
             <div id="qa-sidebar" class="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col h-full z-10 transition-transform absolute md:relative transform -translate-x-full md:translate-x-0">
-                <div class="p-4 border-b border-gray-200 bg-blue-900 text-white flex justify-between items-center">
+                <div class="p-1 border-b border-gray-200 bg-blue-900 text-white flex justify-between items-center">
                     <h2 class="font-bold">Your Activities</h2>
                     <button id="qa-close-sidebar" class="md:hidden text-white"><i class="fas fa-times"></i></button>
                 </div>
