@@ -371,6 +371,7 @@ function renderSidebar(role) {
             closeMobileSidebar();
         };
         toolsSubmenu.appendChild(reviewBtn);
+        container.appendChild(toolsSubmenu);
     }
 }
 
